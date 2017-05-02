@@ -11,6 +11,7 @@ import it.unibo.deis.lia.ramp.core.internode.ContinuityManager;
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
 import it.unibo.deis.lia.ramp.core.internode.Heartbeater;
 import it.unibo.deis.lia.ramp.core.internode.Layer3RoutingManager;
+import it.unibo.deis.lia.ramp.core.internode.OpportunisticNetworkingManager;
 import it.unibo.deis.lia.ramp.core.internode.Resolver;
 //import it.unibo.deis.lia.ramp.core.social.SocialObserver;
 import it.unibo.deis.lia.ramp.service.application.FileSharingService;
@@ -772,6 +773,13 @@ public class RampEntryPoint {
     }
     public static float nextRandomFloat(){
     	return random.nextFloat();
+    }
+    
+    // TODO
+    public void sentNotifyToOpportunisticNetworkingManager() {
+    	OpportunisticNetworkingManager opportunisticNetworkingManager = OpportunisticNetworkingManager.getInstance(false);
+    	if (opportunisticNetworkingManager != null)
+    		opportunisticNetworkingManager.sentNotify();
     }
     
 }

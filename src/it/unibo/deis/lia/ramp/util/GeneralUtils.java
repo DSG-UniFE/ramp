@@ -1,6 +1,8 @@
 package it.unibo.deis.lia.ramp.util;
 
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
+import it.unibo.deis.lia.ramp.RampEntryPoint;
+
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -18,8 +20,8 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Properties;
 
@@ -68,20 +70,20 @@ public class GeneralUtils {
 		"http://deis170.deis.unibo.it:8080/getPublicIpAddr",
 		"http://myip.dnsdynamic.org/"
 	};*/
-	static{
-    	Properties properties = new Properties();
-    	try {
-			properties.load(new FileInputStream("./resources/relay.props"));
-			String protocol = properties.getProperty("publicip.protocol");
-			String ip = properties.getProperty("publicip.ip");
-			String port = properties.getProperty("publicip.port");
-			urlIpRresolvers = new String[2];
-			urlIpRresolvers[0] = protocol+"://"+ip+":"+port+"/fbrelay";
-			urlIpRresolvers[1] = "http://myip.dnsdynamic.org/";
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-    }
+//	static{
+//    	Properties properties = new Properties();
+//    	try {
+//			properties.load(new FileInputStream("./resources/relay.props"));
+//			String protocol = properties.getProperty("publicip.protocol");
+//			String ip = properties.getProperty("publicip.ip");
+//			String port = properties.getProperty("publicip.port");
+//			urlIpRresolvers = new String[2];
+//			urlIpRresolvers[0] = protocol+"://"+ip+":"+port+"/fbrelay";
+//			urlIpRresolvers[1] = "http://myip.dnsdynamic.org/";
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//    }
 
 	public static synchronized String getMyPublicIpString(boolean forceRefresh){
 		if( myPublicIpAddressString == null || forceRefresh){
@@ -332,48 +334,58 @@ public class GeneralUtils {
     // log
 	// ---------------------
 	
-	public static void appendLog(String text)
-	 { 
-		File androidShareDirectory = new File(android.os.Environment.getExternalStorageDirectory() + "/ramp");
-		if(!androidShareDirectory.exists())
-			androidShareDirectory.mkdirs();
-		
-		String logDirectory = androidShareDirectory.getAbsolutePath() + "/log";
-	    File dir = new File(logDirectory);
-	    if(!dir.exists())
-	    	dir.mkdir();
-	    
-	    File logFile = new File(logDirectory+ "/log.txt"); 
-	    
-	    if (!logFile.exists())
-	    {
-	       try
-	       {
-	          logFile.createNewFile();
-	       } 
-	       catch (IOException e)
-	       {
-	          // TODO Auto-generated catch block
-	          e.printStackTrace();
-	       }
-	    }
-	    try
-	    {
-	       //BufferedWriter for performance, true to set append to file flag
-	       BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true)); 
-	       
-	       Date date=new Date(System.currentTimeMillis());
-  		   @SuppressWarnings("deprecation")
-		String log = date.toLocaleString() +": "+text;
-  		
-	       buf.append(log);
-	       buf.newLine();
-	       buf.close();
-	    }
-	    catch (IOException e)
-	    {
-	       // TODO Auto-generated catch block
-	       e.printStackTrace();
-	    }
+	public static void appendLog(String text) { 
+		if (RampEntryPoint.getAndroidContext() != null) {
+			File androidShareDirectory = new File(android.os.Environment.getExternalStorageDirectory() + "/ramp");
+			if(!androidShareDirectory.exists())
+				androidShareDirectory.mkdirs();
+			
+			// This prevents media scanner from reading your media files and 
+			// providing them to other apps through the MediaStore content provider.
+		    File file = new File(androidShareDirectory.getAbsolutePath(), ".nomedia");
+		    if (!file.exists()) { 
+			    try {
+			    	FileOutputStream out = new FileOutputStream(file);
+			    	out.flush();
+			    	out.close();
+			    } catch (Exception e) {
+			    	e.printStackTrace();
+			    }
+		    }
+			
+			
+			String logDirectory = androidShareDirectory.getAbsolutePath() + "/log";
+		    File dir = new File(logDirectory);
+		    if(!dir.exists())
+		    	dir.mkdir();
+		    
+		    File logFile = new File(logDirectory + "/log.txt"); 
+		    
+		    if (!logFile.exists()) {
+		       try {
+		          logFile.createNewFile();
+		       } catch (IOException e) {
+		          e.printStackTrace();
+		       }
+		    }
+		    try {
+		       //BufferedWriter for performance, true to set append to file flag
+		       BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true)); 
+		       
+		       Calendar date = Calendar.getInstance();
+		       SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		       String log = format.format(date.getTime()) + ": " + text;
+		       
+//		       Date date = new Date(System.currentTimeMillis());
+//	  		   @SuppressWarnings("deprecation")
+//	  		   String log = date.toLocaleString() +": "+text;
+	  		
+		       buf.append(log);
+		       buf.newLine();
+		       buf.close();
+		    } catch (IOException e) {
+		       e.printStackTrace();
+		    }
+		}
 	 }
 }
