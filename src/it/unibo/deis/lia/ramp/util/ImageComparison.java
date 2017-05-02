@@ -3,6 +3,8 @@ package it.unibo.deis.lia.ramp.util;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 
+import it.unibo.deis.lia.ramp.exception.ImagesMismatchException;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
