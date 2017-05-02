@@ -939,6 +939,10 @@ public class OpportunisticNetworkingManager extends Thread {
 		}
 	}
 
+	public void receivedInterrupt() {
+		
+	}
+		
 	//Gestione periodica dei pacchetti in memoria
 	@Override
 	public void run() {
@@ -947,32 +951,38 @@ public class OpportunisticNetworkingManager extends Thread {
 			GeneralUtils.appendLog("OpportunisticNetworkingManager START");
 			
 			while (active) {
-				//Periodically send packet not expiry 
-				
-				List<SavedPacket> listSp = new ArrayList<SavedPacket>(savedPackets.keySet());
-				
-				for(SavedPacket sp : listSp)
-				    {
-					    //Refresh expiry
-					    refreshPacketExpiry(sp);
-						if(sp.getExpiry() == 0) //when expiry == 0 the opportunistic management is over
-						{	
-							GeneralUtils.appendLog("OpportunisticNetworkingManager: packet "+sp.getId() +" expiry = 0");
-							removePacket(sp);
-						}
-						else
-						{
-							//Send Packet
-							sendPacket(sp);
-						}
-				    }
-				sleep(getSendPacketsPeriod() * 1000);
+				try {
+					//Periodically send packet not expiry 
+					
+					List<SavedPacket> listSp = new ArrayList<SavedPacket>(savedPackets.keySet());
+					
+					for(SavedPacket sp : listSp)
+					    {
+						    //Refresh expiry
+						    refreshPacketExpiry(sp);
+							if(sp.getExpiry() == 0) //when expiry == 0 the opportunistic management is over
+							{	
+								GeneralUtils.appendLog("OpportunisticNetworkingManager: packet "+sp.getId() +" expiry = 0");
+								removePacket(sp);
+							} else {
+								//Send Packet
+								sendPacket(sp);
+							}
+					    }
+					//sleep(getSendPacketsPeriod() * 1000);
+					//TODO to check
+					synchronized (this) {
+						wait(getSendPacketsPeriod()*1000);
+					}
+				} catch (InterruptedException ie) {
+					System.out.println("OpportunisticNetworkingManager: this should happen only at exit");
+					GeneralUtils.appendLog("OpportunisticNetworkingManager: this should happen only at exit");
+				} catch (Exception e) {
+					e.printStackTrace();
+				}	
 			}
-			
 			System.out.println("OpportunisticNetworkingManager FINISHED");
 			GeneralUtils.appendLog("OpportunisticNetworkingManager FINISHED");
-		} catch (InterruptedException ie) {
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -982,6 +992,14 @@ public class OpportunisticNetworkingManager extends Thread {
 	}
 	
 	private boolean active = true;
+	
+	//TODO
+	public void sentNotify() {
+		System.out.println("OpportunisticNetworkingManager: receivedNotify");
+		synchronized (this) {
+			notify();
+		}
+	}
 	
 	public void deactivate(boolean clear) {
 		System.out.println("OpportunisticNetworkingManager DISABLED");
