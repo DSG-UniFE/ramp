@@ -172,7 +172,7 @@ public class RampEntryPoint {
     private Heartbeater heartbeater;
     private Resolver resolver;
     private ServiceManager serviceManager;
-    private static RampWebServer rampWebInterface;
+//    private static RampWebServer rampWebInterface;
     
     // Android
     private static android.content.Context androidContext = null;
@@ -200,7 +200,7 @@ public class RampEntryPoint {
 	    			//  adding other security providers (BC for creating Web server self-signed certificate and PBE-AES Encryption)
 	    			Security.insertProviderAt(new org.bouncycastle.jce.provider.BouncyCastleProvider(), Security.getProviders().length + 1);
 	    			
-					rampWebInterface = RampWebServer.getInstance();
+/*					rampWebInterface = RampWebServer.getInstance();
 					rampWebInterface.start();
 					synchronized( RampWebServer.getInstance() ){
 						RampWebServer.getInstance().wait();
@@ -213,7 +213,7 @@ public class RampEntryPoint {
 					}else{
 						rampWebInterface.addWar("./resources/webserver/RampAccessWebInterface.war", "/", false);
 					}
-					
+*/					
 					//Added by Lorenzo Donini (temp!!!!)
 					//TODO: REMEMBER TO PUT THIS LINE IN THE WEB MODULE THAT IS RESPONSIBLE FOR ACTIVATING THE SCACM FUNCTIONALITIES
 					//rampWebInterface.addWar("./resources/webserver/RampSocialFilterWebInterface.war", "/filters",false);
@@ -460,8 +460,8 @@ public class RampEntryPoint {
             ResourceDiscovery.deactivate();
             ResourceProvider.deactivate();
             
-            if(rampWebInterface!=null) rampWebInterface.deactivate();
-            rampWebInterface = null;
+//            if(rampWebInterface!=null) rampWebInterface.deactivate();
+//            rampWebInterface = null;
             if(serviceManager!=null) serviceManager.stopServiceManager();
             serviceManager = null;            
             if(heartbeater!=null) heartbeater.stopHeartbeater();
