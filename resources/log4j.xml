@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration>
+
+	<!-- <param name="error-layout" value="%d{HH:mm:ss.SSS} %5p [%t] (%F:%L) - %m%n" /> -->
+
+	<!-- APPENDERS -->
+	
+	<appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%5p [%t] (%F:%L) - %m%n" />
+		</layout>
+	</appender>
+	
+	
+	
+	<appender name="FILE-RUN" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="logs/run.log" />
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{HH:mm:ss.SSS} %5p [%t] (%F:%L) - %m%n" />
+		</layout>
+		<param name="Threshold" value="DEBUG" />
+		<!-- <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="DEBUG"/>
+            <param name="LevelMax" value="INFO"/>
+        </filter> -->
+	</appender>
+	
+	
+
+	<appender name="FILE-TEST" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="logs/test.log" />
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%m%n" />
+		</layout>
+		<!-- <param name="Threshold" value="INFO" /> -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="DEBUG"/>
+            <param name="LevelMax" value="INFO"/>
+        </filter>
+	</appender>
+	
+	<!-- Different layout for errors -->
+	<appender name="FILE-TEST-ERRORS" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="logs/test-errors.log" />
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{HH:mm:ss.SSS} %5p [%t] (%F:%L) - %m%n" />
+		</layout>
+		<!-- <param name="Threshold" value="INFO" /> -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="WARN"/>
+            <param name="LevelMax" value="FATAL"/>
+        </filter>
+	</appender>
+	
+	
+	
+	<appender name="FILE-TEST-LAST-RUN" class="org.apache.log4j.FileAppender">
+		<param name="file" value="logs/last_run_test.log" />
+		<param name="append" value="false" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%m%n" />
+		</layout>
+		<!-- <param name="Threshold" value="INFO" /> -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="DEBUG"/>
+            <param name="LevelMax" value="INFO"/>
+        </filter>
+	</appender>
+	
+	<!-- Different layout for errors -->
+	<appender name="FILE-TEST-LAST-RUN-ERRORS" class="org.apache.log4j.FileAppender">
+		<param name="file" value="logs/last_run_test-errors.log" />
+		<param name="append" value="false" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{HH:mm:ss.SSS} %5p [%t] (%F:%L) - %m%n" />
+		</layout>
+		<!-- <param name="Threshold" value="INFO" /> -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="WARN"/>
+            <param name="LevelMax" value="FATAL"/>
+        </filter>
+	</appender>
+	
+	
+	
+	<appender name="FILE-TIMING" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="logs/${timing.logfile.name}.log" />
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%m%n" />
+		</layout>
+		<!-- <param name="Threshold" value="INFO" /> -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="DEBUG"/>
+            <param name="LevelMax" value="INFO"/>
+        </filter>
+	</appender>
+	
+	<!-- Different layout for errors -->
+	<appender name="FILE-TIMING-ERRORS" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="logs/${timing.logfile.name}-errors.log" />
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{HH:mm:ss.SSS} %5p [%t] (%F:%L) - %m%n" />
+		</layout>
+		<!-- <param name="Threshold" value="INFO" /> -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="WARN"/>
+            <param name="LevelMax" value="FATAL"/>
+        </filter>
+	</appender>
+	
+	
+	
+	<appender name="FILE-GENERIC" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="logs/${logfile.name}.log" />
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%m%n" />
+		</layout>
+		<!-- <param name="Threshold" value="INFO" /> -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="DEBUG"/>
+            <!-- <param name="LevelMax" value="INFO"/> -->
+            <param name="LevelMax" value="FATAL"/>
+        </filter>
+	</appender>
+	
+	<!-- Different layout for errors -->
+	<appender name="FILE-GENERIC-ERRORS" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="logs/${logfile.name}-errors.log" />
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{HH:mm:ss.SSS} %5p [%t] (%F:%L) - %m%n" />
+		</layout>
+		<!-- <param name="Threshold" value="INFO" /> -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="WARN"/>
+            <param name="LevelMax" value="FATAL"/>
+        </filter>
+	</appender>
+	
+	
+	
+	<appender name="FILE-TIME" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="logs/${logfile.name}.log" />
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="append" value="false" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{HH:mm:ss.SSS} - %m%n" />
+		</layout>
+		<!-- <param name="Threshold" value="INFO" /> -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="DEBUG"/>
+            <param name="LevelMax" value="INFO"/>
+        </filter>
+	</appender>
+	
+	<!-- Different layout for errors -->
+	<appender name="FILE-TIME-ERRORS" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="logs/${logfile.name}-errors.log" />
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d{HH:mm:ss.SSS} %5p [%t] (%F:%L) - %m%n" />
+		</layout>
+		<!-- <param name="Threshold" value="INFO" /> -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="WARN"/>
+            <param name="LevelMax" value="FATAL"/>
+        </filter>
+	</appender>
+	
+	
+	
+	<!-- log info level into log.xml -->
+	<appender name="FILE-XML" class="org.apache.log4j.FileAppender">
+		<param name="File" value="logs/log.xml" />
+		<param name="Threshold" value="info" />
+		<layout class="org.apache.log4j.xml.XMLLayout" />
+	</appender>
+	
+	
+	
+
+	<!-- LOGGERS -->
+	
+	<logger name="it.soresm.test" additivity="true">
+		<level value="DEBUG"/>
+		<appender-ref ref="FILE-TEST"/>
+		<appender-ref ref="FILE-TEST-ERRORS"/>
+		<appender-ref ref="FILE-TEST-LAST-RUN"/>
+		<appender-ref ref="FILE-TEST-LAST-RUN-ERRORS"/>
+	</logger>
+	
+	<logger name="TimingLogger" additivity="true">
+		<level value="DEBUG"/>
+		<appender-ref ref="FILE-TIMING"/>
+		<appender-ref ref="FILE-TIMING-ERRORS"/>
+	</logger>
+	
+	<logger name="GenericLogger" additivity="true">
+		<level value="DEBUG"/>
+		<appender-ref ref="FILE-GENERIC"/>
+		<appender-ref ref="FILE-GENERIC-ERRORS"/>
+	</logger>
+	
+	<logger name="TimeLogger" additivity="true">
+		<level value="DEBUG"/>
+		<appender-ref ref="FILE-TIME"/>
+		<appender-ref ref="FILE-TIME-ERRORS"/>
+	</logger>
+	
+	<logger name="org.hibernate" additivity="true">
+		<level value="OFF"/>
+	</logger>
+	
+	<root>
+		<level value="DEBUG"/>
+		<!-- <level value="WARNING"/> -->
+		<appender-ref ref="STDOUT" />
+		<!-- <appender-ref ref="FILE-RUN" /> -->
+		<!-- <appender-ref ref="FILE-XML" /> -->
+	</root>
+
+</log4j:configuration>

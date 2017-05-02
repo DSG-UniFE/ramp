@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure.dtd">
+ 
+<Configure id="Server" class="org.eclipse.jetty.server.Server"> 
+
+  <!-- required configuration -->
+  <!-- connectors -->
+  <!-- handlers -->
+  <!-- webapps/contexts -->
+ 
+  <!-- optional configuration -->
+  
+  <!-- threadpool -->
+    <Set name="ThreadPool">
+      <New class="org.eclipse.jetty.util.thread.QueuedThreadPool">
+        <!-- initial threads set to 5 -->
+        <Set name="minThreads">5</Set>
+
+        <!-- the thread pool will grow only up to 20 -->
+        <Set name="maxThreads">20</Set>
+      </New>
+    </Set>
+  
+  <!-- session id manager -->
+  <!-- 
+  	<Set name="sessionIdManager">
+	  	<New class="org.eclipse.jetty.server.session.HashSessionIdManager">
+	    	<Arg>
+	      		<New class="java.util.Random"/>
+	    	</Arg>
+	    	<Set name="workerName">node1</Set>
+	  	</New>
+	</Set> 
+  -->
+	
+  <!-- authentication realms -->
+  
+  <!-- request logs -->
+  
+  <!-- extra server options -->
+  <Set name="stopAtShutdown">true</Set>
+  
+  <!--
+  <Set name="ExcludeProtocols">
+    <Array type="java.lang.String">             
+       <Item>SSLv3</Item>
+    </Array>
+  </Set>
+  -->
+  
+</Configure>

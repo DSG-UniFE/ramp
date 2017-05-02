@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration>
+
+	<!-- <param name="error-layout" value="%d{HH:mm:ss.SSS} %5p [%t] (%F:%L) - %m%n" /> -->
+
+	<!-- APPENDERS -->
+	
+	<appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%5p [%t] (%F:%L) - %m%n" />
+		</layout>
+	</appender>
+	
+	
+	
+	<appender name="FILE-RUN" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="${soresm.log.dir}/soresm_run.log" />
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<!-- <param name="ConversionPattern" value="%d{HH:mm:ss.SSS} %5p [%t] (%F:%L) - %m%n" /> -->
+			<param name="ConversionPattern" value="%d{ISO8601} %5p [%t] (%F:%L) - %m%n" />
+		</layout>
+		<param name="Threshold" value="DEBUG" />
+		<!-- <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="DEBUG"/>
+            <param name="LevelMax" value="INFO"/>
+        </filter> -->
+	</appender>
+		
+	
+	<appender name="FILE-TIMING-SORESM" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="${soresm.log.dir}/soresm_timing.log" />
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%m%n" />
+		</layout>
+		<!-- <param name="Threshold" value="INFO" /> -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="DEBUG"/>
+            <param name="LevelMax" value="INFO"/>
+        </filter>
+	</appender>
+	
+	
+	<appender name="FILE-TIMING-DATAUPDATER" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="${soresm.log.dir}/soresm_dataupdater.log" />
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%m%n" />
+		</layout>
+		<!-- <param name="Threshold" value="INFO" /> -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="DEBUG"/>
+            <param name="LevelMax" value="INFO"/>
+        </filter>
+	</appender>
+	
+	
+	<appender name="FILE-TIMING-RELEVALUATOR" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="${soresm.log.dir}/soresm_relevaluator.log" />
+		<param name="datePattern" value="'.'yyyy-MM-dd" />
+		<param name="append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%m%n" />
+		</layout>
+		<!-- <param name="Threshold" value="INFO" /> -->
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="DEBUG"/>
+            <param name="LevelMax" value="INFO"/>
+        </filter>
+	</appender>
+	
+	
+	<appender name="FILE-TIMING-FILTER" class="org.apache.log4j.FileAppender">
+		<param name="file" value="${soresm.log.dir}/soresm_timing-filter.log" />
+		<param name="append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%m%n" />
+		</layout>
+		<param name="Threshold" value="DEBUG" />
+		<!-- <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="DEBUG"/>
+            <param name="LevelMax" value="INFO"/>
+        </filter> -->
+	</appender>
+	
+	
+	
+
+	<!-- LOGGERS -->
+	
+	<root>
+		<level value="DEBUG"/>
+		<!-- <level value="WARNING"/> -->
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="FILE-RUN" />
+		<!-- <appender-ref ref="FILE-XML" /> -->
+	</root>
+	
+	<!-- <logger name="Timing" additivity="false">
+   		<level value="debug" />
+   		<appender-ref ref="FILE-TIMING" />
+	</logger> -->
+	
+	<!-- <logger name="Filter" additivity="false">
+   		<level value="debug" />
+   		<appender-ref ref="FILE-TIMING-FILTER" />
+	</logger> -->
+	
+	<logger name="org.hibernate" additivity="true">
+		<level value="OFF"/>
+	</logger>
+	
+	<logger name="it.soresm.facebook.FacebookDataUpdater" additivity="true">
+		<level value="DEBUG"/>
+		<appender-ref ref="FILE-TIMING-DATAUPDATER"/>
+	</logger>
+	
+	<logger name="it.soresm.classification.facebook.FacebookRelationshipEvaluator" additivity="true">
+		<level value="DEBUG"/>
+		<appender-ref ref="FILE-TIMING-RELEVALUATOR"/>
+	</logger>
+	
+	<logger name="it.soresm.classification.twitter.TwitterRelationshipEvaluator" additivity="true">
+		<level value="DEBUG"/>
+		<appender-ref ref="FILE-TIMING-RELEVALUATOR"/>
+	</logger>
+
+</log4j:configuration>

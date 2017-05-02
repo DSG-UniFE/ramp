@@ -1,0 +1,14 @@
+facebook.protocol=https
+facebook.ip=deis170.deis.unibo.it
+facebook.port=8443
+facebook.client_id=304608866286651
+
+twitter.protocol=https
+twitter.ip=deis170.deis.unibo.it
+twitter.port=8443
+twitter.consumerKey=LHK5ejAq58yAzmVnt1M6zA
+twitter.consumerSecret=jDlyTs4JFXT1MOPlVle4aZNh3RCfna97ntSDvUdf0A
+
+publicip.protocol=http
+publicip.ip=deis170.deis.unibo.it
+publicip.port=8080

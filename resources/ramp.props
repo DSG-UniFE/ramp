@@ -1,0 +1,92 @@
+#########################
+# Bootstrap configuration
+#########################
+
+# ESMN, SCAM, and UPnP are automatically loaded on bootstrap (default false)
+autostart = false
+
+#########################
+# ERN configuration
+#########################
+
+# this node acts as the ERN Manager for the logged user (only one RAMP instance must have this set)
+isErnManager = true
+
+# define the type of the ERNs created by this node as ERNManager (encrypted or signed)
+ernTypeToCreate = signed
+
+# number of bytes processed (encrypted or signed, see above) per chunk (0 - 51200 included)
+bytesToProcess = 51200
+
+# is the RIN behind NAT?
+behindNAT = false 
+
+# enable the tuner to configure nat delay for each relayed connected rin
+enableNatTtuner = false
+
+#########################
+# DF/CF configuration
+#########################
+
+# Class names that implement the PacketFilter interface (comma separated list)
+packetFiltersClasses = it.unibo.deis.lia.ramp.core.ern.filter.FileSharingPacketFilter, it.unibo.deis.lia.ramp.core.ern.filter.UPnPPacketFilter
+
+# Node IDs of the nodes with FileSharingService that are allowed to be discovered by Facebook friends
+# (* means all, use ',' to list multiple IDs, leave blank to block every FileSharing service discovery)
+fileSharingAllowedNodeIdsForFacebookFriends = *
+
+# Name of the files allowed to be downloaded by Facebook friends
+# (* means all, otherwise use regular expressions - e.g, .*mp3 for all mp3)
+fileSharingAllowedFilesForFacebookFriends = *
+
+#########################
+# Internet configuration
+#########################
+
+# use string builder instead of string concatenation (default false)
+stringBuilder = true
+
+#########################
+# Log configuration
+#########################
+
+# enables more verbose logging for some applications (default false)
+logging = false
+
+# print logs on console (default true)
+logOnConsole = true
+
+# print logs on file (default false)
+logOnFile = false
+
+#########################
+# Demo configuration
+#########################
+
+# start in demo mode (default false)
+demoVersion = false
+
+#########################
+# Teamlife configuration
+#########################
+
+# teamlife logged user id (default empty)
+teamlifeUserId = 
+
+#########################
+# Twonky configuration
+#########################
+
+# traget directories
+TWONKY_MUSIC_PATH = 
+TWONKY_PHOTO_PATH = 
+TWONKY_VIDEO_PATH = 
+
+#########################
+# UPnPControlPoint
+#########################
+
+contentDirectoryCP = it.unibo.deis.lia.upnp.controlpoint.ContentDirectoryControlPoint
+genericCP = it.unibo.deis.lia.upnp.controlpoint.GenericControlPoint
+
+upnpMoreInfos = false

@@ -1,0 +1,120 @@
+
+// protoc -I=$SRC_DIR --java_out=$DST_DIR $SRC_DIR/ramppackets.proto
+// protoc -I=. --java_out=. ./ramppackets.proto
+
+syntax = "proto2";
+option java_package = "it.unibo.deis.lia.ramp.core.e2e";
+option java_outer_classname = "RampPacketsProtos";
+
+// packet id 4
+message HeartbeatRequest{
+	required int32 nodeId = 1;
+}
+
+// packet id 5
+message HeartbeatResponse{
+	required int32 nodeId = 1;
+}
+
+
+// packet id 1
+message UnicastHeader{
+    required int32 id = 1;
+	repeated int32 dest = 2;
+	repeated int32 source = 3;
+	
+	required int32 destPort = 4;
+	optional int32 destNodeId = 5 [default = 0];
+	optional int32 sourceNodeId = 6 [default = 0];
+	
+	required bool ack = 7;
+	optional int32 sourcePortAck = 8;
+	
+	required int32 currentHop = 9; // [default = 0];
+	
+	required int32 bufferSize = 10; // [default = 51250];
+	
+	required int32 retry = 11; // [default = 0];
+	optional int32 timeWait = 12;
+	optional int32 expiry = 13;
+	
+	required int32 connectTimeout = 14; // [default = 500];
+}
+
+// packet id 3
+message UnicastPacket{
+    required int32 id = 1;
+	repeated int32 dest = 2;
+	repeated int32 source = 3;
+	
+	required int32 destPort = 4;
+	optional int32 destNodeId = 5; // [default = 0];
+	optional int32 sourceNodeId = 6; // [default = 0];
+	
+	required bool ack = 7;
+	optional int32 sourcePortAck = 8;
+	
+	required int32 currentHop = 9; // [default = 0];
+	
+	required int32 bufferSize = 10; // [default = 51250];
+	
+	required int32 retry = 11 [default = 0];
+	optional int32 timeWait = 12;
+	optional int32 expiry = 13;
+	
+	required int32 connectTimeout = 14; // [default = 500];
+	
+	required bytes payload = 15;
+}
+	
+// packet id 2
+message BroadcastPacket{
+    required int32 id = 1;
+	repeated int32 source = 2;
+	repeated int32 traversedIds = 3;
+	
+	optional int32 sourceNodeId = 4; // [default = 0];
+	
+	required int32 ttl = 5;
+	required int32 destPort = 6;
+	optional int32 expiry = 7;
+	
+	required bytes payload = 8;
+}
+
+
+// packet id 6
+message EncryptedPacket{
+	required int32 ernId = 1;
+	required int32 eskId = 2;
+	required bytes encryptedPayload = 3;
+	required int32 encryptedBytes = 4;
+}
+
+// packet id 7
+message SignedPacket{
+	required int32 ernId = 1;
+	required int32 eskId = 2;
+	required bytes payload = 3;
+	required bytes signature = 4;
+	required int32 signedBytes = 5;
+}
+
+// packet id 8
+message EncryptedEskAndRins{
+	required int32 ernId = 1;
+	required bytes connectedRins = 2;
+	required bytes oldKey = 3;
+	required bytes newKey = 4;
+	optional int32 socialRelationshipType = 5 [default = 0]; // SocialRelationship.TYPE_UNDEFINED
+	optional bytes ernManagerFriendId = 6;
+	optional bytes connectorFriendId = 7;
+}
+
+// packet id 9
+message NatTDelayTunerPacket{
+	required int32 internetAddress = 1;
+	required int64 sentTime = 2;
+	required bool replied = 3 [default = false];
+}
+

@@ -1,0 +1,5 @@
+nat.STUNmaxTestTimeOut=7900
+nat.STUNtimeSinceFirstTransmission=1600
+
+#nat.STUN_servers=137.204.57.170:3478,jstun.javawi.de:3478,stun.sipgate.net:10000
+nat.STUN_servers=137.204.57.170:3478
