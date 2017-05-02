@@ -1,5 +1,5 @@
 /*
- 
+
 * CommunicationSupport.java
  *
  * Created on 27 aprile 2010, 12.02
@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 
 /**
  *
- * 
+ *
  */
 //public class CommunicationSupport extends Thread{
 public class ChatCommunicationSupportOld extends Thread {
@@ -53,25 +53,25 @@ public class ChatCommunicationSupportOld extends Thread {
 
         receivedMessages = new Vector<String>();
         //resolver = Resolver.getInstance();
-        
+
         if (RampEntryPoint.getAndroidContext() == null&&csjf==null) {
             csjf = new ChatCommunicationSupportJFrame(this, ch.getContacts());
 
         } else {
         	try {
-                Class<?> activityChat = Class.forName("it.unibo.deis.lia.ramp.android.service.application.ChatServiceActivity");
+                Class<?> activityChat = Class.forName("it.unife.dsg.ramp.android.service.application.ChatServiceActivity");
 
-               
-                
-                
+
+
+
                 Method mI=activityChat.getMethod("startChat", String.class);
                 Method aMI = activityChat.getMethod("getInstance");
 
                 if(mI!=null){
-                	
+
                 	mI.invoke(aMI.invoke(null, new Object[]{}), destNodeId);
                 }
-                
+
             } catch (IllegalAccessException ex) {
                 Logger.getLogger(ChatCommunicationSupportOld.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IllegalArgumentException ex) {
@@ -93,7 +93,7 @@ public class ChatCommunicationSupportOld extends Thread {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        
+
     }
 
     public ChatCommunicationSupportOld(String[] dest, int destNodeId, ChatServiceOld ch) {
@@ -102,26 +102,26 @@ public class ChatCommunicationSupportOld extends Thread {
         this.destNodeId = destNodeId;
         this.ch = ch;
         receivedMessages = new Vector<String>();
-       
+
         //resolver = Resolver.getInstance();
         if (RampEntryPoint.getAndroidContext() == null&&csjf==null) {
             csjf = new ChatCommunicationSupportJFrame(this, ch.getContacts());
 
         } else {
              try {
-            	 Class<?> activityChat = Class.forName("it.unibo.deis.lia.ramp.android.service.application.ChatServiceActivity");
+            	 Class<?> activityChat = Class.forName("it.unife.dsg.ramp.android.service.application.ChatServiceActivity");
 
-                 
-                 
-                 
+
+
+
                  Method mI=activityChat.getMethod("startChat", String.class);
                  Method aMI = activityChat.getMethod("getInstance");
 
                  if(mI!=null){
-                 	
+
                  	mI.invoke(aMI.invoke(null, new Object[]{}), destNodeId);
                  }
-                
+
             } catch (IllegalAccessException ex) {
                 Logger.getLogger(ChatCommunicationSupportOld.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IllegalArgumentException ex) {
@@ -144,7 +144,7 @@ public class ChatCommunicationSupportOld extends Thread {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        
+
     }
 
     public void setIterface(ChatCommunicationSupportInterface csi) {
@@ -167,7 +167,7 @@ public class ChatCommunicationSupportOld extends Thread {
         System.out.println("CommunicationSupport close");
         active = false;
         //invio un messaggio di notifica a tutti i contatti con cui si stava comunicando, x segnalare la chiusura
-        //l'identificatore booleano serve per sapere se sono ancora attivi alcuni contatti, i quali quindi verranno avvisati 
+        //l'identificatore booleano serve per sapere se sono ancora attivi alcuni contatti, i quali quindi verranno avvisati
         //della chiusura del CommunicationSupport corrente. Se invece il ComSupp corrente non ha piu nessun contatto con cui
         //comunicare, si termina solamente il CommSupp corrente
         if (!last) {
@@ -234,7 +234,7 @@ public class ChatCommunicationSupportOld extends Thread {
     }
 
     public Vector<String> getReceivedMessages() {
-    	
+
     	return receivedMessages;
     }
 
@@ -350,7 +350,7 @@ public class ChatCommunicationSupportOld extends Thread {
             //Vector<ResolverPath> destinationAddr;
             BoundReceiveSocket serviceSocket2 = E2EComm.bindPreReceive(ChatServiceOld.CHAT_PROTOCOL);
             String msg = "COMM.REQ:" + serviceSocket2.getLocalPort() + ":" + getLocalPort();//porta a cui inviare la risposta:porta delCommSupp del mittente
-            //messageObject = new Message(msg); 
+            //messageObject = new Message(msg);
             try {
                 /*
                 E2EComm.sendUnicast(
@@ -385,7 +385,7 @@ public class ChatCommunicationSupportOld extends Thread {
             //2- invio a contact la lista di NodeId e le rispettive porte gia' inserite nella comunicazione di gruppo
 
             msg = "INVITEMESSAGE:" + destNodeId + ":" + destPort;//nodeId e porta del primo contatto con cui si e' instaurata la comunicazione
-            //messageObject = new Message(msg); 
+            //messageObject = new Message(msg);
             port = invitedContacts.get(contact);
             try {
                 /*
@@ -474,7 +474,7 @@ public class ChatCommunicationSupportOld extends Thread {
                             /*
                             E2EComm.sendUnicast(
                             destAddr,
-                            id, 
+                            id,
                             port,
                             ChatService.CHAT_PROTOCOL,
                             false, // ack
@@ -547,7 +547,7 @@ active=true;
                             receivedMessages.addElement(sourceNodeId + ": " + st.nextToken());
                             System.out.println("CommunicationSupport.MessageHandler message: " + message);
                         } else if (intro.equals("INVITEMESSAGE"))//tramite questo messaggio, viene comunicato uno o piu nodeId
-                        {                                   //con le relative porte, che partecipano alla comunicazione di gruppo 
+                        {                                   //con le relative porte, che partecipano alla comunicazione di gruppo
                             if (invitedContacts == null) {
                                 invitedContacts = new Hashtable<Integer, Integer>();
                                 //invitedAddr=new Hashtable<String,String[]>();
