@@ -59,7 +59,7 @@ public class ChatCommunicationSupportOld extends Thread {
 
         } else {
         	try {
-                Class<?> activityChat = Class.forName("it.unife.dsg.ramp.android.service.application.ChatServiceActivity");
+                Class<?> activityChat = Class.forName("it.unife.dsg.ramp_android.service.application.ChatServiceActivity");
 
 
 
@@ -109,7 +109,7 @@ public class ChatCommunicationSupportOld extends Thread {
 
         } else {
              try {
-            	 Class<?> activityChat = Class.forName("it.unife.dsg.ramp.android.service.application.ChatServiceActivity");
+            	 Class<?> activityChat = Class.forName("it.unife.dsg.ramp_android.service.application.ChatServiceActivity");
 
 
 

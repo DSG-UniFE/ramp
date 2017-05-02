@@ -316,7 +316,7 @@ new SendStatusHendler(myStatus).start();
                 	communication = getChatSupport(destId);
                 	if (RampEntryPoint.getAndroidContext() != null){
                 		try {
-                            Class<?> activityChat = Class.forName("it.unife.dsg.ramp.android.service.application.ChatServiceActivity");
+                            Class<?> activityChat = Class.forName("it.unife.dsg.ramp_android.service.application.ChatServiceActivity");
 
 
 
@@ -498,7 +498,7 @@ new SendStatusHendler(myStatus).start();
                             	communication=getChatSupport(sourceNodeId);
                             	if (RampEntryPoint.getAndroidContext() != null){
                             		try {
-                                        Class<?> activityChat = Class.forName("it.unife.dsg.ramp.android.service.application.ChatServiceActivity");
+                                        Class<?> activityChat = Class.forName("it.unife.dsg.ramp_android.service.application.ChatServiceActivity");
 
 
 

@@ -79,7 +79,7 @@ public class ChatServiceON extends Thread {
 	    {
 	    	if (RampEntryPoint.getAndroidContext() != null){
          		try {
-                     Class<?> activityChat = Class.forName("it.unife.dsg.ramp.android.service.application.ChatServiceActivity");
+                     Class<?> activityChat = Class.forName("it.unife.dsg.ramp_android.service.application.ChatServiceActivity");
 
                      Method mI=activityChat.getMethod("setChatUserProfile");
                      Method aMI = activityChat.getMethod("getInstance");
@@ -436,7 +436,7 @@ public class ChatServiceON extends Thread {
 		public void notifyChatRequest(String type, int sourceNodeId) {
 			if (RampEntryPoint.getAndroidContext() != null){
 				try {
-			         Class<?> activityChat = Class.forName("it.unife.dsg.ramp.android.service.application.ChatServiceActivity");
+			         Class<?> activityChat = Class.forName("it.unife.dsg.ramp_android.service.application.ChatServiceActivity");
 
 //                                 Method mI=activityChat.getMethod("startChat",Integer.TYPE);
 //                                 Method aMI = activityChat.getMethod("getInstance");

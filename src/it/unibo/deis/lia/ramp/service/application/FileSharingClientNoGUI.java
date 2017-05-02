@@ -260,7 +260,7 @@ public class FileSharingClientNoGUI{
     private void notify(String text) {
 		if (RampEntryPoint.getAndroidContext() != null){
 			try {
-		         Class<?> activityFS = Class.forName("it.unife.dsg.ramp.android.service.application.FileSharingServiceActivity");
+		         Class<?> activityFS = Class.forName("it.unife.dsg.ramp_android.service.application.FileSharingServiceActivity");
 
 		         Method mI=activityFS.getMethod("createNotification", String.class);
 		         Method aMI = activityFS.getMethod("getInstance");
