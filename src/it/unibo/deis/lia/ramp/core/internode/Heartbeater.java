@@ -388,11 +388,6 @@ public class Heartbeater extends Thread {
 						SubnetUtils utils = new SubnetUtils(subnet);
 						SubnetInfo info = utils.getInfo();
 						
-						System.out.println("Heartbeater - sendHeartbeat: inetAddress " + inetAddress);
-						System.out.println("Heartbeater - sendHeartbeat: ip " + ip + ", prefixLength: " + prefixLength);
-						System.out.println("Heartbeater - sendHeartbeat: subnet " + subnet);
-						System.out.println("Heartbeater - sendHeartbeat: info " + info);
-						
 						unicastDiscovery(inetAddress, ds, ip, info);
 						
 						Thread.sleep(50);
