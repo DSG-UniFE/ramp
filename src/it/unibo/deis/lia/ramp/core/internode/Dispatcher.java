@@ -175,7 +175,8 @@ public class Dispatcher {
 			Dispatcher.localRampId = "".hashCode(); // null;
 			Dispatcher.localRampIdString = null;
 		} else {
-			Dispatcher.localRampId = newLocalNodeIdString.hashCode();
+			//Dispatcher.localRampId = newLocalNodeIdString.hashCode();
+			Dispatcher.localRampId = Integer.parseInt(newLocalNodeIdString);
 			Dispatcher.localRampIdString = newLocalNodeIdString;
 		}
 		System.out.println("Dispatcher: localRampId=" + localRampId + " localRampIdString=" + localRampIdString);
@@ -218,9 +219,11 @@ public class Dispatcher {
 		*/
 		if (nodeId == null) {
 			//Random r = new Random();
-			float number = RampEntryPoint.nextRandomFloat();
+			//float number = RampEntryPoint.nextRandomFloat();
 //			nodeId = "fakeNodeId_" + Math.round(number * 1000);
-			nodeId = new StringBuilder("fakeNodeId_" + Math.round(number * 1000));
+			//nodeId = new StringBuilder("fakeNodeId_" + Math.round(number * 1000));
+			// TODO creare nuovo nodeId solo se non esiste un nodeId nel file di properties
+			nodeId = new StringBuilder(""+RampEntryPoint.nextRandomInt());
 		}
 
 //		return nodeId;
