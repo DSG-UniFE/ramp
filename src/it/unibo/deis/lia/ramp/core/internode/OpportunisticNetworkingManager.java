@@ -45,8 +45,8 @@ import it.unibo.deis.lia.ramp.core.e2e.UnicastHeader;
  */
 public class OpportunisticNetworkingManager extends Thread {
 
-	private String savedPacketDirectory = "./temp/savedPacket";
-	public static final String FILE_SAVEDPACKET_EXT = ".sp";
+	private String savedPacketDirectory = "temp/savedPacket";
+	public static final String FILE_SAVEDPACKET_EXT = ".spk";
 	public static final String FILEPACKET_EXT = ".packet";
 	
 	private static OpportunisticNetworkingManager opportunisticNetworkingManager = null; 
@@ -173,9 +173,10 @@ public class OpportunisticNetworkingManager extends Thread {
 	     //get packet information from persistent storage and restore in savedPackets table
 	     String[] savedPacketsFileList = getSavedPacketsFileList();
 	     for(String fileName:savedPacketsFileList) {
-                    SavedPacket savedPacket = restoreSavedPacket(savedPacketDirectory +"/" +fileName);
-                    savedPackets.put(savedPacket, null);
-	    	}
+				System.out.println("OpportunisticNetworkingManager: restored "+fileName);
+                SavedPacket savedPacket = restoreSavedPacket(savedPacketDirectory +"/" +fileName);
+                savedPackets.put(savedPacket, null);
+    	}
 	}
 	
 	private OpportunisticNetworkingSettings deserializeSettings()
@@ -311,9 +312,10 @@ public class OpportunisticNetworkingManager extends Thread {
 	
 	private void removePacket(SavedPacket savedPacket)
 	{
+		System.out.println("OpportunisticNetworkingManager removePacket "+savedPacket.getId());
 		GeneralUtils.appendLog("OpportunisticNetworkingManager removePacket "+savedPacket.getId());
 		
-		//Add packet to menaged packet table
+		//Add packet to managed packet table
 		managedPackets.put(savedPacket.getId(), System.currentTimeMillis());
 		
 		//Delete packet files
@@ -349,6 +351,7 @@ public class OpportunisticNetworkingManager extends Thread {
         
 		//Test if GenericPacket is unicast or broadcast
 		if (gp instanceof UnicastPacket) {
+			System.out.println("OpportunisticNetworkingManager: try to send the unicast packet "+savedPacket.getId());
 			GeneralUtils.appendLog("OpportunisticNetworkingManager: try to send the unicast packet "+savedPacket.getId());
 			UnicastPacket up = (UnicastPacket) gp;
 			
@@ -420,7 +423,8 @@ public class OpportunisticNetworkingManager extends Thread {
 			}
 			else
 			{
-				sendOK = sendPacketToNeighbors(gp);
+				//sendOK = // Carlo
+						sendPacketToNeighbors(gp);
 			}
 			
 			if(!sendOK)
@@ -431,6 +435,7 @@ public class OpportunisticNetworkingManager extends Thread {
 			if(sendOK && isRemovePacketAfterSend())
 			{
 				GeneralUtils.appendLog("OpportunisticNetworkingManager: remove unicast packet "+savedPacket.getId() +" sent");
+				System.out.println("OpportunisticNetworkingManager: remove unicast packet "+savedPacket.getId() +" sent");
 				removePacket(savedPacket);
 			}
 		}
@@ -705,12 +710,23 @@ public class OpportunisticNetworkingManager extends Thread {
 		String fileNameSavedPacket = savedPacketDirectory +"/"+savedPacket.getId() + FILE_SAVEDPACKET_EXT;  
 		
 		try {
-	         FileOutputStream fileOut = new FileOutputStream(fileNameSavedPacket);
+	         System.out.println("OpportunisticNetworkingManager: fileNameSavedPacket "+fileNameSavedPacket);
+	         File file = new File(fileNameSavedPacket);
+	         FileOutputStream fileOut = new FileOutputStream(file);
+	         System.out.println("OpportunisticNetworkingManager: file.getAbsolutePath(); "+file.getAbsolutePath());
 	         ObjectOutputStream out = new ObjectOutputStream(fileOut);
 	         out.writeObject(savedPacket);
-	         out.close();
+	         fileOut.flush();
 	         fileOut.close();
-	         System.out.printf("OpportunisticNetworkingManager: Serialized data is saved in "+fileNameSavedPacket);
+	         
+	         /*File file2 = new File(fileNameSavedPacket+"x");
+	         FileOutputStream fileOut2 = new FileOutputStream(file2);
+	         ObjectOutputStream out2 = new ObjectOutputStream(fileOut2);
+	         out2.writeObject('c');
+	         fileOut2.flush();
+	         fileOut2.close();*/
+	         
+	         System.out.println("OpportunisticNetworkingManager: Serialized data is saved in "+fileNameSavedPacket);
 	         GeneralUtils.appendLog("OpportunisticNetworkingManager: savedPacket "+savedPacket.getId() +" serialized");  
 	      }catch(IOException i) {
 	         i.printStackTrace();
@@ -723,7 +739,9 @@ public class OpportunisticNetworkingManager extends Thread {
 			OutputStream output = null;
 			output = new BufferedOutputStream(new FileOutputStream(fileNamePacket));
 	        output.write(E2EComm.serializePacket(gp));
+	        output.flush();
 	        output.close();
+	        System.out.println("OpportunisticNetworkingManager: packet serialized in "+fileNamePacket);
 	        GeneralUtils.appendLog("OpportunisticNetworkingManager: packet serialized in "+fileNamePacket);  
 		}
 	    catch(IOException i) {
@@ -918,19 +936,21 @@ public class OpportunisticNetworkingManager extends Thread {
 			if(sendPacket && isPacketUnicast)
 			{
 				GeneralUtils.appendLog("OpportunisticNetworkingManager: saved packet, sendPacketToNeighbors...");
-				//Se il pacchetto è stato salvato può essere inviato ai vicini...
-				boolean sendOK = sendPacketToNeighbors(gp);
+				//Se il pacchetto e' stato salvato puo' essere inviato ai vicini...
+				//boolean sendOK = // Carlo 
+						sendPacketToNeighbors(gp);
 				
-				if(!sendOK)
+				/*if(!sendOK) // Carlo
 					GeneralUtils.appendLog("OpportunisticNetworkingManager: unicast packet "+savedPacket.getId() +" not sent to neighbors");
 				else
 					GeneralUtils.appendLog("OpportunisticNetworkingManager: sent unicast packet "+savedPacket.getId() +" to neighbors");
 				
 				if(sendOK && isRemovePacketAfterSend())
 				{	
+					System.out.println("OpportunisticNetworkingManager: remove unicast packet "+savedPacket.getId() +" sent");
 					GeneralUtils.appendLog("OpportunisticNetworkingManager: remove unicast packet "+savedPacket.getId() +" sent");
 					removePacket(savedPacket);
-				}
+				}*/
 			}
 		}
 		else
@@ -947,25 +967,30 @@ public class OpportunisticNetworkingManager extends Thread {
 	@Override
 	public void run() {
 		try {
+			Thread.sleep(5000);
 			System.out.println("OpportunisticNetworkingManager START");
 			GeneralUtils.appendLog("OpportunisticNetworkingManager START");
 			
 			while (active) {
 				try {
-					//Periodically send packet not expiry 
+					//Periodically send packet not expired
+					System.out.println("OpportunisticNetworkingManager: Periodically send packet not expired");
 					
 					List<SavedPacket> listSp = new ArrayList<SavedPacket>(savedPackets.keySet());
 					
 					for(SavedPacket sp : listSp)
 					    {
+						System.out.println("OpportunisticNetworkingManager: managing packet " + sp.getId());
 						    //Refresh expiry
 						    refreshPacketExpiry(sp);
 							if(sp.getExpiry() == 0) //when expiry == 0 the opportunistic management is over
 							{	
+								System.out.println("OpportunisticNetworkingManager: dropping expired packet " + sp.getId());
 								GeneralUtils.appendLog("OpportunisticNetworkingManager: packet "+sp.getId() +" expiry = 0");
 								removePacket(sp);
 							} else {
 								//Send Packet
+								System.out.println("OpportunisticNetworkingManager: trying to resend packet " + sp.getId());
 								sendPacket(sp);
 							}
 					    }

@@ -381,7 +381,7 @@ public class FileSharingClientJFrame extends javax.swing.JFrame {
                             @Override
                             public void run() {
                                 try {
-                                    fsc.sendLocalFile(service, file, GenericPacket.UNUSED_FIELD);
+                                    fsc.sendLocalFile(service, file, 3000/*GenericPacket.UNUSED_FIELD*/);
                                 } catch (Exception ex) {
                                     ex.printStackTrace();
                                 }
