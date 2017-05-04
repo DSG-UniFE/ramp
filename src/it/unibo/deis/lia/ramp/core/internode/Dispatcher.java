@@ -184,7 +184,7 @@ public class Dispatcher {
 	private String createLocalId() {
 //		String nodeId = null;
 		StringBuilder nodeId = null;
-		if (RampEntryPoint.getAndroidContext() != null) {
+		/*if (RampEntryPoint.getAndroidContext() != null) {
 			WifiManager wifi = (WifiManager) RampEntryPoint.getAndroidContext().getSystemService(Context.WIFI_SERVICE);
 //			nodeId = wifi.getConnectionInfo().getMacAddress();
 			nodeId = new StringBuilder(wifi.getConnectionInfo().getMacAddress());
@@ -215,7 +215,7 @@ public class Dispatcher {
 				e.printStackTrace();
 			}
 		}
-
+		*/
 		if (nodeId == null) {
 			//Random r = new Random();
 			float number = RampEntryPoint.nextRandomFloat();

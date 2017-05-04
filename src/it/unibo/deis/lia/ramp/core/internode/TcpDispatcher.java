@@ -558,7 +558,9 @@ public class TcpDispatcher extends Thread {
 					}
 				}
 			}
-			while ( ! ((packetRetry != GenericPacket.UNUSED_FIELD && missedDeadline == true) || retry == false || (packetRetry == GenericPacket.UNUSED_FIELD && attempts >= TcpDispatcher.MAX_ATTEMPTS)) );
+			while ( !((packetRetry != GenericPacket.UNUSED_FIELD && missedDeadline == true) || 
+					retry == false || 
+					(packetRetry == GenericPacket.UNUSED_FIELD && attempts >= TcpDispatcher.MAX_ATTEMPTS)) );
 
 			if ( destS != null && destS.isConnected() ) {
 				// System.out.println("TcpDispatcher unicast packet: destS.getRemoteSocketAddress() "+destS.getRemoteSocketAddress());
