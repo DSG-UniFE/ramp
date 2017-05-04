@@ -173,17 +173,14 @@ public class FileSharingClientNoGUI{
         System.out.println("FileSharingClient: request to send "+fileName);
         GeneralUtils.appendLog("FileSharingClient: request to send "+fileName +" to "+service.getServerDest());
 
-        if(expiry == GenericPacket.UNUSED_FIELD)
-        {
+        if(expiry == GenericPacket.UNUSED_FIELD) {
         	E2EComm.sendUnicast(
         			service.getServerDest(),
         			service.getServerPort(),
         			service.getProtocol(),
         			E2EComm.serialize(fsr)
         			);
-        }
-        else
-        {
+        } else {
         	//Stefano Lanzone - New sendUnicast with expiry value
         	E2EComm.sendUnicast(service.getServerDest(),
         			service.getServerNodeId(), service.getServerPort(), service.getProtocol(),
@@ -199,41 +196,48 @@ public class FileSharingClientNoGUI{
         int timeout = 5*1000;
         if(expiry != GenericPacket.UNUSED_FIELD)
         	timeout = expiry * 1000;
-    	UnicastPacket upServerPort = (UnicastPacket) E2EComm.receive(socketClient, timeout);
-    	int port = (Integer)(E2EComm.deserialize(upServerPort.getBytePayload()));
-        System.out.println("FileSharingClient: sending "+fileName+" to "+port);
-        GeneralUtils.appendLog("FileSharingClient: sending "+fileName+" to "+port);
-
-        File f = new File(sharedDirectory+"/"+fileName);
-        FileInputStream fis = new FileInputStream(f);
-
-        if(expiry == GenericPacket.UNUSED_FIELD)
-        {
-        	E2EComm.sendUnicast(
-        			service.getServerDest(),
-        			port,
-        			E2EComm.TCP, //service.getProtocol(),
-        			fis
-        			);
+        try {
+	    	UnicastPacket upServerPort = (UnicastPacket) E2EComm.receive(socketClient, timeout);
+	    	int port = (Integer)(E2EComm.deserialize(upServerPort.getBytePayload()));
+	        System.out.println("FileSharingClient: sending "+fileName+" to "+port);
+	        GeneralUtils.appendLog("FileSharingClient: sending "+fileName+" to "+port);
+	
+	        File f = new File(sharedDirectory+"/"+fileName);
+	        FileInputStream fis = new FileInputStream(f);
+	
+	        if(expiry == GenericPacket.UNUSED_FIELD)
+	        {
+	        	E2EComm.sendUnicast(
+	        			service.getServerDest(),
+	        			port,
+	        			E2EComm.TCP, //service.getProtocol(),
+	        			fis
+	        			);
+	        }
+	        else
+	        {
+	
+	        	//Stefano Lanzone - New sendUnicast with expiry value
+	        	E2EComm.sendUnicast(service.getServerDest(),
+	        			service.getServerNodeId(), port, E2EComm.TCP,
+	        			false, GenericPacket.UNUSED_FIELD,
+	        			E2EComm.DEFAULT_BUFFERSIZE,
+	        			GenericPacket.UNUSED_FIELD,
+	        			expiry,
+	        			GenericPacket.UNUSED_FIELD,
+	        			fis
+	        			);
+	        }
+	
+	        //fis.close();
+	        GeneralUtils.appendLog("FileSharingClient: "+fileName+" sent to "+service.getServerDest());
+	        System.out.println("FileSharingClient: "+fileName+" sent");
+        } catch (Exception e){
+        	System.out.println("FileSharingClientNoGUI sendLocalFile exception: " );
+        	e.printStackTrace();
+        } finally {
+        	socketClient.close();
         }
-        else
-        {
-
-        	//Stefano Lanzone - New sendUnicast with expiry value
-        	E2EComm.sendUnicast(service.getServerDest(),
-        			service.getServerNodeId(), port, E2EComm.TCP,
-        			false, GenericPacket.UNUSED_FIELD,
-        			E2EComm.DEFAULT_BUFFERSIZE,
-        			GenericPacket.UNUSED_FIELD,
-        			expiry,
-        			GenericPacket.UNUSED_FIELD,
-        			fis
-        			);
-        }
-
-        //fis.close();
-        GeneralUtils.appendLog("FileSharingClient: "+fileName+" sent to "+service.getServerDest());
-        System.out.println("FileSharingClient: "+fileName+" sent");
     }
 
     public String[] getLocalFileList(){

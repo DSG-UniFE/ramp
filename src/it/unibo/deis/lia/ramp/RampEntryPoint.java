@@ -775,7 +775,6 @@ public class RampEntryPoint {
     	return random.nextFloat();
     }
     
-    // TODO
     public void sentNotifyToOpportunisticNetworkingManager() {
     	OpportunisticNetworkingManager opportunisticNetworkingManager = OpportunisticNetworkingManager.getInstance(false);
     	if (opportunisticNetworkingManager != null)

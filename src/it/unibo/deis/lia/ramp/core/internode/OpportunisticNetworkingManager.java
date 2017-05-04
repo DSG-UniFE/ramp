@@ -993,7 +993,6 @@ public class OpportunisticNetworkingManager extends Thread {
 	
 	private boolean active = true;
 	
-	//TODO
 	public void sentNotify() {
 		System.out.println("OpportunisticNetworkingManager: receivedNotify");
 		synchronized (this) {
