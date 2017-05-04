@@ -118,7 +118,7 @@ public class OpportunisticNetworkingSettings implements Serializable {
 	public OpportunisticNetworkingSettings()
 	{
 		 //Default values
-		 this.sendPacketsPeriod = 600;
+		 this.sendPacketsPeriod = 10;
 		 this.expirationTimeManagedPackets = 720; //12 ore
 		 this.persistPackets = true;
 		 this.removePacketAfterSend = true;

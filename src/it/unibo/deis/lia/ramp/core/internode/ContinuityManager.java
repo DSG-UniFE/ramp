@@ -47,7 +47,8 @@ public class ContinuityManager implements PacketForwardingListener {
 			//Stefano Lanzone
 			if(opportunisticNetworkingManager != null)
 			{
-				opportunisticNetworkingManager.deactivate(true);
+				//opportunisticNetworkingManager.deactivate(true); // Carlo
+				opportunisticNetworkingManager.deactivate(false);
 				opportunisticNetworkingManager = null;
 			}
 			
@@ -174,6 +175,7 @@ public class ContinuityManager implements PacketForwardingListener {
 			}
 		} else {
 			// c) looking for the destination node
+			System.out.println("ContinuityManager: c) looking for the destination node");
 
 			try {
 				// 1) find new paths to the same nodeId
@@ -227,6 +229,7 @@ public class ContinuityManager implements PacketForwardingListener {
 				int packetRetry = uh.getRetry();
 				if (bestPath != null || opportunisticNetworking) {
 					// there is a route to destNodeId or packet is managed in opportunistic way
+					System.out.println("ContinuityManager: there is a route to destNodeId or packet is managed in opportunistic way");
 				} else if (packetRetry == GenericPacket.UNUSED_FIELD) {
 					// no delay tolerant
 					System.out.println("ContinuityManager: DROPPING packet for " + destNodeId);
