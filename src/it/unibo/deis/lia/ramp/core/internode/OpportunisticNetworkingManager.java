@@ -45,8 +45,11 @@ import it.unibo.deis.lia.ramp.core.e2e.UnicastHeader;
  */
 public class OpportunisticNetworkingManager extends Thread {
 
+//	Path currentPath = Paths.get(System.getProperty("user.dir"));
+//	Path filePath = Paths.get(currentPath.toString(), "data", "foo.txt");
+//	System.out.println(filePath.toString());
 	private String savedPacketDirectory = "temp/savedPacket";
-	public static final String FILE_SAVEDPACKET_EXT = ".spk";
+	public static final String FILE_SAVEDPACKET_EXT = ".info";
 	public static final String FILEPACKET_EXT = ".packet";
 	
 	private static OpportunisticNetworkingManager opportunisticNetworkingManager = null; 

@@ -402,17 +402,17 @@ public class ResourceDiscovery {
 	}
 	
 	/* 
-	 * FIXME In realt� bisognerebbe cercare di recuperare tutto il path verso il server perch� il suo indirizzo 
+	 * FIXME In realta' bisognerebbe cercare di recuperare tutto il path verso il server perche' il suo indirizzo 
 	 * potrebbe essere locale (es. 192.169.56.101) ma appartenere alla sottorete di un amico Facebook federata con la mia.
-	 * Qu� controllo soltanto se l'indirizzo finale del server appartiene o meno ad una mia sottorete.
-	 * Ad es. se il server � su 192.168.56.101 di Alice e Bob ha una sottorete 192.168.56.x, il server appare come locale
-	 * a Bob perch� il suo indirizzo fa match con la sottorete di Bob. Inoltre i messaggi soap possono passano per i vari 
-	 * proxy UPnP che ne modificano gli indirizzi, spacciandosi cos� per i server UPnP: il Control Point avr� in mano 
+	 * Qui controllo soltanto se l'indirizzo finale del server appartiene o meno ad una mia sottorete.
+	 * Ad es. se il server e' su 192.168.56.101 di Alice e Bob ha una sottorete 192.168.56.x, il server appare come locale
+	 * a Bob perche' il suo indirizzo fa match con la sottorete di Bob. Inoltre i messaggi soap possono passano per i vari 
+	 * proxy UPnP che ne modificano gli indirizzi, spacciandosi cos� per i server UPnP: il Control Point avra' in mano 
 	 * l'indirizzo IP del proxy UPnP a lui locale, e non il vero IP del server.
 	 * XXX Possibile soluzione: inserire un header custom nella risposta SSDP al discovery per marcare il passaggio dal 
-	 * proxy UPnP (e quindi sottolineare il fatto che il media server � in un'altra sottorete).
+	 * proxy UPnP (e quindi sottolineare il fatto che il media server e' in un'altra sottorete).
 	 * Altra soluzione (quella adottata): guardare se esiste un proxy UPnP che rappresenta il server in esame: se esiste 
-	 * il server � remoto, altrimenti � locale.
+	 * il server e' remoto, altrimenti e' locale.
 	 */ 
 	public boolean isLocalMediaServer(String mediaServerIp) {
 		try {
