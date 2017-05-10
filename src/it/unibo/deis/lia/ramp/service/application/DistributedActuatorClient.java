@@ -3,11 +3,17 @@ package it.unibo.deis.lia.ramp.service.application;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.time.Instant;
 import java.util.Hashtable;
+import java.util.Set;
 
 import it.unibo.deis.lia.ramp.core.e2e.BoundReceiveSocket;
 import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
+import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
+import it.unibo.deis.lia.ramp.service.application.DistribuitedActuatorRequest.Type;
+import it.unibo.deis.lia.ramp.util.GeneralUtils;
+
 
 public class DistributedActuatorClient extends Thread{
 
@@ -18,9 +24,12 @@ public class DistributedActuatorClient extends Thread{
     private static BoundReceiveSocket clientSocket;
     private int protocol = E2EComm.TCP;
     
+    // key: app name
+ 	private Hashtable<String, ClieantActuatorAppDescriptor> clientActuatorAppDb = new Hashtable<String, ClieantActuatorAppDescriptor>();
+    
 	public static synchronized DistributedActuatorClient getInstance() {
     	try {
-        	if(distributedActuatorClient == null){
+        	if (distributedActuatorClient == null) {
 				distributedActuatorClient = new DistributedActuatorClient(false);
 	        	distributedActuatorClient.start();
         	}
@@ -45,7 +54,6 @@ public class DistributedActuatorClient extends Thread{
         }
     }
     
-    
 	@Override
     public void run(){
 		try{
@@ -56,11 +64,11 @@ public class DistributedActuatorClient extends Thread{
                 try{
                     // receive
                     GenericPacket gp = E2EComm.receive(clientSocket, 5*1000);
-                    //System.out.println("FileSharingService new request");
+                    //System.out.println("DistributedActuatorClient new request");
                     new DistributedActuatorClientPacketHandler(gp).start();
                 }
                 catch(SocketTimeoutException ste){
-                    //System.out.println("FileSharingService SocketTimeoutException");
+                    //System.out.println("DistributedActuatorClient SocketTimeoutException");
                 }
             }
             clientSocket.close();
@@ -76,7 +84,15 @@ public class DistributedActuatorClient extends Thread{
 	}
 	
 	
-	private class DistributedActuatorClientPacketHandler extends Thread{
+	public void registerNewApp(String appName) {
+		//TODO
+	}
+	
+	public void leave(String appName) {
+		//TODO
+	}
+	
+	private class DistributedActuatorClientPacketHandler extends Thread {
 		
 		private GenericPacket gp;
 		
@@ -85,12 +101,65 @@ public class DistributedActuatorClient extends Thread{
 		}
 		
 		@Override
-	    public void run(){
-			
+	    public void run() {
+			try {
+	            if (gp instanceof UnicastPacket) {
+	                // 1) payload
+	                UnicastPacket up = (UnicastPacket) gp;
+	                Object payload = E2EComm.deserialize(up.getBytePayload());
+	                if (payload instanceof DistribuitedActuatorRequest) {
+	                    System.out.println("DistributedActuatorClientPacketHandler DistribuitedActuatorRequest");
+	                    DistribuitedActuatorRequest request = (DistribuitedActuatorRequest) payload;
+	                    switch (request.getType()) {
+		                    case PRE_COMMAND:
+		                    	// TODO
+		                    	DistribuitedActuatorRequest dar = new DistribuitedActuatorRequest(
+		                    			appName, 
+		                    			Type.HERE_I_AM, 
+		                    			clientSocket.getLocalPort());
+	                        	
+		                    	E2EComm.sendUnicast(
+	                        			up.getSource(),
+	                        			up.getSourcePortAck(),
+	                        			E2EComm.TCP,
+	                        			E2EComm.serialize(dar));
+		                    	break;
+		                    case COMMAND:
+		                    	// TODO
+		                    	
+								break;
+	
+							default:
+								// received wrong type of request: do nothing...
+		                        System.out.println("DistributedActuatorClientPacketHandler wrong type of request: " + 
+		                        		request.getType());
+								
+								break;
+						}
+	                } else {
+	                    // received payload is not DistributedActuatorClientPacketHandler: do nothing...
+	                    System.out.println("DistributedActuatorClientPacketHandler wrong payload: " + payload);
+	                }
+	            }
+	            else{
+	                // received packet is not UnicastPacket: do nothing...
+	                System.out.println("DistributedActuatorClientPacketHandler wrong packet: " + 
+	                		gp.getClass().getName());
+	            }
+
+	        } catch(Exception e) {
+	            e.printStackTrace();
+	        }
 		}
 	}
 	
+	
 	private class ClieantActuatorAppDescriptor{
+		private int controllerNodeId;
+		private int controllerPort;
+		private long timestamp; // unix epoch
+		
+		
 		public int getControllerNodeId() {
 			return controllerNodeId;
 		}
@@ -109,25 +178,22 @@ public class DistributedActuatorClient extends Thread{
 		public void setTimestamp(long timestamp) {
 			this.timestamp = timestamp;
 		}
-		private int controllerNodeId;
-		private int controllerPort;
-		private long timestamp; // unix epoch
-		 // TODOprivate ClientActuatorCommandListener commandListener;
+		
+		 // TODO private ClientActuatorCommandListener commandListener;
 	}
 	
-	// key: app name
-	Hashtable<String,ClieantActuatorAppDescriptor> clientActuatorAppDb  = new Hashtable<String,ClieantActuatorAppDescriptor>();
-	private class DistributedActuatorClientResiliencyHandler extends Thread{
+	
+	private class DistributedActuatorClientResiliencyHandler extends Thread {
 		
 		@Override
-	    public void run(){
-			while(open){
+	    public void run() {
+			while (open) {
 				try {
 					sleep(10*1000);
 					for (String appName: clientActuatorAppDb.keySet()) {
 						ClieantActuatorAppDescriptor clieantActuatorAppDescriptor = clientActuatorAppDb.get(appName);
 						long lastTimeout = clieantActuatorAppDescriptor.getTimestamp();
-						if(System.currentTimeMillis()-lastTimeout>60*1000){
+						if (System.currentTimeMillis()-lastTimeout > 60*1000) {
 							// TODO clieantActuatorAppDescriptor.getClientActuatorCommandListener().activateResiliency();
 							// TODO look for another service whith the same app name
 						}
