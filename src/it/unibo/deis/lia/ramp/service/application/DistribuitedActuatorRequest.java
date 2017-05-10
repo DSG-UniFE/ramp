@@ -11,11 +11,13 @@ public class DistribuitedActuatorRequest implements Serializable {
 	private Type type;
 	private String appName;
 	private int port;
+	private long lastUpdate;
 	
-	protected DistribuitedActuatorRequest (String appName, Type type, int port) {
+	protected DistribuitedActuatorRequest (String appName, Type type, int port, long lastUpdate) {
     	this.appName = appName;
     	this.type = type;
     	this.port = port;
+    	this.lastUpdate = lastUpdate;
     }
 	
 	public Type getType() {
@@ -41,6 +43,14 @@ public class DistribuitedActuatorRequest implements Serializable {
 
 	public void setPort(int port) {
 		this.port = port;
+	}
+
+	public long getLastUpdate() {
+		return lastUpdate;
+	}
+
+	public void setLastUpdate(long lastUpdate) {
+		this.lastUpdate = lastUpdate;
 	}
 	
 	
