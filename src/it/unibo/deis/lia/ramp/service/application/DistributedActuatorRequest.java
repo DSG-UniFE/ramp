@@ -2,7 +2,7 @@ package it.unibo.deis.lia.ramp.service.application;
 
 import java.io.Serializable;
 
-public class DistribuitedActuatorRequest implements Serializable {
+public class DistributedActuatorRequest implements Serializable {
 	/**
 	 * 
 	 */ 
@@ -13,7 +13,7 @@ public class DistribuitedActuatorRequest implements Serializable {
 	private int port;
 	private long lastUpdate;
 	
-	protected DistribuitedActuatorRequest (String appName, Type type, int port, long lastUpdate) {
+	protected DistributedActuatorRequest (String appName, Type type, int port, long lastUpdate) {
     	this.appName = appName;
     	this.type = type;
     	this.port = port;

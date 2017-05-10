@@ -11,7 +11,7 @@ import it.unibo.deis.lia.ramp.core.e2e.BoundReceiveSocket;
 import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
-import it.unibo.deis.lia.ramp.service.application.DistribuitedActuatorRequest.Type;
+import it.unibo.deis.lia.ramp.service.application.DistributedActuatorRequest.Type;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 
 
@@ -107,16 +107,17 @@ public class DistributedActuatorClient extends Thread{
 	                // 1) payload
 	                UnicastPacket up = (UnicastPacket) gp;
 	                Object payload = E2EComm.deserialize(up.getBytePayload());
-	                if (payload instanceof DistribuitedActuatorRequest) {
-	                    System.out.println("DistributedActuatorClientPacketHandler DistribuitedActuatorRequest");
-	                    DistribuitedActuatorRequest request = (DistribuitedActuatorRequest) payload;
+	                if (payload instanceof DistributedActuatorRequest) {
+	                    System.out.println("DistributedActuatorClientPacketHandler DistributedActuatorRequest");
+	                    DistributedActuatorRequest request = (DistributedActuatorRequest) payload;
 	                    switch (request.getType()) {
 		                    case PRE_COMMAND:
 		                    	// TODO
-		                    	DistribuitedActuatorRequest dar = new DistribuitedActuatorRequest(
-		                    			appName, 
+		                    	DistributedActuatorRequest dar = new DistributedActuatorRequest(
+		                    			"appName", 
 		                    			Type.HERE_I_AM, 
-		                    			clientSocket.getLocalPort());
+		                    			clientSocket.getLocalPort(),
+		                    			Instant.now().toEpochMilli());
 	                        	
 		                    	E2EComm.sendUnicast(
 	                        			up.getSource(),

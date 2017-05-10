@@ -16,21 +16,21 @@ import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 import it.unibo.deis.lia.ramp.service.management.ServiceManager;
 
 
-public class DistribuitedActuatorServiceNoGUI extends Thread {
+public class DistributedActuatorServiceNoGUI extends Thread {
 
 	private boolean open;
 	
 	private int protocol = E2EComm.TCP;
 	private static BoundReceiveSocket serviceSocket;
 	
-	private static DistribuitedActuatorServiceNoGUI distribuitedActuator = null;
+	private static DistributedActuatorServiceNoGUI distribuitedActuator = null;
 	private static Heartbeater heartbeater = null;
 	
 	// <app_name, <node_id, ClientDescriptor>
 	private BiHashtable<String, Integer, ClientDescriptor> appDB  = new BiHashtable<String, Integer, ClientDescriptor>();
 	
 	
-	protected DistribuitedActuatorServiceNoGUI(boolean gui) throws Exception {
+	protected DistributedActuatorServiceNoGUI(boolean gui) throws Exception {
 		open = true;
 		
 	    serviceSocket = E2EComm.bindPreReceive(protocol);
@@ -42,29 +42,29 @@ public class DistribuitedActuatorServiceNoGUI extends Thread {
 			);
 	}
 	
-	public static synchronized DistribuitedActuatorServiceNoGUI getInstance() {
+	public static synchronized DistributedActuatorServiceNoGUI getInstance() {
 	    try {
-	        if (DistribuitedActuatorServiceNoGUI.distribuitedActuator == null) {
-	        	// DistribuitedActuatorService senza GUI
-	        	DistribuitedActuatorServiceNoGUI.distribuitedActuator = new DistribuitedActuatorServiceNoGUI(false); 
-	        	DistribuitedActuatorServiceNoGUI.distribuitedActuator.start();
+	        if (DistributedActuatorServiceNoGUI.distribuitedActuator == null) {
+	        	// DistributedActuatorService senza GUI
+	        	DistributedActuatorServiceNoGUI.distribuitedActuator = new DistributedActuatorServiceNoGUI(false); 
+	        	DistributedActuatorServiceNoGUI.distribuitedActuator.start();
 	        }
 	    }
 	    catch (Exception e) {
 	        e.printStackTrace();
 	    }
-	    return DistribuitedActuatorServiceNoGUI.distribuitedActuator;
+	    return DistributedActuatorServiceNoGUI.distribuitedActuator;
 	}
 	
 	public static boolean isActive(){
-	    return DistribuitedActuatorServiceNoGUI.distribuitedActuator != null;
+	    return DistributedActuatorServiceNoGUI.distribuitedActuator != null;
 	}
 	
 	public void stopService(){
-	    System.out.println("DistribuitedActuatorService close");
+	    System.out.println("DistributedActuatorService close");
 	    ServiceManager.getInstance(false).removeService("DistribuitedActuator");
 	    open = false;
-	    DistribuitedActuatorServiceNoGUI.heartbeater.stopHeartbeater();
+	    DistributedActuatorServiceNoGUI.heartbeater.stopHeartbeater();
 	    try {
 	        serviceSocket.close();
 	    } catch (IOException ex) {
@@ -87,17 +87,17 @@ public class DistribuitedActuatorServiceNoGUI extends Thread {
 	@Override
 	public void run() {
 	    try {
-	        System.out.println("DistribuitedActuatorService START");
-	        System.out.println("DistribuitedActuatorService START " + serviceSocket.getLocalPort() + " " + protocol);
-	        DistribuitedActuatorServiceNoGUI.heartbeater = new Heartbeater(15, TimeUnit.SECONDS);
+	        System.out.println("DistributedActuatorService START");
+	        System.out.println("DistributedActuatorService START " + serviceSocket.getLocalPort() + " " + protocol);
+	        DistributedActuatorServiceNoGUI.heartbeater = new Heartbeater(15, TimeUnit.SECONDS);
 	        while (open) {
 	            try {
 	                // receive
 	                GenericPacket gp = E2EComm.receive(serviceSocket, 5*1000);
-	                System.out.println("DistribuitedActuatorService new request");
+	                System.out.println("DistributedActuatorService new request");
 	                new Handler(gp).start();
 	            } catch(SocketTimeoutException ste) {
-	                System.out.println("DistribuitedActuatorService SocketTimeoutException");
+	                System.out.println("DistributedActuatorService SocketTimeoutException");
 	            }
 	        }
 	        serviceSocket.close();
@@ -106,8 +106,8 @@ public class DistribuitedActuatorServiceNoGUI extends Thread {
 	    } catch (Exception e) {
 	        e.printStackTrace();
 	    }
-	    DistribuitedActuatorServiceNoGUI.distribuitedActuator = null;
-	    System.out.println("DistribuitedActuatorService FINISHED");
+	    DistributedActuatorServiceNoGUI.distribuitedActuator = null;
+	    System.out.println("DistributedActuatorService FINISHED");
 	}
 
 	
@@ -126,9 +126,9 @@ public class DistribuitedActuatorServiceNoGUI extends Thread {
 	                // 1) payload
 	                UnicastPacket up = (UnicastPacket) gp;
 	                Object payload = E2EComm.deserialize(up.getBytePayload());
-	                if (payload instanceof DistribuitedActuatorRequest) {
-	                    System.out.println("DistribuitedActuatorHandler DistribuitedActuatorRequest");
-	                    DistribuitedActuatorRequest request = (DistribuitedActuatorRequest) payload;
+	                if (payload instanceof DistributedActuatorRequest) {
+	                    System.out.println("DistribuitedActuatorHandler DistributedActuatorRequest");
+	                    DistributedActuatorRequest request = (DistributedActuatorRequest) payload;
 	                    switch (request.getType()) {
 		                    case AVAILABLE_APPS:
 		                    	Set<String> appNames = appDB.getApps(); 
@@ -169,7 +169,7 @@ public class DistribuitedActuatorServiceNoGUI extends Thread {
 						}
 	                } else {
 	                    // received payload is not DistribuitedActuatorHandler: do nothing...
-	                    System.out.println("DistribuitedActuatorService wrong payload: " + payload);
+	                    System.out.println("DistributedActuatorService wrong payload: " + payload);
 	                }
 	            }
 	            else{
@@ -214,7 +214,7 @@ public class DistribuitedActuatorServiceNoGUI extends Thread {
 		
 	    @Override
 	    public void run() {
-	    	System.out.println("DistribuitedActuatorServiceHeartbeater START");
+	    	System.out.println("DistributedActuatorServiceHeartbeater START");
 	    	while (open) {
 	    		Set<String> appNames = appDB.getApps();
 	    		for (String appName: appNames) {
@@ -233,7 +233,7 @@ public class DistribuitedActuatorServiceNoGUI extends Thread {
 					}
 	    		}
 	    	}
-	    	System.out.println("DistribuitedActuatorServiceHeartbeater FINISHED");
+	    	System.out.println("DistributedActuatorServiceHeartbeater FINISHED");
 	    }
 
 		protected void setMillisToSleep(long millisToSleep, TimeUnit timeUnit) {
