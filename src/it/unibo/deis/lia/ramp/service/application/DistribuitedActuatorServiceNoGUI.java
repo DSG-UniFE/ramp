@@ -27,7 +27,7 @@ public class DistribuitedActuatorServiceNoGUI extends Thread {
 	private static Heartbeater heartbeater = null;
 	
 	// <app_name, <node_id, ClientDescriptor>
-	BiHashtable<String, Integer, ClientDescriptor> appDB  = new BiHashtable<String, Integer, ClientDescriptor>();
+	private BiHashtable<String, Integer, ClientDescriptor> appDB  = new BiHashtable<String, Integer, ClientDescriptor>();
 	
 	
 	protected DistribuitedActuatorServiceNoGUI(boolean gui) throws Exception {
@@ -143,8 +143,9 @@ public class DistribuitedActuatorServiceNoGUI extends Thread {
 		                    	
 								break;
 		                    case HERE_I_AM:
-		                    	// TODO
-		                    	
+		                    	ClientDescriptor cd = appDB.get(request.getAppName(), up.getSourceNodeId());
+		                    	// e' corretto?
+		                    	cd.setLastUpdate(request.getLastUpdate());
 		                    	break;
 		                    case JOIN:
 		                    	appDB.put(request.getAppName(), up.getSourceNodeId(),
@@ -216,7 +217,14 @@ public class DistribuitedActuatorServiceNoGUI extends Thread {
 	    	System.out.println("DistribuitedActuatorServiceHeartbeater START");
 	    	while (open) {
 	    		Set<String> appNames = appDB.getApps();
-	    		// TODO inviare pre-commad a tutti
+	    		for (String appName: appNames) {
+	    			Hashtable<Integer, ClientDescriptor> nodes;
+	    			nodes = appDB.getNodes(appName);
+	    			for(int nodeID : nodes.keySet()) {
+	    				ClientDescriptor node = nodes.get(nodeID);
+	    				// TODO inviare pre-commad a tutti
+	    			}
+	    		}
 	    		synchronized (monitor) {
 	    			try {
 						monitor.wait(millisToSleep);
