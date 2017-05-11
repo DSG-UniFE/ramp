@@ -26,19 +26,20 @@ public class DistributedActuatorRequest implements Serializable {
     	this.type = type;
     }
 	
-	protected DistributedActuatorRequest (Type type, String appName, int port) {
+	protected DistributedActuatorRequest (Type type, int port, String appName) {
     	this.appName = appName;
     	this.type = type;
     	this.port = port;
     }
 	
-	protected DistributedActuatorRequest (Type type, String appName, String command) {
+	protected DistributedActuatorRequest (Type type, int port, String appName, String command) {
     	this.appName = appName;
     	this.type = type;
+    	this.port = port;
     	this.command = command;
     }
 	
-	protected DistributedActuatorRequest (Type type, String[] appNames, int port) {
+	protected DistributedActuatorRequest (Type type, int port, String[] appNames) {
     	this.appNames = appNames;
     	this.type = type;
     	this.port = port;

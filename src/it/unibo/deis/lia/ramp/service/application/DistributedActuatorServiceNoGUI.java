@@ -1,9 +1,9 @@
 package it.unibo.deis.lia.ramp.service.application;
 
-
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.Vector;
@@ -17,13 +17,14 @@ import it.unibo.deis.lia.ramp.core.internode.Resolver;
 import it.unibo.deis.lia.ramp.core.internode.ResolverPath;
 import it.unibo.deis.lia.ramp.service.application.DistributedActuatorRequest.Type;
 import it.unibo.deis.lia.ramp.service.management.ServiceManager;
+import it.unibo.deis.lia.ramp.util.GeneralUtils;
 
 
 public class DistributedActuatorServiceNoGUI extends Thread {
 
 	private boolean open;
 	
-	private int protocol = E2EComm.TCP;
+	private static final int protocol = E2EComm.TCP;
 	private static BoundReceiveSocket serviceSocket;
 	
 	private static DistributedActuatorServiceNoGUI distribuitedActuator = null;
@@ -83,6 +84,9 @@ public class DistributedActuatorServiceNoGUI extends Thread {
     	appDB.removeK1(appName);
     }
     
+    /**
+	 * @param threshold value from 0 to 1
+	 */
     public void sendCommand(String appName, String command, int timeToWait, int threshold) {
     	Hashtable<Integer, ClientDescriptor> nodes = appDB.getK2(appName);
     	for(int nodeID : nodes.keySet()) {
@@ -90,9 +94,11 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 			Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(nodeID, 5*1000);
 			try {
 				E2EComm.sendUnicast(
+						// TODO e' corretto il recupero del path?
 						paths.firstElement().getPath(),
-						nodeID, node.getPort(), 
-						E2EComm.TCP,
+						nodeID, 
+						node.getPort(), 
+						protocol,
 						false, 
 						GenericPacket.UNUSED_FIELD,
 						E2EComm.DEFAULT_BUFFERSIZE,
@@ -102,6 +108,7 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 						E2EComm.serialize(
 								new DistributedActuatorRequest(
 										DistributedActuatorRequest.Type.PRE_COMMAND,
+										serviceSocket.getLocalPort(),
 										appName))
 						);
 			} catch (Exception e) {
@@ -116,21 +123,24 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 		}
     	
     	int nActiveNodes = 0;
+    	ArrayList<Integer> activeNodes = new ArrayList<Integer>();
     	for(int nodeID : nodes.keySet()) {
     		ClientDescriptor node = nodes.get(nodeID);
     		if (node.lastUpdate > (System.currentTimeMillis()-timeToWait)) {
     			nActiveNodes++;
+    			activeNodes.add(nodeID);
     		}
     	}
+    	
     	if ((nActiveNodes/nodes.size()) > threshold) {
-    		for(int nodeID : nodes.keySet()) {
+    		for(int nodeID : activeNodes) {
     			ClientDescriptor node = nodes.get(nodeID);
     			Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(nodeID, 5*1000);
     			try {
     				E2EComm.sendUnicast(
     						paths.firstElement().getPath(),
     						nodeID, node.getPort(), 
-    						E2EComm.TCP,
+    						protocol,
     						false, 
     						GenericPacket.UNUSED_FIELD,
     						E2EComm.DEFAULT_BUFFERSIZE,
@@ -140,6 +150,7 @@ public class DistributedActuatorServiceNoGUI extends Thread {
     						E2EComm.serialize(
     								new DistributedActuatorRequest(
     										DistributedActuatorRequest.Type.COMMAND,
+    										serviceSocket.getLocalPort(),
     										appName, 
     										command))
     						);
@@ -154,34 +165,34 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 	public void run() {
 	    try {
 	        System.out.println("DistributedActuatorService START");
-	        System.out.println("DistributedActuatorService START " + serviceSocket.getLocalPort() + " " + protocol);
+	        GeneralUtils.appendLog("DistributedActuatorService START " + 
+	        		serviceSocket.getLocalPort() + " " + protocol);
 	        DistributedActuatorServiceNoGUI.heartbeater = new Heartbeater(15, TimeUnit.SECONDS);
 	        while (open) {
 	            try {
 	                // receive
 	                GenericPacket gp = E2EComm.receive(serviceSocket, 5*1000);
 	                System.out.println("DistributedActuatorService new request");
-	                new Handler(gp).start();
+	                new PacketHandler(gp).start();
 	            } catch(SocketTimeoutException ste) {
 	                System.out.println("DistributedActuatorService SocketTimeoutException");
 	            }
 	        }
 	        serviceSocket.close();
-	    } catch (SocketException se) {
-
 	    } catch (Exception e) {
 	        e.printStackTrace();
 	    }
 	    DistributedActuatorServiceNoGUI.distribuitedActuator = null;
 	    System.out.println("DistributedActuatorService FINISHED");
+	    GeneralUtils.appendLog("DistributedActuatorService FINISHED");
 	}
 
 	
-	private class Handler extends Thread {
+	private class PacketHandler extends Thread {
 	    private GenericPacket gp;
 
 	    
-	    private Handler(GenericPacket gp) {
+	    private PacketHandler(GenericPacket gp) {
 	        this.gp = gp;
 	    }
 	    
@@ -193,7 +204,7 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 	                UnicastPacket up = (UnicastPacket) gp;
 	                Object payload = E2EComm.deserialize(up.getBytePayload());
 	                if (payload instanceof DistributedActuatorRequest) {
-	                    System.out.println("DistribuitedActuatorHandler DistributedActuatorRequest");
+	                    System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest");
 	                    DistributedActuatorRequest request = (DistributedActuatorRequest) payload;
 	                    switch (request.getType()) {
 		                    case HERE_I_AM:
@@ -213,51 +224,62 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 		                    	String[] aAppNames = sAppNames.toArray(new String[sAppNames.size()]);
 		                    	DistributedActuatorRequest dar = new DistributedActuatorRequest(
 		                    			Type.AVAILABLE_APPS,
-		                    			aAppNames,
-		                    			serviceSocket.getLocalPort());
+		                    			serviceSocket.getLocalPort(),
+		                    			aAppNames);
 		                    	try {
+		                    		// TODO Possible error, I have to use the socket client
+//			                    	E2EComm.sendUnicast(
+//			                    			E2EComm.ipReverse(up.getSource()),
+//		                        			request.getPort(),
+//		                        			protocol,
+//		                        			E2EComm.serialize(dar));
 			                    	E2EComm.sendUnicast(
 			                    			E2EComm.ipReverse(up.getSource()),
+			            					// TODO inserire nodeID del service
+			                    			nodeID,
 		                        			request.getPort(),
-		                        			E2EComm.TCP,
-		                        			E2EComm.serialize(dar));
+			            					E2EComm.TCP,
+			            					false, 
+			            					GenericPacket.UNUSED_FIELD,
+			            					E2EComm.DEFAULT_BUFFERSIZE,
+			            					GenericPacket.UNUSED_FIELD,
+			            					GenericPacket.UNUSED_FIELD,
+			            					GenericPacket.UNUSED_FIELD,
+			            					E2EComm.serialize(dar)
+			            					);
 		                    	} catch (Exception e) {
 		            	            e.printStackTrace();
 		            	        }
 		                    	break;
-	
 							default:
 								// received wrong type of request: do nothing...
-		                        System.out.println("DistribuitedActuatorHandler wrong type of request: " + 
+		                        System.out.println("DistribuitedActuatorService PacketHandler wrong type of request: " + 
 		                        		request.getType());
-								
 								break;
 						}
 	                } else {
 	                    // received payload is not DistribuitedActuatorHandler: do nothing...
-	                    System.out.println("DistributedActuatorService wrong payload: " + payload);
+	                    System.out.println("DistributedActuatorService PacketHandler wrong payload: " + payload);
 	                }
 	            }
 	            else{
 	                // received packet is not UnicastPacket: do nothing...
-	                System.out.println("DistribuitedActuatorHandler wrong packet: " + 
+	                System.out.println("DistributedActuatorService PacketHandler wrong packet: " + 
 	                		gp.getClass().getName());
 	            }
-
 	        } catch(Exception e) {
 	            e.printStackTrace();
 	        }
 	    }
 	}
-	
-	
+
 	
 	private class Heartbeater extends Thread {
 
 		private boolean open;
 		private final Object monitor = new Object();
 		private long millisToSleep = TimeUnit.SECONDS.toMillis(15); // default time
-		private  Heartbeater heartbeater = null;
+		private Heartbeater heartbeater = null;
 		
 		
 		private Heartbeater(int timeToSleep, TimeUnit timeUnit) {
@@ -266,7 +288,6 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 	        start();
 	    }
 	    
-		
 		protected boolean isActive(){
 		    return heartbeater != null;
 		}
@@ -282,6 +303,14 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 	    public void run() {
 	    	System.out.println("DistributedActuatorServiceHeartbeater START");
 	    	while (open) {
+	    		synchronized (monitor) {
+	    			try {
+	    		    	System.out.println("DistributedActuatorServiceHeartbeater: waiting...");
+						monitor.wait(millisToSleep);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+	    		}
 	    		Set<String> appNames = appDB.getK1();
 	    		for (String appName: appNames) {
 	    			Hashtable<Integer, ClientDescriptor> nodes = appDB.getK2(appName);
@@ -292,7 +321,7 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 							E2EComm.sendUnicast(
 									paths.firstElement().getPath(),
 									nodeID, node.getPort(), 
-									E2EComm.TCP,
+									protocol,
 									false, 
 									GenericPacket.UNUSED_FIELD,
 									E2EComm.DEFAULT_BUFFERSIZE,
@@ -301,19 +330,13 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 									GenericPacket.UNUSED_FIELD,
 									E2EComm.serialize(new DistributedActuatorRequest(
 											DistributedActuatorRequest.Type.PRE_COMMAND,
+											serviceSocket.getLocalPort(),
 											appName))
 									);
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
 	    			}
-	    		}
-	    		synchronized (monitor) {
-	    			try {
-						monitor.wait(millisToSleep);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
 	    		}
 	    	}
 	    	System.out.println("DistributedActuatorServiceHeartbeater FINISHED");
