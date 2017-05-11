@@ -11,13 +11,18 @@ public class DistributedActuatorRequest implements Serializable {
 	private Type type;
 	private String appName;
 	private int port;
-	private long lastUpdate;
+	//private long lastUpdate;
+
+	protected DistributedActuatorRequest (String appName, Type type) {
+    	this.appName = appName;
+    	this.type = type;
+    }
 	
-	protected DistributedActuatorRequest (String appName, Type type, int port, long lastUpdate) {
+	protected DistributedActuatorRequest (String appName, Type type, int port/*, long lastUpdate*/) {
     	this.appName = appName;
     	this.type = type;
     	this.port = port;
-    	this.lastUpdate = lastUpdate;
+    	//this.lastUpdate = lastUpdate;
     }
 	
 	public Type getType() {
@@ -45,13 +50,13 @@ public class DistributedActuatorRequest implements Serializable {
 		this.port = port;
 	}
 
-	public long getLastUpdate() {
+	/*public long getLastUpdate() {
 		return lastUpdate;
 	}
 
 	public void setLastUpdate(long lastUpdate) {
 		this.lastUpdate = lastUpdate;
-	}
+	}*/
 	
 	
 	public enum Type {

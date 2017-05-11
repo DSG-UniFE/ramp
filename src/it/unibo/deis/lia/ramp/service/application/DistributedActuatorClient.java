@@ -25,7 +25,7 @@ public class DistributedActuatorClient extends Thread{
     private int protocol = E2EComm.TCP;
     
     // key: app name
- 	private Hashtable<String, ClieantActuatorAppDescriptor> clientActuatorAppDb = new Hashtable<String, ClieantActuatorAppDescriptor>();
+ 	private Hashtable<String, ClientActuatorAppDescriptor> clientActuatorAppDb = new Hashtable<String, ClientActuatorAppDescriptor>();
     
 	public static synchronized DistributedActuatorClient getInstance() {
     	try {
@@ -84,7 +84,7 @@ public class DistributedActuatorClient extends Thread{
 	}
 	
 	
-	public void registerNewApp(String appName) {
+	public void registerNewApp(String appName, DistributedClientListener dcl) {
 		//TODO
 	}
 	
@@ -114,22 +114,19 @@ public class DistributedActuatorClient extends Thread{
 		                    case PRE_COMMAND:
 		                    	// TODO
 		                    	DistributedActuatorRequest dar = new DistributedActuatorRequest(
-		                    			"appName", 
-		                    			Type.HERE_I_AM, 
-		                    			clientSocket.getLocalPort(),
-		                    			Instant.now().toEpochMilli());
+		                    			request.getAppName(), 
+		                    			Type.HERE_I_AM);
 	                        	
 		                    	E2EComm.sendUnicast(
-	                        			up.getSource(),
-	                        			up.getSourcePortAck(),
+	                        			up.getSource(),//TODO reverse
+	                        			up.getSourcePortAck(),// TODO porta del service in hashtable
 	                        			E2EComm.TCP,
 	                        			E2EComm.serialize(dar));
 		                    	break;
 		                    case COMMAND:
 		                    	// TODO
-		                    	
+		                    	clientActuatorAppDb.get(request.getAppName()).getDistributedClientListener().receivedCommand(request);
 								break;
-	
 							default:
 								// received wrong type of request: do nothing...
 		                        System.out.println("DistributedActuatorClientPacketHandler wrong type of request: " + 
@@ -155,12 +152,19 @@ public class DistributedActuatorClient extends Thread{
 	}
 	
 	
-	private class ClieantActuatorAppDescriptor{
+	private class ClientActuatorAppDescriptor{
+		
 		private int controllerNodeId;
 		private int controllerPort;
 		private long timestamp; // unix epoch
+		private DistributedClientListener distributedClientListener;
 		
-		
+		public DistributedClientListener getDistributedClientListener() {
+			return distributedClientListener;
+		}
+		public void setDistributedClientListener(DistributedClientListener distributedClientListener) {
+			this.distributedClientListener = distributedClientListener;
+		}
 		public int getControllerNodeId() {
 			return controllerNodeId;
 		}
@@ -192,7 +196,7 @@ public class DistributedActuatorClient extends Thread{
 				try {
 					sleep(10*1000);
 					for (String appName: clientActuatorAppDb.keySet()) {
-						ClieantActuatorAppDescriptor clieantActuatorAppDescriptor = clientActuatorAppDb.get(appName);
+						ClientActuatorAppDescriptor clieantActuatorAppDescriptor = clientActuatorAppDb.get(appName);
 						long lastTimeout = clieantActuatorAppDescriptor.getTimestamp();
 						if (System.currentTimeMillis()-lastTimeout > 60*1000) {
 							// TODO clieantActuatorAppDescriptor.getClientActuatorCommandListener().activateResiliency();
