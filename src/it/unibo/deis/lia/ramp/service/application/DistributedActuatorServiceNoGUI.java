@@ -15,6 +15,7 @@ import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 import it.unibo.deis.lia.ramp.core.internode.Resolver;
 import it.unibo.deis.lia.ramp.core.internode.ResolverPath;
+import it.unibo.deis.lia.ramp.service.application.DistributedActuatorRequest.Type;
 import it.unibo.deis.lia.ramp.service.management.ServiceManager;
 
 
@@ -82,8 +83,74 @@ public class DistributedActuatorServiceNoGUI extends Thread {
     	appDB.removeK1(appName);
     }
     
-    public void sendCommand(String appName, String command, int threshold) {
-    	// TODO COMMAND
+    public void sendCommand(String appName, String command, int timeToWait, int threshold) {
+    	Hashtable<Integer, ClientDescriptor> nodes = appDB.getK2(appName);
+    	for(int nodeID : nodes.keySet()) {
+			ClientDescriptor node = nodes.get(nodeID);
+			Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(nodeID, 5*1000);
+			try {
+				E2EComm.sendUnicast(
+						paths.firstElement().getPath(),
+						nodeID, node.getPort(), 
+						E2EComm.TCP,
+						false, 
+						GenericPacket.UNUSED_FIELD,
+						E2EComm.DEFAULT_BUFFERSIZE,
+						GenericPacket.UNUSED_FIELD,
+						GenericPacket.UNUSED_FIELD,
+						GenericPacket.UNUSED_FIELD,
+						E2EComm.serialize(
+								new DistributedActuatorRequest(
+										appName, 
+										DistributedActuatorRequest.Type.PRE_COMMAND)
+								)
+						);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+    	
+    	try {
+			wait(timeToWait);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    	int nActiveNodes = 0;
+    	for(int nodeID : nodes.keySet()) {
+    		ClientDescriptor node = nodes.get(nodeID);
+    		if (node.lastUpdate > (System.currentTimeMillis()-timeToWait)) {
+    			nActiveNodes++;
+    		}
+    	}
+    	if ((nActiveNodes/nodes.size()) > threshold) {
+    		for(int nodeID : nodes.keySet()) {
+    			ClientDescriptor node = nodes.get(nodeID);
+    			Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(nodeID, 5*1000);
+    			try {
+    				E2EComm.sendUnicast(
+    						paths.firstElement().getPath(),
+    						nodeID, node.getPort(), 
+    						E2EComm.TCP,
+    						false, 
+    						GenericPacket.UNUSED_FIELD,
+    						E2EComm.DEFAULT_BUFFERSIZE,
+    						GenericPacket.UNUSED_FIELD,
+    						GenericPacket.UNUSED_FIELD,
+    						GenericPacket.UNUSED_FIELD,
+    						E2EComm.serialize(
+    								new DistributedActuatorRequest(
+    										appName, 
+    										DistributedActuatorRequest.Type.COMMAND,
+    										command)
+    								)
+    						);
+    			} catch (Exception e) {
+    				e.printStackTrace();
+    			}
+    		}
+    	}
     }
     
 	@Override
@@ -134,7 +201,6 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 	                    switch (request.getType()) {
 		                    case HERE_I_AM:
 		                    	ClientDescriptor cd = appDB.get(request.getAppName(), up.getSourceNodeId());
-		                    	// e' corretto?
 		                    	cd.setLastUpdate(System.currentTimeMillis());
 		                    	break;
 		                    case JOIN:
@@ -146,10 +212,21 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 		                    	appDB.removeK2(request.getAppName(), up.getSourceNodeId());
 		                    	break;
 		                    case WHICH_APP:
-		                    	// TODO
-		                    	Set<String> appNames = appDB.getK1(); 
-		                    	// TODO rispondere le applicaizoni disponibili
-								break;
+		                    	Set<String> sAppNames = appDB.getK1();
+		                    	String[] aAppNames = sAppNames.toArray(new String[sAppNames.size()]);
+		                    	DistributedActuatorRequest dar = new DistributedActuatorRequest(
+		                    			aAppNames,
+		                    			Type.AVAILABLE_APPS);
+		                    	try {
+			                    	E2EComm.sendUnicast(
+			                    			E2EComm.ipReverse(up.getSource()),
+		                        			request.getPort(),
+		                        			E2EComm.TCP,
+		                        			E2EComm.serialize(dar));
+		                    	} catch (Exception e) {
+		            	            e.printStackTrace();
+		            	        }
+		                    	break;
 	
 							default:
 								// received wrong type of request: do nothing...
@@ -185,9 +262,9 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 		private  Heartbeater heartbeater = null;
 		
 		
-		private Heartbeater(int millisToSleep, TimeUnit timeUnit) {
+		private Heartbeater(int timeToSleep, TimeUnit timeUnit) {
 			this.open = true;
-	        setMillisToSleep(millisToSleep, timeUnit);
+	        setMillisToSleep(timeToSleep, timeUnit);
 	        start();
 	    }
 	    
@@ -209,17 +286,17 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 	    	while (open) {
 	    		Set<String> appNames = appDB.getK1();
 	    		for (String appName: appNames) {
-	    			Hashtable<Integer, ClientDescriptor> nodes;
-	    			nodes = appDB.getK2(appName);
+	    			Hashtable<Integer, ClientDescriptor> nodes = appDB.getK2(appName);
 	    			for(int nodeID : nodes.keySet()) {
 	    				ClientDescriptor node = nodes.get(nodeID);
-	    				// TODO inviare pre-commad a tutti
 	    				Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(nodeID, 5*1000);
 	    				try {
 							E2EComm.sendUnicast(
 									paths.firstElement().getPath(),
-									nodeID, node.getPort(), E2EComm.TCP,
-									false, GenericPacket.UNUSED_FIELD,
+									nodeID, node.getPort(), 
+									E2EComm.TCP,
+									false, 
+									GenericPacket.UNUSED_FIELD,
 									E2EComm.DEFAULT_BUFFERSIZE,
 									GenericPacket.UNUSED_FIELD,
 									GenericPacket.UNUSED_FIELD,
@@ -242,9 +319,9 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 	    	System.out.println("DistributedActuatorServiceHeartbeater FINISHED");
 	    }
 
-		protected void setMillisToSleep(long millisToSleep, TimeUnit timeUnit) {
+		protected void setMillisToSleep(long timeToSleep, TimeUnit timeUnit) {
 			synchronized (monitor) {
-	            this.millisToSleep = timeUnit.toMillis(millisToSleep);
+	            this.millisToSleep = timeUnit.toMillis(timeToSleep);
 //	            monitor.notify();
 	        }
 		}
@@ -374,8 +451,8 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 		
 		
 		protected ClientDescriptor(int port, long lastUpdate) {
-			setPort(port);
-			setLastUpdate(lastUpdate);
+			this.port = port;
+			this.lastUpdate = lastUpdate;
 		}
 		
 		protected int getPort() {
