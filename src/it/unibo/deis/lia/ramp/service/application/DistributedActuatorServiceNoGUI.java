@@ -38,7 +38,7 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 		
 	    serviceSocket = E2EComm.bindPreReceive(protocol);
 
-	    ServiceManager.getInstance(false).registerService("" +
+	    ServiceManager.getInstance(false).registerService(
 	    		"DistribuitedActuator",
 	    		serviceSocket.getLocalPort(),
 	    		protocol
@@ -101,9 +101,8 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 						GenericPacket.UNUSED_FIELD,
 						E2EComm.serialize(
 								new DistributedActuatorRequest(
-										appName, 
-										DistributedActuatorRequest.Type.PRE_COMMAND)
-								)
+										DistributedActuatorRequest.Type.PRE_COMMAND,
+										appName))
 						);
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -113,7 +112,6 @@ public class DistributedActuatorServiceNoGUI extends Thread {
     	try {
 			wait(timeToWait);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     	
@@ -141,10 +139,9 @@ public class DistributedActuatorServiceNoGUI extends Thread {
     						GenericPacket.UNUSED_FIELD,
     						E2EComm.serialize(
     								new DistributedActuatorRequest(
-    										appName, 
     										DistributedActuatorRequest.Type.COMMAND,
-    										command)
-    								)
+    										appName, 
+    										command))
     						);
     			} catch (Exception e) {
     				e.printStackTrace();
@@ -215,8 +212,9 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 		                    	Set<String> sAppNames = appDB.getK1();
 		                    	String[] aAppNames = sAppNames.toArray(new String[sAppNames.size()]);
 		                    	DistributedActuatorRequest dar = new DistributedActuatorRequest(
+		                    			Type.AVAILABLE_APPS,
 		                    			aAppNames,
-		                    			Type.AVAILABLE_APPS);
+		                    			serviceSocket.getLocalPort());
 		                    	try {
 			                    	E2EComm.sendUnicast(
 			                    			E2EComm.ipReverse(up.getSource()),
@@ -301,7 +299,9 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 									GenericPacket.UNUSED_FIELD,
 									GenericPacket.UNUSED_FIELD,
 									GenericPacket.UNUSED_FIELD,
-									E2EComm.serialize(new DistributedActuatorRequest(appName, DistributedActuatorRequest.Type.PRE_COMMAND))
+									E2EComm.serialize(new DistributedActuatorRequest(
+											DistributedActuatorRequest.Type.PRE_COMMAND,
+											appName))
 									);
 						} catch (Exception e) {
 							e.printStackTrace();

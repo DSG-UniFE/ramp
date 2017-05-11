@@ -13,28 +13,35 @@ public class DistributedActuatorRequest implements Serializable {
 	private String[] appNames;
 	private String command;
 	private int port;
+	private int nodeID;
 
 
-	protected DistributedActuatorRequest (String appName, Type type) {
+	protected DistributedActuatorRequest (Type type, int port) {
+    	this.port = port;
+    	this.type = type;
+    }
+	
+	protected DistributedActuatorRequest (Type type, String appName) {
     	this.appName = appName;
     	this.type = type;
     }
 	
-	protected DistributedActuatorRequest (String appName, Type type, int port) {
+	protected DistributedActuatorRequest (Type type, String appName, int port) {
     	this.appName = appName;
     	this.type = type;
     	this.port = port;
     }
 	
-	protected DistributedActuatorRequest (String appName, Type type, String command) {
+	protected DistributedActuatorRequest (Type type, String appName, String command) {
     	this.appName = appName;
     	this.type = type;
     	this.command = command;
     }
 	
-	protected DistributedActuatorRequest (String[] appNames, Type type) {
+	protected DistributedActuatorRequest (Type type, String[] appNames, int port) {
     	this.appNames = appNames;
     	this.type = type;
+    	this.port = port;
     }
 	
 	public String[] getAppNames() {
@@ -78,6 +85,15 @@ public class DistributedActuatorRequest implements Serializable {
 		this.command = command;
 	}
 	
+	public int getNodeID() {
+		return nodeID;
+	}
+
+	public void setNodeID(int nodeID) {
+		this.nodeID = nodeID;
+	}
+	
+
 	public enum Type {
 		AVAILABLE_APPS, PRE_COMMAND, COMMAND,
 		HERE_I_AM, JOIN, LEAVE, WHICH_APP
