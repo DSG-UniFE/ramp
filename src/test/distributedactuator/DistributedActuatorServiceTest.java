@@ -14,7 +14,7 @@ public class DistributedActuatorServiceTest {
     	String appName = "test app name";
     	das.addApp(appName);
     	
-    	Thread.sleep(500);
+    	Thread.sleep(10000);
     	das.sendCommand(appName, "command=c,resilience=r", 1000, 0);
     	
     	Thread.sleep(3000);

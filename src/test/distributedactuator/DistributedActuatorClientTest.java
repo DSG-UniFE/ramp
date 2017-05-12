@@ -10,10 +10,11 @@ public class DistributedActuatorClientTest {
 	public static void main(String[] args) throws InterruptedException {
 		RampEntryPoint.getInstance(true, null);
     	DistributedActuatorClient dac = DistributedActuatorClient.getInstance();
-    	DistributedActuatorClientListener dacl = new Sensor();
+    	Sensor sensor = new Sensor();
+    	sensor.start();
 		
     	String appName = "test app name";
-    	dac.registerNewApp(appName, dacl);
+    	dac.registerNewApp(appName, sensor);
     	
     	Thread.sleep(500);
     	
