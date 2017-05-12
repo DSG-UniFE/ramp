@@ -5,22 +5,22 @@ import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorClient;
 import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorClientListener;
 import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorService;
 
-public class DistributedActuatorClientTest {
+public class DistributedActuatorServiceTest {
 
 	public static void main(String[] args) throws InterruptedException {
 		RampEntryPoint.getInstance(true, null);
-    	DistributedActuatorClient dac = DistributedActuatorClient.getInstance();
-    	DistributedActuatorClientListener dacl = new Sensor();
+    	DistributedActuatorService das = DistributedActuatorService.getInstance();
 		
     	String appName = "test app name";
-    	dac.registerNewApp(appName, dacl);
+    	das.addApp(appName);
     	
     	Thread.sleep(500);
+    	das.sendCommand(appName, "command=c,resilience=r", 1000, 0);
     	
     	Thread.sleep(3000);
-    	dac.leave(appName);
 
     	Thread.sleep(2000);
+    	das.removeApp(appName);
 	}
 	
 }

@@ -7,12 +7,12 @@ public class Sensor implements DistributedActuatorClientListener{
 
 	@Override
 	public void activateResilience() {
-		System.out.println("DistributedActuatorClientTest.activateResilience");
+		System.out.println("Sensor.activateResilience");
 	}
 
 	@Override
 	public void receivedCommand(DistributedActuatorRequest dar) {
-		System.out.println("DistributedActuatorClientTest.receivedCommand: "+dar);
+		System.out.println("Sensor.receivedCommand: "+dar);
 	}
 	
 }

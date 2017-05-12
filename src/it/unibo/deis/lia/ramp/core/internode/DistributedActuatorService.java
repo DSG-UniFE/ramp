@@ -172,7 +172,7 @@ public class DistributedActuatorService extends Thread {
 	        System.out.println("DistributedActuatorService START");
 	        GeneralUtils.appendLog("DistributedActuatorService START " + 
 	        		serviceSocket.getLocalPort() + " " + protocol);
-	        DistributedActuatorService.heartbeater = new Heartbeater(15, TimeUnit.SECONDS);
+	        DistributedActuatorService.heartbeater = new Heartbeater(5, TimeUnit.SECONDS);
 	        while (open) {
 	            try {
 	                // receive
@@ -316,6 +316,7 @@ public class DistributedActuatorService extends Thread {
 					}
 	    		}
 	    		Set<String> appNames = appDB.getK1();
+		    	System.out.println("DistributedActuatorServiceHeartbeater: appNames "+appNames);
 	    		for (String appName: appNames) {
 	    			Hashtable<Integer, ClientDescriptor> nodes = appDB.getK2(appName);
 	    			for(int nodeID : nodes.keySet()) {
@@ -421,11 +422,7 @@ public class DistributedActuatorService extends Thread {
 		}
 		
 		public Set<K1> getK1() {
-		    if (tTable.size() > 0) {
-		        return tTable.keySet();
-		    } else {
-		        return null;
-		    }
+	        return tTable.keySet();
 		}
 		
 		public Hashtable<K2, V> getK2(K1 key1) {

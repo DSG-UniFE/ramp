@@ -18,10 +18,10 @@ public class DistributedActuatorTest {
     	das.addApp(appName);
     	dac.registerNewApp(appName, dacl);
     	
-    	Thread.sleep(1000);
-    	das.sendCommand(appName, "command=c,resilience=r", 5000, 0);
+    	Thread.sleep(500);
+    	das.sendCommand(appName, "command=c,resilience=r", 1000, 0);
     	
-    	Thread.sleep(5000);
+    	Thread.sleep(3000);
     	dac.leave(appName);
 
     	Thread.sleep(2000);

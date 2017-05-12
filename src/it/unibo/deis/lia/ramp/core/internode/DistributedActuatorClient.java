@@ -64,7 +64,7 @@ public class DistributedActuatorClient extends Thread{
             System.out.println("DistributedActuatorClient START");
             GeneralUtils.appendLog("DistributedActuatorClient START " + 
             		clientSocket.getLocalPort() + " " + protocol);
-            new ResiliencyHandler().start();
+            new ResilienceHandler().start();
             while(open){
                 try{
                     // receive
@@ -91,14 +91,14 @@ public class DistributedActuatorClient extends Thread{
 	
 	public boolean registerNewApp(String appName, DistributedActuatorClientListener dcl) {
 		Vector<ServiceResponse> services = findDistributedActuatorService(5, 5*1000, 5);
-		ArrayList<DistributedActuatorRequest> servicesReceived = new ArrayList<DistributedActuatorRequest>();
+		ArrayList<UnicastPacket> servicesReceived = new ArrayList<UnicastPacket>();
 		for(ServiceResponse service : services) {
 			try {
 				BoundReceiveSocket newAppSocket = E2EComm.bindPreReceive(service.getProtocol());
 				// TODO check sendUnicast
 				E2EComm.sendUnicast(
 		                service.getServerDest(),
-		                newAppSocket.getLocalPort(),
+		                service.getServerPort(),//newAppSocket.getLocalPort(),
 		                service.getProtocol(),
 		                E2EComm.serialize(new DistributedActuatorRequest(
 		                		DistributedActuatorRequest.Type.WHICH_APP, 
@@ -123,11 +123,11 @@ public class DistributedActuatorClient extends Thread{
 	                UnicastPacket up = (UnicastPacket) gp;
 	                Object payload = E2EComm.deserialize(up.getBytePayload());
 	                if (payload instanceof DistributedActuatorRequest) {
-	                    System.out.println("DistributedActuatorClient registerNewApp DistributedActuatorRequest");
 	                    DistributedActuatorRequest request = (DistributedActuatorRequest) payload;
+	                    System.out.println("DistributedActuatorClient registerNewApp DistributedActuatorRequest: "+request);
 	                    switch (request.getType()) {
 		                    case AVAILABLE_APPS:
-		                    	servicesReceived.add(request);
+		                    	servicesReceived.add(up);
 		                    	break;
 		                    default:
 								// received wrong type of request: do nothing...
@@ -147,16 +147,24 @@ public class DistributedActuatorClient extends Thread{
 		int bestControllerNodeID = -1;
 		int bestControllerPort = -1;
 		int bestControllerNearest = Integer.MAX_VALUE;
-		for(DistributedActuatorRequest service : servicesReceived) {
-			for(String ser : service.getAppNames()) {
-				if (ser.equals(appName)) {
-					Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(service.getNodeID(), 5*1000);
-					if (bestControllerNearest > paths.size()) {
-						bestControllerNearest = paths.size();
-						bestControllerNodeID = service.getNodeID();
-						bestControllerPort = service.getPort();
+		for(UnicastPacket up : servicesReceived) {
+            Object payload;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+	            DistributedActuatorRequest request = (DistributedActuatorRequest) payload;
+				
+				for(String ser : request.getAppNames()) {
+					if (ser.equals(appName)) {
+						Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(up.getSourceNodeId(), 5*1000);
+						if (bestControllerNearest > paths.size()) {
+							bestControllerNearest = paths.size();
+							bestControllerNodeID = up.getSourceNodeId();
+							bestControllerPort = request.getPort();
+						}
 					}
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 		
@@ -167,7 +175,8 @@ public class DistributedActuatorClient extends Thread{
 				appDB.put(appName, new AppDescriptor(
 						bestControllerNodeID, 
 						bestControllerPort, 
-						System.currentTimeMillis()));
+						System.currentTimeMillis(),
+						dcl));
 				System.out.println("DistributedActuatorClient registerNewApp: added '" + 
 						appName + "', nodeID " + bestControllerNodeID);
 				return true;
@@ -182,6 +191,7 @@ public class DistributedActuatorClient extends Thread{
 	}
 	
 	public void leave(String appName) {
+        System.out.println("DistributedActuatorClient leave appName: " + appName);
 		AppDescriptor controller = appDB.get(appName);
 		Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(controller.getControllerNodeId(), 5*1000);
 		try {
@@ -318,10 +328,11 @@ public class DistributedActuatorClient extends Thread{
 		private Long timestamp = null; // unix epoch
 		private DistributedActuatorClientListener distributedActuatorClientListener;
 		
-		protected AppDescriptor(int nodeID, int port, long timestamp) {
+		protected AppDescriptor(int nodeID, int port, long timestamp, DistributedActuatorClientListener distributedActuatorClientListener) {
 			this.controllerNodeID = nodeID;
 			this.controllerPort = port;
 			this.timestamp = timestamp;
+			this.distributedActuatorClientListener = distributedActuatorClientListener;
 		}
 		
 		public DistributedActuatorClientListener getDistributedActuatorClientListener() {
@@ -352,21 +363,22 @@ public class DistributedActuatorClient extends Thread{
 	}
 	
 	
-	private class ResiliencyHandler extends Thread {
+	private class ResilienceHandler extends Thread {
 		
 		@Override
 	    public void run() {
 			while (open) {
 				try {
-					sleep(10*1000);
+					sleep(5*1000);
+                    System.out.println("DistributedActuatorClientPacketHandler.ResilienceHandler");
 					for (String appName: appDB.keySet()) {
 						AppDescriptor appDescriptor = appDB.get(appName);
-						long lastTimeout = appDescriptor.getTimestamp();
-						if ((System.currentTimeMillis()-lastTimeout) > (60*1000)) {
-							appDescriptor.getDistributedActuatorClientListener().activateResilience();
+						Long lastTimeout = appDescriptor.getTimestamp();
+						if ( lastTimeout == null || (System.currentTimeMillis()-lastTimeout) > (20*1000) ) {
 							
 							// look for another service with the same app name
 							boolean ok = registerNewApp(appName, appDescriptor.getDistributedActuatorClientListener());
+							
 							if(!ok){
 								appDescriptor.setControllerNodeId(null);
 								appDescriptor.setControllerPort(null);
