@@ -4,11 +4,13 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
+import android.R.integer;
 import it.unibo.deis.lia.ramp.core.e2e.BoundReceiveSocket;
 import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
@@ -38,7 +40,7 @@ public class DistributedActuatorService extends Thread {
 	    serviceSocket = E2EComm.bindPreReceive(protocol);
 
 	    ServiceManager.getInstance(false).registerService(
-	    		"DistribuitedActuator",
+	    		"DistributedActuator",
 	    		serviceSocket.getLocalPort(),
 	    		protocol
 			);
@@ -109,12 +111,14 @@ public class DistributedActuatorService extends Thread {
 										serviceSocket.getLocalPort(),
 										appName))
 						);
+				System.out.println("DistributedActuatorService.sendCommand: sent packet PRE_COMMAND");
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
     	
     	try {
+    		System.out.println("DistributedActuatorService.sendCommand: waiting for " + timeToWait + " milliseconds");
 			sleep(timeToWait);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -129,8 +133,10 @@ public class DistributedActuatorService extends Thread {
     			activeNodes.add(nodeID);
     		}
     	}
-    	
+    	System.out.println("DistributedActuatorService.sendCommand: founded n " + nActiveNodes + " active nodes");
+    	System.out.println("DistributedActuatorService.sendCommand: list of active nodes " + Arrays.toString(activeNodes.toArray()));
     	if ((nActiveNodes/nodes.size()) > threshold) {
+    		System.out.println("DistributedActuatorService.sendCommand: outdated threshold");
     		for(int nodeID : activeNodes) {
     			ClientDescriptor node = nodes.get(nodeID);
     			Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(nodeID, 5*1000);
@@ -152,6 +158,7 @@ public class DistributedActuatorService extends Thread {
     										appName, 
     										command))
     						);
+    				System.out.println("DistributedActuatorService.sendCommand: sent packet COMMAD=" + command);
     			} catch (Exception e) {
     				e.printStackTrace();
     			}
@@ -206,20 +213,25 @@ public class DistributedActuatorService extends Thread {
 	                    DistributedActuatorRequest request = (DistributedActuatorRequest) payload;
 	                    switch (request.getType()) {
 		                    case HERE_I_AM:
+		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest HERE_I_AM");
 		                    	ClientDescriptor cd = appDB.get(request.getAppName(), up.getSourceNodeId());
 		                    	cd.setLastUpdate(System.currentTimeMillis());
 		                    	break;
 		                    case JOIN:
+		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest JOIN");
 		                    	appDB.put(request.getAppName(), up.getSourceNodeId(),
 		                    			new ClientDescriptor(request.getPort(), 
 		                    					System.currentTimeMillis()));
 		                    	break;
 		                    case LEAVE:
+		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest LEAVE");
 		                    	appDB.removeK2(request.getAppName(), up.getSourceNodeId());
 		                    	break;
 		                    case WHICH_APP:
+		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest WHICH_aAPP");
 		                    	Set<String> sAppNames = appDB.getK1();
 		                    	String[] aAppNames = sAppNames.toArray(new String[sAppNames.size()]);
+		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest aAppNames:" + Arrays.toString(aAppNames));
 		                    	DistributedActuatorRequest dar = new DistributedActuatorRequest(
 		                    			Type.AVAILABLE_APPS,
 		                    			serviceSocket.getLocalPort(),
@@ -238,6 +250,7 @@ public class DistributedActuatorService extends Thread {
 			            					GenericPacket.UNUSED_FIELD,
 			            					E2EComm.serialize(dar)
 			            					);
+			                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest sent packet AVAILABLE_APPS");
 		                    	} catch (Exception e) {
 		            	            e.printStackTrace();
 		            	        }
