@@ -1,4 +1,4 @@
-package it.unibo.deis.lia.ramp.service.application;
+package it.unibo.deis.lia.ramp.core.internode;
 
 import java.io.IOException;
 import java.net.SocketException;
@@ -12,19 +12,17 @@ import it.unibo.deis.lia.ramp.core.e2e.BoundReceiveSocket;
 import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
-import it.unibo.deis.lia.ramp.core.internode.Resolver;
-import it.unibo.deis.lia.ramp.core.internode.ResolverPath;
-import it.unibo.deis.lia.ramp.service.application.DistributedActuatorRequest.Type;
+import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorRequest.Type;
 import it.unibo.deis.lia.ramp.service.management.ServiceDiscovery;
 import it.unibo.deis.lia.ramp.service.management.ServiceResponse;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 
 
-public class DistributedActuatorClientNoGUI extends Thread{
+public class DistributedActuatorClient extends Thread{
 
     private boolean open;
     
-	private static DistributedActuatorClientNoGUI distributedActuatorClient = null;
+	private static DistributedActuatorClient distributedActuatorClient = null;
 
     private static BoundReceiveSocket clientSocket;
     private int protocol = E2EComm.TCP;
@@ -33,10 +31,10 @@ public class DistributedActuatorClientNoGUI extends Thread{
  	private Hashtable<String, AppDescriptor> appDB = new Hashtable<String, AppDescriptor>();
     
  	
-	public static synchronized DistributedActuatorClientNoGUI getInstance() {
+	public static synchronized DistributedActuatorClient getInstance() {
     	try {
         	if (distributedActuatorClient == null) {
-				distributedActuatorClient = new DistributedActuatorClientNoGUI(false);
+				distributedActuatorClient = new DistributedActuatorClient(false);
 	        	distributedActuatorClient.start();
         	}
 		} catch (Exception e) {
@@ -45,13 +43,13 @@ public class DistributedActuatorClientNoGUI extends Thread{
         return distributedActuatorClient;
     }
 	
-	private DistributedActuatorClientNoGUI(boolean gui) throws Exception {
+	private DistributedActuatorClient(boolean gui) throws Exception {
 		open = true;
         clientSocket = E2EComm.bindPreReceive(protocol);
 	}
 	
     public void stopClient(){
-        System.out.println("DistributedActuatorClientNoGUI stop");
+        System.out.println("DistributedActuatorClient stop");
         open = false;
         try {
             clientSocket.close();
@@ -63,19 +61,19 @@ public class DistributedActuatorClientNoGUI extends Thread{
 	@Override
     public void run(){
 		try{
-            System.out.println("DistributedActuatorClientNoGUI START");
-            GeneralUtils.appendLog("DistributedActuatorClientNoGUI START " + 
+            System.out.println("DistributedActuatorClient START");
+            GeneralUtils.appendLog("DistributedActuatorClient START " + 
             		clientSocket.getLocalPort() + " " + protocol);
             new ResiliencyHandler().start();
             while(open){
                 try{
                     // receive
                     GenericPacket gp = E2EComm.receive(clientSocket, 5*1000);
-                    //System.out.println("DistributedActuatorClientNoGUI new request");
+                    //System.out.println("DistributedActuatorClient new request");
                     new PacketHandler(gp).start();
                 }
                 catch(SocketTimeoutException ste){
-                    //System.out.println("DistributedActuatorClientNoGUI SocketTimeoutException");
+                    //System.out.println("DistributedActuatorClient SocketTimeoutException");
                 }
             }
             clientSocket.close();
@@ -87,8 +85,8 @@ public class DistributedActuatorClientNoGUI extends Thread{
             e.printStackTrace();
         }
         distributedActuatorClient = null;
-        System.out.println("DistributedActuatorClientNoGUI FINISHED");
-        GeneralUtils.appendLog("DistributedActuatorClientNoGUI FINISHED");
+        System.out.println("DistributedActuatorClient FINISHED");
+        GeneralUtils.appendLog("DistributedActuatorClient FINISHED");
 	}
 	
 	public boolean registerNewApp(String appName, DistributedActuatorClientListener dcl) {

@@ -1,4 +1,4 @@
-package it.unibo.deis.lia.ramp.service.application;
+package it.unibo.deis.lia.ramp.core.internode;
 
 public interface DistributedActuatorClientListener {
 	

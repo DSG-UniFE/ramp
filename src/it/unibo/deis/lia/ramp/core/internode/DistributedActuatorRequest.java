@@ -1,6 +1,7 @@
-package it.unibo.deis.lia.ramp.service.application;
+package it.unibo.deis.lia.ramp.core.internode;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 public class DistributedActuatorRequest implements Serializable {
 	/**
@@ -99,4 +100,13 @@ public class DistributedActuatorRequest implements Serializable {
 		AVAILABLE_APPS, PRE_COMMAND, COMMAND,
 		HERE_I_AM, JOIN, LEAVE, WHICH_APP
 	}
+
+
+	@Override
+	public String toString() {
+		return "DistributedActuatorRequest [type=" + type + ", appName=" + appName + ", appNames="
+				+ Arrays.toString(appNames) + ", command=" + command + ", port=" + port + ", nodeID=" + nodeID + "]";
+	}
+	
+	
 }
