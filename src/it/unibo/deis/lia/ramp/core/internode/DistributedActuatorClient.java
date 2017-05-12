@@ -192,9 +192,10 @@ public class DistributedActuatorClient extends Thread{
 	
 	public void leave(String appName) {
         System.out.println("DistributedActuatorClient leave appName: " + appName);
-		AppDescriptor controller = appDB.get(appName);
-		Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(controller.getControllerNodeId(), 5*1000);
 		try {
+			AppDescriptor controller = appDB.get(appName);
+			System.out.println("DistributedActuatorClient.leave controller: " + controller);
+			Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(controller.getControllerNodeId(), 5*1000);
 			// TODO check sendUnicast
 			E2EComm.sendUnicast(
 					paths.firstElement().getPath(),
@@ -358,6 +359,12 @@ public class DistributedActuatorClient extends Thread{
 		}
 		public void setTimestamp(Long timestamp) {
 			this.timestamp = timestamp;
+		}
+		
+		@Override
+		public String toString() {
+			return "AppDescriptor [controllerNodeID=" + controllerNodeID + ", controllerPort=" + controllerPort
+					+ ", timestamp=" + timestamp + "]";
 		}
 		
 	}
