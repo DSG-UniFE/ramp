@@ -91,7 +91,7 @@ public class DistributedActuatorClientNoGUI extends Thread{
         GeneralUtils.appendLog("DistributedActuatorClientNoGUI FINISHED");
 	}
 	
-	public void registerNewApp(String appName, DistributedClientListener dcl) {
+	public boolean registerNewApp(String appName, DistributedActuatorClientListener dcl) {
 		Vector<ServiceResponse> services = findDistributedActuatorService(5, 5*1000, 5);
 		ArrayList<DistributedActuatorRequest> servicesReceived = new ArrayList<DistributedActuatorRequest>();
 		for(ServiceResponse service : services) {
@@ -152,7 +152,6 @@ public class DistributedActuatorClientNoGUI extends Thread{
 		for(DistributedActuatorRequest service : servicesReceived) {
 			for(String ser : service.getAppNames()) {
 				if (ser.equals(appName)) {
-					// TODO in questo caso è corretto fare in questo modo?
 					Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(service.getNodeID(), 5*1000);
 					if (bestControllerNearest > paths.size()) {
 						bestControllerNearest = paths.size();
@@ -173,6 +172,7 @@ public class DistributedActuatorClientNoGUI extends Thread{
 						System.currentTimeMillis()));
 				System.out.println("DistributedActuatorClient registerNewApp: added '" + 
 						appName + "', nodeID " + bestControllerNodeID);
+				return true;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -180,6 +180,7 @@ public class DistributedActuatorClientNoGUI extends Thread{
 			System.out.println("DistributedActuatorClient registerNewApp: no service found for '" + 
 					appName + "'");
 		}
+		return false;
 	}
 	
 	public void leave(String appName) {
@@ -271,6 +272,7 @@ public class DistributedActuatorClientNoGUI extends Thread{
 	                    switch (request.getType()) {
 		                    case PRE_COMMAND:
 		                    	try {
+		                    		appDB.get(request.getAppName()).setTimestamp(System.currentTimeMillis());
 		                    		// TODO check sendUnicast
 			                    	E2EComm.sendUnicast(
 			                    			E2EComm.ipReverse(up.getSource()),
@@ -285,7 +287,8 @@ public class DistributedActuatorClientNoGUI extends Thread{
 		            	        }
 		                    	break;
 		                    case COMMAND:
-		                    	appDB.get(request.getAppName()).getDistributedClientListener().receivedCommand(request);
+	                    		appDB.get(request.getAppName()).setTimestamp(System.currentTimeMillis());
+		                    	appDB.get(request.getAppName()).getDistributedActuatorClientListener().receivedCommand(request);
 								break;
 							default:
 								// received wrong type of request: do nothing...
@@ -312,10 +315,10 @@ public class DistributedActuatorClientNoGUI extends Thread{
 	
 	private class AppDescriptor{
 		
-		private int controllerNodeID;
-		private int controllerPort;
-		private long timestamp; // unix epoch
-		private DistributedClientListener distributedClientListener;
+		private Integer controllerNodeID = null;
+		private Integer controllerPort = null;
+		private Long timestamp = null; // unix epoch
+		private DistributedActuatorClientListener distributedActuatorClientListener;
 		
 		protected AppDescriptor(int nodeID, int port, long timestamp) {
 			this.controllerNodeID = nodeID;
@@ -323,28 +326,28 @@ public class DistributedActuatorClientNoGUI extends Thread{
 			this.timestamp = timestamp;
 		}
 		
-		public DistributedClientListener getDistributedClientListener() {
-			return distributedClientListener;
+		public DistributedActuatorClientListener getDistributedActuatorClientListener() {
+			return distributedActuatorClientListener;
 		}
-		public void setDistributedClientListener(DistributedClientListener distributedClientListener) {
-			this.distributedClientListener = distributedClientListener;
+		public void setDistributedActuatorClientListener(DistributedActuatorClientListener distributedActuatorClientListener) {
+			this.distributedActuatorClientListener = distributedActuatorClientListener;
 		}
-		public int getControllerNodeId() {
+		public Integer getControllerNodeId() {
 			return controllerNodeID;
 		}
-		public void setControllerNodeId(int controllerNodeId) {
+		public void setControllerNodeId(Integer controllerNodeId) {
 			this.controllerNodeID = controllerNodeId;
 		}
-		public int getControllerPort() {
+		public Integer getControllerPort() {
 			return controllerPort;
 		}
-		public void setControllerPort(int controllerPort) {
+		public void setControllerPort(Integer controllerPort) {
 			this.controllerPort = controllerPort;
 		}
-		public long getTimestamp() {
+		public Long getTimestamp() {
 			return timestamp;
 		}
-		public void setTimestamp(long timestamp) {
+		public void setTimestamp(Long timestamp) {
 			this.timestamp = timestamp;
 		}
 		
@@ -362,9 +365,16 @@ public class DistributedActuatorClientNoGUI extends Thread{
 						AppDescriptor appDescriptor = appDB.get(appName);
 						long lastTimeout = appDescriptor.getTimestamp();
 						if ((System.currentTimeMillis()-lastTimeout) > (60*1000)) {
-							appDescriptor.getDistributedClientListener().activateResilience();
-
-							// TODO look for another service whith the same app name
+							appDescriptor.getDistributedActuatorClientListener().activateResilience();
+							
+							// look for another service with the same app name
+							boolean ok = registerNewApp(appName, appDescriptor.getDistributedActuatorClientListener());
+							if(!ok){
+								appDescriptor.setControllerNodeId(null);
+								appDescriptor.setControllerPort(null);
+								appDescriptor.setTimestamp(null);
+								appDescriptor.getDistributedActuatorClientListener().activateResilience();
+							}
 						}
 					}
 				} catch (InterruptedException e) {

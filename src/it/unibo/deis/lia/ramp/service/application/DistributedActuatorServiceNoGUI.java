@@ -87,14 +87,13 @@ public class DistributedActuatorServiceNoGUI extends Thread {
     /**
 	 * @param threshold value from 0 to 1
 	 */
-    public void sendCommand(String appName, String command, int timeToWait, int threshold) {
+    public void sendCommand(String appName, String command, int timeToWait, float threshold) { // "primaryValue=xxx,resilience=yyy"
     	Hashtable<Integer, ClientDescriptor> nodes = appDB.getK2(appName);
     	for(int nodeID : nodes.keySet()) {
 			ClientDescriptor node = nodes.get(nodeID);
 			Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(nodeID, 5*1000);
 			try {
 				E2EComm.sendUnicast(
-						// TODO e' corretto il recupero del path?
 						paths.firstElement().getPath(),
 						nodeID, 
 						node.getPort(), 
@@ -122,7 +121,7 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 			e.printStackTrace();
 		}
     	
-    	int nActiveNodes = 0;
+    	float nActiveNodes = 0;
     	ArrayList<Integer> activeNodes = new ArrayList<Integer>();
     	for(int nodeID : nodes.keySet()) {
     		ClientDescriptor node = nodes.get(nodeID);
@@ -227,16 +226,9 @@ public class DistributedActuatorServiceNoGUI extends Thread {
 		                    			serviceSocket.getLocalPort(),
 		                    			aAppNames);
 		                    	try {
-		                    		// TODO Possible error, I have to use the socket client
-//			                    	E2EComm.sendUnicast(
-//			                    			E2EComm.ipReverse(up.getSource()),
-//		                        			request.getPort(),
-//		                        			protocol,
-//		                        			E2EComm.serialize(dar));
 			                    	E2EComm.sendUnicast(
 			                    			E2EComm.ipReverse(up.getSource()),
-			            					// TODO inserire nodeID del service
-			                    			nodeID,
+			                    			up.getSourceNodeId(),
 		                        			request.getPort(),
 			            					E2EComm.TCP,
 			            					false, 
