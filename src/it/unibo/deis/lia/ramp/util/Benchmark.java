@@ -13,8 +13,9 @@ import it.unibo.deis.lia.ramp.RampEntryPoint;
 
 public class Benchmark {
 	
-	private String filename;
+	private String filename = "benchmark";
 	private ArrayList<String> benchmarksList;
+	private String bench_dir = "temp/benchmark";
 	private static SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private static SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 	private static SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss");
@@ -23,28 +24,42 @@ public class Benchmark {
 		this.benchmarksList  = new ArrayList<String>();
 		this.setFilename(filename);
 		this.createDirectory();
+		this.createFile();
 		
 	}
 	
 	private void createDirectory() { 
 		if (RampEntryPoint.getAndroidContext() != null) {
-			File androidShareDirectory = new File(android.os.Environment.getExternalStorageDirectory() + "/ramp");
-			if(!androidShareDirectory.exists())
-				androidShareDirectory.mkdirs();
-			
-			String logDirectory = androidShareDirectory.getAbsolutePath() + "/benchmark";
-		    File dir = new File(logDirectory);
-		    if(!dir.exists())
-		    	dir.mkdir();
+			bench_dir = android.os.Environment.getExternalStorageDirectory() + "/benchmark";
+			File dir = new File(bench_dir);
+			if(!dir.exists())
+				dir.mkdirs();
 		}
 	 }
 
+	private void createFile() {
+		Calendar date = Calendar.getInstance();
+		CSVWriter writer;
+		try {
+//			writer = new CSVWriter(new FileWriter(DATE_TIME_FORMAT.format(date.getTime()) + "-" + filename + ".csv"), ';');
+			String filenameSaved = bench_dir + filename + ".csv";
+			writer = new CSVWriter(new FileWriter(filenameSaved, true), ';');
+			// feed in your array (or convert your data to an array)
+		    String[] entries = "Date#Time#Milliseconds#Type#Packet ID#Sender#Recipient".split("#");
+		    writer.writeNext(entries);    
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public void writeFile() {
 		if (RampEntryPoint.getAndroidContext() != null) {
 			Calendar date = Calendar.getInstance();
 		       
 			CSVWriter writer;
 			try {
+				
 				writer = new CSVWriter(new FileWriter(DATE_TIME_FORMAT.format(date.getTime()) + filename + ".csv"), ';');
 				// feed in your array (or convert your data to an array)
 			    String[] entries = "Date#Time#Packet ID#Sender#Recipient".split("#");
@@ -56,9 +71,27 @@ public class Benchmark {
 			    
 				writer.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+	}
+	
+	public void appendBench(Calendar date, String packetId, String sender, String recipient) {
+		// long millis = System.currentTimeMillis();
+		String row = DATE_FORMAT.format(date.getTime()) + "#" + 
+				TIME_FORMAT.format(date.getTime()) + "#" +
+				packetId + "#" +
+				sender + "#" +
+				recipient;
+		
+		CSVWriter writer;
+		try {
+			String filenameSaved = bench_dir + filename + ".csv";
+			writer = new CSVWriter(new FileWriter(filenameSaved, true), ';');
+	    	writer.writeNext(row.split("#"));
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -70,9 +103,13 @@ public class Benchmark {
 		this.filename = filename;
 	}
 
-	public void addBenchmark(Calendar date, String packetId, String sender, String recipient) {
+	public void addBenchmark(Calendar date, long millis, String type, 
+			String packetId, String sender, String recipient) {
+		// long millis = System.currentTimeMillis();
 		String row = DATE_FORMAT.format(date.getTime()) + "#" + 
 				TIME_FORMAT.format(date.getTime()) + "#" +
+				millis + "#" +
+				type + "#" +
 				packetId + "#" +
 				sender + "#" +
 				recipient;

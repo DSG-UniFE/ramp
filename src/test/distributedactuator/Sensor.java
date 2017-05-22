@@ -19,9 +19,9 @@ import it.unibo.deis.lia.ramp.util.ImageComparison;
 public class Sensor extends Thread implements DistributedActuatorClientListener {
 	
 	private static String IMG_PATH = "/tmp/images/img.jpg";
+	private static String SCRIPT_DIR = "/home/pi/workspace/";
 	private boolean open = false;
-	private float threshold;
-	private float resilience;
+	private float resilience = 40;
 	private String command = null;
 	BufferedImage oldImg = null;
 	
@@ -44,7 +44,7 @@ public class Sensor extends Thread implements DistributedActuatorClientListener 
 					double result = ImageComparison.imageDifference(oldImg, img);
 				    System.out.println("Difference: " +  new DecimalFormat("#.###").format(result) + "%");
 				    
-				    if (result > threshold) {
+				    if (result > resilience) {
 				    	System.out.println(">>>ATTENTION<<< The threshold exceeded");
 				    }
 				}
@@ -60,7 +60,7 @@ public class Sensor extends Thread implements DistributedActuatorClientListener 
 	@Override
 	public void activateResilience() {
 		System.out.println("Sensor.activateResilience");
-		// modify the threshold according to the saved resilience
+		setResilience(50);
 	}
 
 	@Override
@@ -80,13 +80,13 @@ public class Sensor extends Thread implements DistributedActuatorClientListener 
         commands.add("-c");
 
         // Add arguments
-        commands.add("python /home/pi/workspace/...");
+        commands.add(command);
         System.out.println(commands);
 
         try {
         	// Run macro on target
             ProcessBuilder pb = new ProcessBuilder(commands);
-            pb.directory(new File("/home/pi/workspace/..."));
+            pb.directory(new File(SCRIPT_DIR));
             pb.redirectErrorStream(true);
             Process process = pb.start();
             
@@ -103,7 +103,7 @@ public class Sensor extends Thread implements DistributedActuatorClientListener 
 			
 			// Check result
 			if (process.waitFor() == 0) {
-				System.out.println("Success!");
+//				System.out.println("Success!");
 //	            System.exit(0);
 			}
 			
@@ -116,14 +116,10 @@ public class Sensor extends Thread implements DistributedActuatorClientListener 
 		}
 	}
 	
-	public float getThreshold() {
-		return threshold;
+	public void stopSensor() {
+		setOpen(false);
 	}
-
-	public void setThreshold(float threshold) {
-		this.threshold = threshold;
-	}
-
+	
 	public float getResilience() {
 		return resilience;
 	}

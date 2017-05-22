@@ -133,7 +133,7 @@ public class DistributedActuatorService extends Thread {
     	}
     	System.out.println("DistributedActuatorService.sendCommand: founded n " + nActiveNodes + " active nodes");
     	System.out.println("DistributedActuatorService.sendCommand: list of active nodes " + Arrays.toString(activeNodes.toArray()));
-    	if ((nActiveNodes/nodes.size()) > threshold) {
+    	if ((nActiveNodes/nodes.size()) >= threshold) {
     		System.out.println("DistributedActuatorService.sendCommand: outdated threshold");
     		for(int nodeID : activeNodes) {
     			ClientDescriptor node = nodes.get(nodeID);
