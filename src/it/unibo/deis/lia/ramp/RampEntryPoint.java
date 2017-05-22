@@ -9,8 +9,6 @@ import android.os.Message;
 import it.unibo.deis.lia.ramp.core.internode.BufferSizeManager;
 import it.unibo.deis.lia.ramp.core.internode.ContinuityManager;
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
-import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorClient;
-import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorService;
 import it.unibo.deis.lia.ramp.core.internode.Heartbeater;
 import it.unibo.deis.lia.ramp.core.internode.Layer3RoutingManager;
 import it.unibo.deis.lia.ramp.core.internode.OpportunisticNetworkingManager;

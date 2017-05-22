@@ -95,10 +95,9 @@ public class DistributedActuatorClient extends Thread{
 		for(ServiceResponse service : services) {
 			try {
 				BoundReceiveSocket newAppSocket = E2EComm.bindPreReceive(service.getProtocol());
-				// TODO check sendUnicast
 				E2EComm.sendUnicast(
 		                service.getServerDest(),
-		                service.getServerPort(),//newAppSocket.getLocalPort(),
+		                service.getServerPort(),
 		                service.getProtocol(),
 		                E2EComm.serialize(new DistributedActuatorRequest(
 		                		DistributedActuatorRequest.Type.WHICH_APP, 
@@ -196,7 +195,6 @@ public class DistributedActuatorClient extends Thread{
 			AppDescriptor controller = appDB.get(appName);
 			System.out.println("DistributedActuatorClient.leave controller: " + controller);
 			Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(controller.getControllerNodeId(), 5*1000);
-			// TODO check sendUnicast
 			E2EComm.sendUnicast(
 					paths.firstElement().getPath(),
 					controller.getControllerNodeId(), 
@@ -240,7 +238,6 @@ public class DistributedActuatorClient extends Thread{
 	
 	private void join(String appName, int nodeID, int port) throws Exception {
 		Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(nodeID, 5*1000);
-		// TODO check sendUnicast
 		E2EComm.sendUnicast(
 				paths.firstElement().getPath(),
 				nodeID,
@@ -282,7 +279,6 @@ public class DistributedActuatorClient extends Thread{
 		                    case PRE_COMMAND:
 		                    	try {
 		                    		appDB.get(request.getAppName()).setTimestamp(System.currentTimeMillis());
-		                    		// TODO check sendUnicast
 			                    	E2EComm.sendUnicast(
 			                    			E2EComm.ipReverse(up.getSource()),
 		                        			appDB.get(request.getAppName()).getControllerPort(),

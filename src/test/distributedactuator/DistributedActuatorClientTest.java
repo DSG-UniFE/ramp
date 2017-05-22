@@ -2,8 +2,7 @@ package test.distributedactuator;
 
 import it.unibo.deis.lia.ramp.RampEntryPoint;
 import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorClient;
-import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorClientListener;
-import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorService;
+
 
 public class DistributedActuatorClientTest {
 
