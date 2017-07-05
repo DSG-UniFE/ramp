@@ -13,9 +13,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import android.content.Context;
-import android.net.wifi.WifiManager;
-
 
 /**
  * 
@@ -183,50 +180,13 @@ public class Dispatcher {
 	}
 
 	private String createLocalId() {
-//		String nodeId = null;
-		StringBuilder nodeId = null;
-		/*if (RampEntryPoint.getAndroidContext() != null) {
-			WifiManager wifi = (WifiManager) RampEntryPoint.getAndroidContext().getSystemService(Context.WIFI_SERVICE);
-//			nodeId = wifi.getConnectionInfo().getMacAddress();
-			nodeId = new StringBuilder(wifi.getConnectionInfo().getMacAddress());
-		} else {
-			try {
-				for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements() && (nodeId == null || nodeId.equals(""));) {
-					NetworkInterface intf = en.nextElement();
-					// System.out.println("Dispatcher.getInternalLocalNetworkAddresses intf: "+intf);
-					byte[] mac = intf.getHardwareAddress();
-					if ( mac != null && mac.length != 0 ) {
-//						nodeId = "";
-						nodeId = new StringBuilder();
-						for (int i = 0; i < mac.length; i++) {
-							if (((int) mac[i] & 0xff) < 0x10) {
-//								nodeId += "0";
-								nodeId.append("0");
-							}
-//							nodeId += Long.toString((int) mac[i] & 0xff, 16);
-							nodeId.append(Long.toString((int) mac[i] & 0xff, 16));
-							if (i < mac.length - 1) {
-//								nodeId += ":";
-								nodeId.append(":");
-							}
-						}
-					}
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		*/
+		String nodeId = RampEntryPoint.getRampProperty("nodeID");
 		if (nodeId == null) {
-			//Random r = new Random();
-			//float number = RampEntryPoint.nextRandomFloat();
-//			nodeId = "fakeNodeId_" + Math.round(number * 1000);
-			//nodeId = new StringBuilder("fakeNodeId_" + Math.round(number * 1000));
-			// TODO creare nuovo nodeId solo se non esiste un nodeId nel file di properties
-			nodeId = new StringBuilder(""+RampEntryPoint.nextRandomInt());
+			StringBuilder tmpNodeId = new StringBuilder("" + RampEntryPoint.nextRandomInt());
+			nodeId = tmpNodeId.toString();
+			RampEntryPoint.setRampProperty("nodeID", nodeId);
 		}
 
-//		return nodeId;
 		return nodeId.toString();
 	}
 	

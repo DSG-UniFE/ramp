@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -24,7 +25,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Properties;
-
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -256,15 +256,14 @@ public class GeneralUtils {
 	// ---------------------
 	
 	private static String propertiesPath = null;
-	static{
+	static {
 		propertiesPath = "./resources/ramp.props";
-		try{
-			if( android.os.Environment.getExternalStorageDirectory() != null ){
+		try {
+			if(android.os.Environment.getExternalStorageDirectory() != null) {
 				propertiesPath = android.os.Environment.getExternalStorageDirectory() + "/ramp/ramp.props";
 			}
-		}
-		catch(Exception e){
-			//e.printStackTrace();
+		} catch(Exception e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -277,57 +276,67 @@ public class GeneralUtils {
     }
     
 	public static void storeProperties(Properties properties) throws Exception{
-		FileReader fr = new FileReader(propertiesPath); // read the properties file first
-		BufferedReader br = new BufferedReader(fr);
 		StringBuilder sb = new StringBuilder();
-		String line = br.readLine();
-		while(line != null){
-			String toBeProcessed = "";
-			if(!line.startsWith("#") && !line.startsWith("!") && line.length() > 0){ // nor comment line or empty line
-				while(line != null && line.endsWith("\\")){ // multiple line entry
-					line = line.replace("\\", ""); 
+		try {
+			FileReader fr = new FileReader(propertiesPath); // read the properties file first
+			BufferedReader br = new BufferedReader(fr);
+			
+			String line = br.readLine();
+			while(line != null){
+				String toBeProcessed = "";
+				if(!line.startsWith("#") && !line.startsWith("!") && line.length() > 0){ // nor comment line or empty line
+					while(line != null && line.endsWith("\\")){ // multiple line entry
+						line = line.replace("\\", ""); 
+						toBeProcessed += line;
+						line = br.readLine();
+					}
 					toBeProcessed += line;
-					line = br.readLine();
+					if(toBeProcessed.contains(":")){ 
+						toBeProcessed = toBeProcessed.replace(":", "="); // use only = to separate key/value
+					}else if(!toBeProcessed.contains("=")){
+						toBeProcessed += "=";
+					}
+					if(!toBeProcessed.matches("^[^ ]+ = [^ ]*$"))
+						toBeProcessed = toBeProcessed.replaceFirst("([^ ]+).*=.*([^ ]*)", "$1 = $2"); // normalize format: key = value 
+					sb.append(toBeProcessed + "\n");
+				}else{
+					sb.append(line + "\n"); // keep comments and empty lines as is 
 				}
-				toBeProcessed += line;
-				if(toBeProcessed.contains(":")){ 
-					toBeProcessed = toBeProcessed.replace(":", "="); // use only = to separate key/value
-				}else if(!toBeProcessed.contains("=")){
-					toBeProcessed += "=";
+				line = br.readLine();
+			}
+			// now sb contains a normalized string copy of the file
+			fr.close();
+			br.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			HashMap<String, String> propertiesToAppend = new HashMap<String, String>();
+			for (String key : properties.stringPropertyNames()) { // foreach key
+				String value = properties.getProperty(key);
+				int valueStartIndex = sb.indexOf(key + " = "); // find start position of the key in the sb
+				if(valueStartIndex == -1){ // property not found in the properties file
+					propertiesToAppend.put(key, value); // append later at the end
+					continue;
 				}
-				if(!toBeProcessed.matches("^[^ ]+ = [^ ]*$"))
-					toBeProcessed = toBeProcessed.replaceFirst("([^ ]+).*=.*([^ ]*)", "$1 = $2"); // normalize format: key = value 
-				sb.append(toBeProcessed + "\n");
-			}else{
-				sb.append(line + "\n"); // keep comments and empty lines as is 
+				// property found in the properties file
+				int valueEndIndex = sb.indexOf("\n", valueStartIndex);
+				valueStartIndex =  sb.indexOf("=", valueStartIndex) + 2;
+				sb.replace(valueStartIndex, valueEndIndex, value); // update the actual value in the sb
 			}
-			line = br.readLine();
-		}
-		// now sb contains a normalized string copy of the file
-		fr.close();
-		br.close();
-		HashMap<String, String> propertiesToAppend = new HashMap<String, String>();
-		for (String key : properties.stringPropertyNames()) { // foreach key
-			String value = properties.getProperty(key);
-			int valueStartIndex = sb.indexOf(key + " = "); // find start position of the key in the sb
-			if(valueStartIndex == -1){ // property not found in the properties file
-				propertiesToAppend.put(key, value); // append later at the end
-				continue;
+			if(propertiesToAppend.size() > 0){
+				sb.append("\n# Appended configuration \n");
+				for (String key : propertiesToAppend.keySet()) {
+					sb.append(key + " = " + propertiesToAppend.get(key) + "\n");
+				}
 			}
-			// property found in the properties file
-			int valueEndIndex = sb.indexOf("\n", valueStartIndex);
-			valueStartIndex =  sb.indexOf("=", valueStartIndex) + 2;
-			sb.replace(valueStartIndex, valueEndIndex, value); // update the actual value in the sb
+			FileOutputStream fos = new FileOutputStream(propertiesPath, false); // write back to the properties file
+			fos.write(sb.toString().getBytes());
+			fos.close();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		if(propertiesToAppend.size() > 0){
-			sb.append("\n# Appended configuration \n");
-			for (String key : propertiesToAppend.keySet()) {
-				sb.append(key + " = " + propertiesToAppend.get(key) + "\n");
-			}
-		}
-		FileOutputStream fos = new FileOutputStream(propertiesPath, false); // write back to the properties file
-		fos.write(sb.toString().getBytes());
-		fos.close();
     }
 	
 	// ---------------------
@@ -388,4 +397,5 @@ public class GeneralUtils {
 		    }
 		}
 	 }
+	
 }

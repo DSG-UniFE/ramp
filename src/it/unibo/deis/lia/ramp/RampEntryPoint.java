@@ -50,9 +50,6 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javax.crypto.Cipher;
 
 import org.apache.log4j.xml.DOMConfigurator;
