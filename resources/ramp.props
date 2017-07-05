@@ -90,3 +90,6 @@ contentDirectoryCP = it.unibo.deis.lia.upnp.controlpoint.ContentDirectoryControl
 genericCP = it.unibo.deis.lia.upnp.controlpoint.GenericControlPoint
 
 upnpMoreInfos = false
+
+# Appended configuration 
+nodeID = 277594165
