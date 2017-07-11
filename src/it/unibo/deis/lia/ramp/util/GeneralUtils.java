@@ -265,100 +265,95 @@ public class GeneralUtils {
 	static {
 		propertiesPath = "./resources/ramp.props";
 		try {
-			if (RampEntryPoint.getAndroidContext() != null) {
-				if (android.os.Environment.getExternalStorageDirectory() != null) {
-					propertiesPath = android.os.Environment.getExternalStorageDirectory() + "/ramp/ramp.props";
-				}
+			if (isAndroidContext()) {
+				propertiesPath = android.os.Environment.getExternalStorageDirectory() + "/ramp/ramp.props";
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static Properties loadProperties() throws Exception {
+	public static Properties loadProperties() {
+		prepareAndroidContext();
+
 		Properties properties = new Properties();
-		FileInputStream file = new FileInputStream(propertiesPath);
-		properties.load(new FileReader(propertiesPath));
-		file.close();
+		try {
+			FileInputStream file = new FileInputStream(propertiesPath);
+			properties.load(new FileReader(propertiesPath));
+			file.close();
+		} catch (FileNotFoundException e) {
+			System.out.println("GeneralUtils, loadProperties(): impossible to find, " + propertiesPath);
+			System.out.println("Cannot load RAMP properties: initializing...");
+		} catch (Exception e) {
+			System.out.println("Cannot load RAMP properties: initializing...");
+		}
 		return properties;
 	}
 
 	public static void storeProperties(Properties properties) throws Exception {
+		prepareAndroidContext();
+
 		StringBuilder sb = new StringBuilder();
 		try {
-			FileReader fr = new FileReader(propertiesPath); // read the
-															// properties file
-															// first
+			// Read the properties file first
+			FileReader fr = new FileReader(propertiesPath);
 			BufferedReader br = new BufferedReader(fr);
 
 			String line = br.readLine();
 			while (line != null) {
 				String toBeProcessed = "";
-				if (!line.startsWith("#") && !line.startsWith("!") && line.length() > 0) { // nor
-																							// comment
-																							// line
-																							// or
-																							// empty
-																							// line
-					while (line != null && line.endsWith("\\")) { // multiple
-																	// line
-																	// entry
+				// nor comment line or empty line
+				if (!line.startsWith("#") && !line.startsWith("!") && line.length() > 0) {
+					// Multiple line entry
+					while (line != null && line.endsWith("\\")) {
 						line = line.replace("\\", "");
 						toBeProcessed += line;
 						line = br.readLine();
 					}
 					toBeProcessed += line;
 					if (toBeProcessed.contains(":")) {
-						toBeProcessed = toBeProcessed.replace(":", "="); // use
-																			// only
-																			// =
-																			// to
-																			// separate
-																			// key/value
+						// Use only = to separate key/value
+						toBeProcessed = toBeProcessed.replace(":", "=");
 					} else if (!toBeProcessed.contains("=")) {
 						toBeProcessed += "=";
 					}
 					if (!toBeProcessed.matches("^[^ ]+ = [^ ]*$"))
-						toBeProcessed = toBeProcessed.replaceFirst("([^ ]+).*=.*([^ ]*)", "$1 = $2"); // normalize
-																										// format:
-																										// key
-																										// =
-																										// value
+						// Normalize format: key = value
+						toBeProcessed = toBeProcessed.replaceFirst("([^ ]+).*=.*([^ ]*)", "$1 = $2");
 					sb.append(toBeProcessed + "\n");
 				} else {
-					sb.append(line + "\n"); // keep comments and empty lines as
-											// is
+					// Keep comments and empty lines as is
+					sb.append(line + "\n");
 				}
 				line = br.readLine();
 			}
-			// now sb contains a normalized string copy of the file
+			// Now sb contains a normalized string copy of the file
 			fr.close();
 			br.close();
 		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+			System.out.println("GeneralUtils, storeProperties(): impossible to find " + propertiesPath);
 		}
 
 		try {
 			HashMap<String, String> propertiesToAppend = new HashMap<String, String>();
-			for (String key : properties.stringPropertyNames()) { // foreach key
+			for (String key : properties.stringPropertyNames()) {
+				// foreach key
 				String value = properties.getProperty(key);
-				int valueStartIndex = sb.indexOf(key + " = "); // find start
-																// position of
-																// the key in
-																// the sb
-				if (valueStartIndex == -1) { // property not found in the
-												// properties file
-					propertiesToAppend.put(key, value); // append later at the
-														// end
+				// Find start position of the key in the sb
+				int valueStartIndex = sb.indexOf(key + " = ");
+				if (valueStartIndex == -1) {
+					// Property not found in the properties file
+					System.out.println("valueStartIndex: Property not found in the properties file, valueStartIndex "
+							+ valueStartIndex);
+					// Append later at the end
+					propertiesToAppend.put(key, value);
 					continue;
 				}
 				// property found in the properties file
 				int valueEndIndex = sb.indexOf("\n", valueStartIndex);
 				valueStartIndex = sb.indexOf("=", valueStartIndex) + 2;
-				sb.replace(valueStartIndex, valueEndIndex, value); // update the
-																	// actual
-																	// value in
-																	// the sb
+				// Update the actual value in the sb
+				sb.replace(valueStartIndex, valueEndIndex, value);
 			}
 			if (propertiesToAppend.size() > 0) {
 				sb.append("\n# Appended configuration \n");
@@ -366,12 +361,8 @@ public class GeneralUtils {
 					sb.append(key + " = " + propertiesToAppend.get(key) + "\n");
 				}
 			}
-			FileOutputStream fos = new FileOutputStream(propertiesPath, false); // write
-																				// back
-																				// to
-																				// the
-																				// properties
-																				// file
+			// Write back to the properties file
+			FileOutputStream fos = new FileOutputStream(propertiesPath, false);
 			fos.write(sb.toString().getBytes());
 			fos.close();
 		} catch (Exception e) {
@@ -384,42 +375,18 @@ public class GeneralUtils {
 	// ---------------------
 
 	public static void appendLog(String text) {
-		if (RampEntryPoint.getAndroidContext() != null) {
-			File androidShareDirectory = new File(android.os.Environment.getExternalStorageDirectory() + "/ramp");
-			if (!androidShareDirectory.exists())
-				androidShareDirectory.mkdirs();
+		if (isAndroidContext()) {
+			prepareAndroidContext();
 
-			// This prevents media scanner from reading your media files and
-			// providing them to other apps through the MediaStore content
-			// provider.
-			File file = new File(androidShareDirectory.getAbsolutePath(), ".nomedia");
-			if (!file.exists()) {
-				try {
-					FileOutputStream out = new FileOutputStream(file);
-					out.flush();
-					out.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-
-			String logDirectory = androidShareDirectory.getAbsolutePath() + "/log";
-			File dir = new File(logDirectory);
-			if (!dir.exists())
-				dir.mkdir();
-
-			File logFile = new File(logDirectory + "/log.txt");
-
-			if (!logFile.exists()) {
-				try {
-					logFile.createNewFile();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
 			try {
-				// BufferedWriter for performance, true to set append to file
-				// flag
+				String logDirectory = android.os.Environment.getExternalStorageDirectory() + "/ramp/logs";
+				File logFile = new File(logDirectory + "/log.txt");
+				if (!logFile.exists()) {
+					logFile.createNewFile();
+				}
+
+				// BufferedWriter for performance, true to set append to
+				// file flag
 				BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
 
 				Calendar date = Calendar.getInstance();
@@ -433,10 +400,47 @@ public class GeneralUtils {
 				buf.append(log);
 				buf.newLine();
 				buf.close();
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	public static void prepareAndroidContext() {
+		if (isAndroidContext()) {
+			try {
+				File androidShareDirectory = new File(android.os.Environment.getExternalStorageDirectory() + "/ramp");
+				if (!androidShareDirectory.exists())
+					androidShareDirectory.mkdirs();
+
+				// This prevents media scanner from reading your media files and
+				// providing them to other apps through the MediaStore content
+				// provider.
+				File file = new File(androidShareDirectory.getAbsolutePath(), "/.nomedia");
+				if (!file.exists()) {
+					FileOutputStream out = new FileOutputStream(file);
+					out.flush();
+					out.close();
+				}
+
+				File dir = new File(androidShareDirectory.getAbsolutePath() + "/logs");
+				if (!dir.exists())
+					dir.mkdir();
+
+				propertiesPath = androidShareDirectory.getAbsolutePath() + "/ramp.props";
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public static boolean isAndroidContext() {
+		if (RampEntryPoint.getAndroidContext() != null) {
+			if (android.os.Environment.getExternalStorageDirectory() != null) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }
