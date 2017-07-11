@@ -68,25 +68,27 @@ public class GeneralUtils {
 	// Find my ip methods
 	// --------------------
 
-	private static String[] urlIpRresolvers;/*
-											 * = {
-											 * "http://deis170.deis.unibo.it:8080/getPublicIpAddr",
-											 * "http://myip.dnsdynamic.org/" };
-											 */
-	// static{
-	// Properties properties = new Properties();
-	// try {
-	// properties.load(new FileInputStream("./resources/relay.props"));
-	// String protocol = properties.getProperty("publicip.protocol");
-	// String ip = properties.getProperty("publicip.ip");
-	// String port = properties.getProperty("publicip.port");
-	// urlIpRresolvers = new String[2];
-	// urlIpRresolvers[0] = protocol+"://"+ip+":"+port+"/fbrelay";
-	// urlIpRresolvers[1] = "http://myip.dnsdynamic.org/";
-	// } catch (IOException e) {
-	// e.printStackTrace();
-	// }
-	// }
+	private static String[] urlIpRresolvers;
+	/*
+	 * = {
+	 * 		"http://deis170.deis.unibo.it:8080/getPublicIpAddr",
+	 * 		"http://myip.dnsdynamic.org/" };
+	 */
+	
+//	static{
+//		Properties properties = new Properties();
+//		try {
+//			properties.load(new FileInputStream("./resources/relay.props"));
+//			String protocol = properties.getProperty("publicip.protocol");
+//			String ip = properties.getProperty("publicip.ip");
+//			String port = properties.getProperty("publicip.port");
+//			urlIpRresolvers = new String[2];
+//			urlIpRresolvers[0] = protocol+"://"+ip+":"+port+"/fbrelay";
+//			urlIpRresolvers[1] = "http://myip.dnsdynamic.org/";
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//	}
 
 	public static synchronized String getMyPublicIpString(boolean forceRefresh) {
 		if (myPublicIpAddressString == null || forceRefresh) {

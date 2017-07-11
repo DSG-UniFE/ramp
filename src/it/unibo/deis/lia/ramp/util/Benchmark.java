@@ -1,6 +1,7 @@
 package it.unibo.deis.lia.ramp.util;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -35,11 +36,30 @@ public class Benchmark {
 			if (RampEntryPoint.getAndroidContext() != null) {
 				System.out.println("--->SONO DENTRO");
 				if (android.os.Environment.getExternalStorageDirectory() != null) {
-					BENCH_DIR = android.os.Environment.getExternalStorageDirectory() + "/ramp/logs/";
+					BENCH_DIR = android.os.Environment.getExternalStorageDirectory() + "/ramp/";
 
 					File dir = new File(BENCH_DIR);
 					if (!dir.exists())
 						dir.mkdirs();
+
+					// This prevents media scanner from reading your media files
+					// and providing them to other apps through the MediaStore
+					// content provider.
+					File file = new File(android.os.Environment.getExternalStorageDirectory() + "/ramp/.nomedia");
+					if (!file.exists()) {
+						try {
+							FileOutputStream out = new FileOutputStream(file);
+							out.flush();
+							out.close();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+
+					BENCH_DIR = android.os.Environment.getExternalStorageDirectory() + "/ramp/logs/";
+					dir = new File(BENCH_DIR);
+					if (!dir.exists())
+						dir.mkdir();
 				}
 			} else {
 				if (Files.notExists(Paths.get(BENCH_DIR), LinkOption.NOFOLLOW_LINKS)) {
@@ -51,7 +71,7 @@ public class Benchmark {
 		}
 	}
 
-	public static void createFile() {
+	private static void createFile() {
 		createDirectory();
 
 		int nfiles = getNumberFiles(BENCH_DIR, ENDS_WITH, FILE_EXTENSION);
@@ -62,6 +82,17 @@ public class Benchmark {
 		System.out.println("FILENAME: " + FILENAME);
 		System.out.println("BENCH_DIR: " + BENCH_DIR);
 		System.out.println("BENCH_PATH: " + BENCH_PATH);
+
+		if (RampEntryPoint.getAndroidContext() != null) {
+			File benchFile = new File(BENCH_PATH);
+			if (!benchFile.exists()) {
+				try {
+					benchFile.createNewFile();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 
 		CSVWriter writer;
 		try {
@@ -79,6 +110,10 @@ public class Benchmark {
 
 	public static void appendBenchmark(int millis, String type, String packetId, String sender, String recipient) {
 		File lastFile = getLastFilename(BENCH_DIR, ENDS_WITH, FILE_EXTENSION);
+		if (lastFile == null) {
+			createFile();
+			lastFile = getLastFilename(BENCH_DIR, ENDS_WITH, FILE_EXTENSION);
+		}
 
 		Date date = new Date();
 		SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);

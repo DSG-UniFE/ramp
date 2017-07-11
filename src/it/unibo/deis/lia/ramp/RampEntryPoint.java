@@ -220,19 +220,14 @@ public class RampEntryPoint {
 							loadExistingCredentials();
 							System.out.println("RampEntryPoint.getInstance: trying to autostart as: " + username);
 							if (checkUserCredential(username, passwordHash)) {
-								// starting ERN -- STEFANO LANZONE
-								// SecureJoinEntrypoint sje =
-								// SecureJoinEntrypoint.getInstance(username);
-								// SecureJoinUser user = sje.getUser(username,
-								// passwordHash, username, passwordHash);
-								// if(user == null) // first time -> add it as
-								// GOD
-								// sje.addUser(username, passwordHash,
-								// SecureJoinUser.GOD_ROLE, 0);
-								//
-								// starting Social Observer
-								// SocialObserver.getInstance(username,
-								// passwordHash);
+//								 starting ERN -- STEFANO LANZONE
+//								 SecureJoinEntrypoint sje = SecureJoinEntrypoint.getInstance(username);
+//								 SecureJoinUser user = sje.getUser(username, passwordHash, username, passwordHash);
+//								 if(user == null) // first time -> add it as GOD
+//									 sje.addUser(username, passwordHash, SecureJoinUser.GOD_ROLE, 0);
+//
+//								 starting Social Observer
+//								 SocialObserver.getInstance(username, passwordHash);
 
 								// starting resource provider
 								ResourceProvider.getInstance();
@@ -273,7 +268,7 @@ public class RampEntryPoint {
 								+ RampEntryPoint.androidShareDirectory);
 					}
 
-					// FIXME Reload properties
+					// FIXME Reload properties for Android
 					rampProperties = GeneralUtils.loadProperties();
 
 					// start components
@@ -286,11 +281,11 @@ public class RampEntryPoint {
 				 * RampEntryPoint.osgiContext = (BundleContext) context; }
 				 */
 
-				// Provider[] providers = Security.getProviders();
-				// for (int i = 0; i < providers.length; i++) {
-				// System.out.println("providers[" + i + "] = " + providers[i] +
-				// " - " + providers[i].getInfo());
-				// }
+//				 Provider[] providers = Security.getProviders();
+//				 for (int i = 0; i < providers.length; i++) {
+//					 System.out.println("providers[" + i + "] = " + providers[i] +
+//							 " - " + providers[i].getInfo());
+//				 }
 
 				RampEntryPoint.ramp = new RampEntryPoint();
 
@@ -398,23 +393,25 @@ public class RampEntryPoint {
 				stat.executeUpdate("CREATE TABLE users (username, passhash)");
 				System.out.println("SQLite: users table does not exists. Creating it");
 			} catch (SQLException e) {
-				firstLogin = false; // table already exists (CREATE TABLE raises
-									// an SQLException)
+				// Table already exists (CREATE TABLE raises an SQLException)
+				firstLogin = false;
 			}
-			if (firstLogin) { // add credentials to the users table
+			if (firstLogin) {
+				// Add credentials to the users table
 				ps = conn.prepareStatement("INSERT INTO users VALUES (?, ?)");
 				ps.setString(1, username); // 1-based
 				ps.setBytes(2, passwordHash);
 				ps.execute();
 				System.out.println("Added username " + username + " to users table");
 				return true;
-			} else { // check if user and passhash are valid
+			} else {
+				// Check if user and passhash are valid
 				ps = conn.prepareStatement("SELECT * FROM users WHERE username=? AND passhash=?");
 				ps.setString(1, username); // 1-based
 				ps.setBytes(2, passwordHash);
 				rs = ps.executeQuery();
-				if (rs.next()) { // there is a row in the result set so the user
-									// is valid
+				if (rs.next()) {
+					// There is a row in the result set so the user is valid
 					System.out.println("Access granted to " + username);
 					return true;
 				}
@@ -444,12 +441,11 @@ public class RampEntryPoint {
 		java.lang.System.setProperty("java.net.preferIPv4Stack", "true");
 		java.lang.System.setProperty("java.net.preferIPv6Addresses", "false");
 
-		// rampProperties =
-		// GeneralUtils.loadProperties("./resources/ramp.props");
-		// System.out.println("RampEntryPoint rampProperties = " +
-		// rampProperties);
-		//
-		// logging = Boolean.parseBoolean(getRampProperty("logging"));
+//		rampProperties = GeneralUtils.loadProperties("./resources/ramp.props");
+//		System.out.println("RampEntryPoint rampProperties = " +
+//				rampProperties);
+//
+//		logging = Boolean.parseBoolean(getRampProperty("logging"));
 
 		if (RampEntryPoint.getAndroidContext() != null) {
 			WifiManager wifi = (WifiManager) RampEntryPoint.getAndroidContext()
@@ -483,8 +479,9 @@ public class RampEntryPoint {
 			ResourceDiscovery.deactivate();
 			ResourceProvider.deactivate();
 
-			// if(rampWebInterface!=null) rampWebInterface.deactivate();
-			// rampWebInterface = null;
+//			if(rampWebInterface!=null)
+//				rampWebInterface.deactivate();
+//			rampWebInterface = null;
 			if (serviceManager != null)
 				serviceManager.stopServiceManager();
 			serviceManager = null;
@@ -542,9 +539,10 @@ public class RampEntryPoint {
 		androidUIHandler.sendMessage(m);
 	}
 
-	/*
-	 * public static BundleContext getOsgiContext() { return osgiContext; }
-	 */
+
+//	public static BundleContext getOsgiContext() {
+//		return osgiContext;
+//	}
 
 	public void forceNeighborsUpdate() {
 		Thread t = new Thread(new Runnable() {
@@ -576,78 +574,81 @@ public class RampEntryPoint {
 
 	public ArrayList<String> getClients() {
 		ArrayList<String> res = new ArrayList<String>();
-		/*
-		 * if (osgiContext != null){ org.osgi.framework.Bundle[] bundles =
-		 * osgiContext.getBundles(); for (int i = 0; i < bundles.length; i++){
-		 * if( bundles[i].getSymbolicName().contains(
-		 * "it.unibo.deis.lia.ramp.osgi.service.application") &&
-		 * bundles[i].getSymbolicName().endsWith("Client") ){
-		 * System.out.println("" + bundles[i].getSymbolicName());
-		 * res.add(bundles[i].getSymbolicName().substring(48)); } } } else {
-		 */
-		try {
-			Class<?>[] classes = RampEntryPoint.getClasses("it.unibo.deis.lia.ramp.service.application");
 
-			for (int i = 0; i < classes.length; i++) {
-				String name = classes[i].getSimpleName();
-				if (name.endsWith("Client")) {
-					res.add(name);
+//		if (osgiContext != null) {
+//			org.osgi.framework.Bundle[] bundles = osgiContext.getBundles();
+//			for (int i = 0; i < bundles.length; i++){
+//				if( bundles[i].getSymbolicName().contains("it.unibo.deis.lia.ramp.osgi.service.application") &&
+//						bundles[i].getSymbolicName().endsWith("Client") ){
+//					System.out.println("" + bundles[i].getSymbolicName());
+//					res.add(bundles[i].getSymbolicName().substring(48));
+//					}
+//				}
+//		} else {
+			try {
+				Class<?>[] classes = RampEntryPoint.getClasses("it.unibo.deis.lia.ramp.service.application");
+
+				for (int i = 0; i < classes.length; i++) {
+					String name = classes[i].getSimpleName();
+					if (name.endsWith("Client")) {
+						res.add(name);
+					}
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		// }
+//		}
 		return res;
 	}
 
 	public ArrayList<String> getServices() {
 		ArrayList<String> res = new ArrayList<String>();
-		/*
-		 * if (osgiContext != null) { org.osgi.framework.Bundle[] bundles =
-		 * osgiContext.getBundles(); for (int i = 0; i < bundles.length; i++){
-		 * if(bundles[i].getSymbolicName().contains(
-		 * "it.unibo.deis.lia.ramp.osgi.service.application")&&bundles[i].
-		 * getSymbolicName().endsWith("Service")){ System.out.println("" +
-		 * bundles[i].getSymbolicName());
-		 * res.add(bundles[i].getSymbolicName().substring(48)); } } } else {
-		 */
-		try {
 
-			Class<?>[] classes = RampEntryPoint.getClasses("it.unibo.deis.lia.ramp.service.application");
-
-			for (int i = 0; i < classes.length; i++) {
-
-				String name = classes[i].getSimpleName();
-				if (name.endsWith("Service")) {
-					res.add(name);
-
+//		if (osgiContext != null) {
+//			org.osgi.framework.Bundle[] bundles = osgiContext.getBundles();
+//			for (int i = 0; i < bundles.length; i++){
+//				if(bundles[i].getSymbolicName().contains("it.unibo.deis.lia.ramp.osgi.service.application") &&
+//						bundles[i].getSymbolicName().endsWith("Service")) {
+//					System.out.println("" + bundles[i].getSymbolicName());
+//					res.add(bundles[i].getSymbolicName().substring(48));
+//				}
+//			}
+//		} else {
+			try {
+				Class<?>[] classes = RampEntryPoint.getClasses("it.unibo.deis.lia.ramp.service.application");
+				for (int i = 0; i < classes.length; i++) {
+					String name = classes[i].getSimpleName();
+					if (name.endsWith("Service")) {
+						res.add(name);
+					}
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		// }
+//		}
 		return res;
 	}
 
 	public void startClient(String className) {
-		/*
-		 * if (osgiContext != null) { try{ org.osgi.framework.Bundle[] bundles =
-		 * osgiContext.getBundles(); int i=0;
-		 * while(!bundles[i].getSymbolicName().contains(className)) i++;
-		 * bundles[i].start(); } catch (Exception e) {
-		 * System.out.println("Impossibile avviare il bundle "+e.getMessage());
-		 * } } else{
-		 */
-		try {
-			Class<?> c = Class.forName("it.unibo.deis.lia.ramp.service.application." + className);
-			Method m = c.getMethod("getInstance");
-			m.invoke(null, new Object[] {});
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		// }
+//		if (osgiContext != null) { 
+//			try{ 
+//				org.osgi.framework.Bundle[] bundles = osgiContext.getBundles(); 
+//				int i=0;
+//				while(!bundles[i].getSymbolicName().contains(className)) 
+//					i++;
+//				bundles[i].start(); 
+//			} catch (Exception e) {
+//				System.out.println("Impossibile avviare il bundle " + e.getMessage());
+//			} 
+//		} else {
+			try {
+				Class<?> c = Class.forName("it.unibo.deis.lia.ramp.service.application." + className);
+				Method m = c.getMethod("getInstance");
+				m.invoke(null, new Object[] {});
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+//		}
 	}
 
 	public void startService(String className) {
@@ -764,34 +765,34 @@ public class RampEntryPoint {
 		return classes;
 	}
 
-	// public void startUpnpProxyEntrypoint() {
-	// UpnpProxyEntrypoint.getInstance();
-	// }
-	// public void stopUpnpProxyEntrypoint() {
-	// UpnpProxyEntrypoint.deactivate();
-	// }
+//	 public void startUpnpProxyEntrypoint() {
+//		 UpnpProxyEntrypoint.getInstance();
+//	 }
+//	 public void stopUpnpProxyEntrypoint() {
+//		 UpnpProxyEntrypoint.deactivate();
+//	 }
 
-	// public void startSecureJoinEntrypoint(String username) {
-	// try {
-	// SecureJoinEntrypoint.getInstance(username);
-	// } catch (Exception e) {
-	// e.printStackTrace();
-	// }
-	// }
-	// public void stopSecureJoinEntrypoint() {
-	// SecureJoinEntrypoint.deactivate();
-	// }
+//	 public void startSecureJoinEntrypoint(String username) {
+//		 try {
+//			 SecureJoinEntrypoint.getInstance(username);
+//		 } catch (Exception e) {
+//			 e.printStackTrace();
+//		 }
+//	 }
+//	 public void stopSecureJoinEntrypoint() {
+//		 SecureJoinEntrypoint.deactivate();
+//	 }
 
-	// public void startSocialObserver(String username, byte[] passHash) {
-	// try {
-	// SocialObserver.getInstance(username, passHash);
-	// } catch (Exception e) {
-	// e.printStackTrace();
-	// }
-	// }
-	// public void stopSocialObserver() {
-	// SocialObserver.deactivate();
-	// }
+//	 public void startSocialObserver(String username, byte[] passHash) {
+//		 try {
+//			 SocialObserver.getInstance(username, passHash);
+//		 } catch (Exception e) {
+//			 e.printStackTrace();
+//		 }
+//	 }
+//	 public void stopSocialObserver() {
+//		 SocialObserver.deactivate();
+//	 }
 
 	private static Random random = GeneralUtils.getSecureRandom();
 

@@ -77,44 +77,38 @@ public class Dispatcher {
 		return getLocalNetworkAddresses(false);
 	}
 
-	// synchronized public static Vector<String>
-	// getLocalNetworkAddresses(boolean force) throws Exception {
-	// if( System.currentTimeMillis() - lastLocalNetworkAddresses < 1000 ){
-	// // always wait at least 1000ms
-	// }
-	// else if ( ! force && (System.currentTimeMillis() -
-	// lastLocalNetworkAddresses < 15000)) {
-	// // if force is false, do nothing for 15000ms
-	// }
-	// else{
-	// lastLocalNetworkAddresses = System.currentTimeMillis();
-	// Vector<String> newLocalNetworkAddresses = new Vector<String>();
-	// for (Enumeration<NetworkInterface> en =
-	// NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
-	// NetworkInterface intf = en.nextElement();
-	// for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses();
-	// enumIpAddr.hasMoreElements();) {
-	// InetAddress inetAddress = enumIpAddr.nextElement();
-	// if (!inetAddress.isLoopbackAddress()) {
-	// String ip = inetAddress.getHostAddress().toString();
-	// if ( ! ip.contains(":") ) { // do not consider IPv6 addresses
-	// if( ! ignoredLocalInterfaces.contains(ip) ){
-	// //System.out.println("Dispatcher.getInternalLocalNetworkAddresses: adding
-	// "+ip);
-	// newLocalNetworkAddresses.addElement(ip);
-	// }
-	// else{
-	// //System.out.println("Dispatcher.getInternalLocalNetworkAddresses:
-	// ignoring "+ip);
-	// }
-	// }
-	// }
-	// }
-	// }
-	// localNetworkAddresses = newLocalNetworkAddresses;
-	// }
-	// return localNetworkAddresses;
-	// }
+//	 synchronized public static Vector<String> getLocalNetworkAddresses(boolean force) throws Exception {
+//		if (System.currentTimeMillis() - lastLocalNetworkAddresses < 1000) {
+//			// always wait at least 1000ms
+//		} else if (!force && (System.currentTimeMillis() - lastLocalNetworkAddresses < 15000)) {
+//			// if force is false, do nothing for 15000ms
+//		} else {
+//			lastLocalNetworkAddresses = System.currentTimeMillis();
+//			Vector<String> newLocalNetworkAddresses = new Vector<String>();
+//			for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+//				NetworkInterface intf = en.nextElement();
+//				for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+//					InetAddress inetAddress = enumIpAddr.nextElement();
+//					if (!inetAddress.isLoopbackAddress()) {
+//						String ip = inetAddress.getHostAddress().toString();
+//						if (!ip.contains(":")) { // do not consider IPv6
+//													// addresses
+//							if (!ignoredLocalInterfaces.contains(ip)) {
+//								// System.out.println("Dispatcher.getInternalLocalNetworkAddresses:
+//								// adding"+ip);
+//								newLocalNetworkAddresses.addElement(ip);
+//							} else {
+//								// System.out.println("Dispatcher.getInternalLocalNetworkAddresses:
+//								// ignoring "+ip);
+//							}
+//						}
+//					}
+//				}
+//			}
+//			localNetworkAddresses = newLocalNetworkAddresses;
+//		}
+//		return localNetworkAddresses;
+//	}
 
 	synchronized public static Vector<String> getLocalNetworkAddresses(boolean force) throws Exception {
 		if (System.currentTimeMillis() - lastLocalNetworkAddresses < 1000) {
@@ -245,9 +239,9 @@ public class Dispatcher {
 		} catch (Exception ex) {
 
 			boolean sendToRin = true;
-			// if( ! RampInternetNode.isActive() ){
-			// sendToRin = false;
-			// }STEFANO LANZONE
+//			if( ! RampInternetNode.isActive() ){
+//				 sendToRin = false;
+//			}STEFANO LANZONE
 			if (destIp.startsWith("127.0.") || destIp.startsWith("192.168.") || destIp.startsWith("10.")
 					|| destIp.startsWith("169.254.")) {
 				sendToRin = false;
@@ -287,9 +281,9 @@ public class Dispatcher {
 		} catch (Exception ex) {
 
 			boolean isFromRin = true;
-			// if( ! RampInternetNode.isActive() ){
-			// isFromRin = false;
-			// } STEFANO LANZONE
+//			if( ! RampInternetNode.isActive() ){
+//				isFromRin = false;
+//			} STEFANO LANZONE
 			if (remoteAddressString.startsWith("127.0.") || remoteAddressString.startsWith("192.168.")
 					|| remoteAddressString.startsWith("10.") || remoteAddressString.startsWith("169.254.")) {
 				isFromRin = false;
@@ -305,8 +299,7 @@ public class Dispatcher {
 						String localNetworkAddressString = localNetworkAddresses.elementAt(i).replaceAll("/", "");
 						String[] loc = localNetworkAddressString.split("[.]");
 						String[] remOctets = remoteAddressString.split("[.]");
-						// System.out.println("Remoto:" + remoteAddressString +
-						// " Locale:" + localNetworkAddressString+" "+i);
+//						System.out.println("Remoto:" + remoteAddressString + " Locale:" + localNetworkAddressString+" "+i);
 						if (remOctets[0].equals(loc[0]) && remOctets[1].equals(loc[1]) && remOctets[2].equals(loc[2])) {
 							System.out.println("Dispatcher.isFromRin: " + i + " remoteAddressString="
 									+ remoteAddressString + " localNetworkAddressString=" + localNetworkAddressString);
