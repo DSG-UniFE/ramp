@@ -20,13 +20,13 @@ import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastHeader;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
-
+import it.unibo.deis.lia.ramp.util.Benchmark;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 import it.unibo.deis.lia.ramp.util.ThreadPool;
 import it.unibo.deis.lia.ramp.util.ThreadPool.IThreadPoolCallback;
 
 /**
- * 
+ *
  * @author Carlo Giannelli
  */
 public class TcpDispatcher extends Thread {
@@ -36,7 +36,7 @@ public class TcpDispatcher extends Thread {
 	private static int MAX_ATTEMPTS = 3; // attempts for non-delay tolerant packets and without ContinuityManager
 
 	private ServerSocket ss;
-	
+
 	// pooling
 	private static ThreadPool<TcpDispatcherHandler, EnqueuedTcpGenericPacket> pool;
 
@@ -49,33 +49,33 @@ public class TcpDispatcher extends Thread {
 		active = false;
 		try {
 			ss.close();
-		} 
+		}
 		catch (IOException ex) {
 			ex.printStackTrace();
 		}
 		this.interrupt();
 	}
-	
+
 	public TcpDispatcher() throws Exception {
 		// setup pool and start threads
 		pool = new ThreadPool<TcpDispatcherHandler, EnqueuedTcpGenericPacket>(this, TcpDispatcherHandler.class, getClass().getSimpleName()).init();
 		ss = new ServerSocket(Dispatcher.DISPATCHER_PORT, TcpDispatcher.TCP_DISPATCHER_SERVER_SOCKET_BACKLOG);
 		ss.setReuseAddress(true);
 	}
-	
+
 	public static void asyncDispatchTcpGenericPacket(GenericPacket gp, InetAddress remoteAddress){
 		pool.enqueueItem(new EnqueuedTcpGenericPacket(gp, remoteAddress));
 	}
-	
+
 	//Stefano Lanzone
 	public static void asyncDispatchTcpGenericPacket(GenericPacket gp, InetAddress remoteAddress, Set<Integer> exploredNodeIdList){
 		pool.enqueueItem(new EnqueuedTcpGenericPacket(gp, remoteAddress, exploredNodeIdList));
 	}
-	
+
 	public static void asyncDispatchTcpGenericPacket(UnicastHeader uh, InputStream is, InetAddress remoteAddress){
 		pool.enqueueItem(new EnqueuedTcpGenericPacket(uh, is, remoteAddress));
 	}
-	
+
 	private static void asyncDispatchTcpGenericPacket(Socket socket){
 		try {
 			pool.enqueueItem(new EnqueuedTcpGenericPacket(socket));
@@ -86,7 +86,7 @@ public class TcpDispatcher extends Thread {
 			} catch (IOException e1) {}
 		}
 	}
-	
+
 	@Override
 	public void run() {
 		try {
@@ -96,16 +96,23 @@ public class TcpDispatcher extends Thread {
 				// receive
 				Socket s = ss.accept();
 				s.setSoTimeout(60000); // XXX this is to avoid that a thread is blocked indefinitely listening on this socket
+
+				try {
+					System.out.println("TcpDispatcher, run(): after accept");
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
 				asyncDispatchTcpGenericPacket(s);
 			}
-		} 
+		}
 		catch (java.net.BindException be) {
 			// be.printStackTrace();
 			System.out.println("TcpDispatcher port " + Dispatcher.DISPATCHER_PORT + " already in use; exiting now");
-		} 
+		}
 		catch (java.net.SocketException se) {
 			// se.printStackTrace();
-		} 
+		}
 		catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -119,14 +126,13 @@ public class TcpDispatcher extends Thread {
 		private InetAddress remoteAddress;
 		private Socket socket;
 		//Stefano Lanzone
-		private Set<Integer> exploredNodeIdList; 
-		
+		private Set<Integer> exploredNodeIdList;
+
 		@Override
 		public void run() {
 			// System.out.println("TcpDispatcherHandler run start");
-			
 			try {
-				
+
 				if (gp == null) {
 					gp = E2EComm.readPacket(is);
 				}
@@ -161,30 +167,30 @@ public class TcpDispatcher extends Thread {
 				}
 				// System.out.println("TcpDispatcherHandler firstHop="+firstHop+" remoteAddressString="+remoteAddressString);
 
+				Benchmark.append(System.currentTimeMillis(), "RECEIVED", gp.getPacketId());
+
 				if (gp instanceof UnicastHeader) {
 					UnicastHeader uh = (UnicastHeader) gp;
 					unicastHeaderTcpHandler(firstHop, remoteAddressString, uh);
-				} 
-				else if (gp instanceof UnicastPacket) {
+				} else if (gp instanceof UnicastPacket) {
 					UnicastPacket up = (UnicastPacket) gp;
 					unicastPacketTcpHandler(firstHop, remoteAddressString, up);
-				} 
-				else if (gp instanceof BroadcastPacket) {
+				} else if (gp instanceof BroadcastPacket) {
 					final BroadcastPacket bp = (BroadcastPacket) gp;
-					
+
 					if(exploredNodeIdList == null)
 						broadcastPacketTcpHandler(firstHop, remoteAddressString, bp);
 					else
 						broadcastPacketTcpHandler(firstHop, remoteAddressString, exploredNodeIdList, bp);
-				}
-				else {
+				} else {
 					// not UnicastPacket, not UnicastHeader, not BroadcastPacket
 					throw new Exception("Unknown packet type: " + gp.getClass().getName());
 				}
 
 				// System.out.println("TcpDispatcherHandler finished");
 			} catch (Exception e) {
-				System.out.println("TcpDispatcherHandler exception"+e+" remoteAddress.getHostAddress()=" + remoteAddress.getHostAddress());
+				System.out.println("TcpDispatcherHandler exception" + e + " remoteAddress.getHostAddress()="
+						+ remoteAddress.getHostAddress());
 				e.printStackTrace();
 			}
 
@@ -202,7 +208,7 @@ public class TcpDispatcher extends Thread {
 //			this.active = false;
 //			this.interrupt();
 //		}
-		
+
 		private void unicastHeaderTcpHandler(boolean firstHop, String remoteAddressString, UnicastHeader uh) throws Exception{
 			// System.out.println("TcpDispatcherHandler UnicastHeader");
 			if (!firstHop ||
@@ -236,7 +242,7 @@ public class TcpDispatcher extends Thread {
 				boolean missedDeadline;
 				int packetRetry;
 				boolean sendToRin = true;
-				
+
 				do {
 					retry = true;
 					packetRetry = uh.getRetry();
@@ -244,7 +250,7 @@ public class TcpDispatcher extends Thread {
 					Exception ex = null;
 					if (packetRetry == 0) {
 						missedDeadline = true;
-					} 
+					}
 					else {
 						missedDeadline = false;
 						try {
@@ -255,7 +261,7 @@ public class TcpDispatcher extends Thread {
 								ipDest = GeneralUtils.getLocalHost();
 								portDest = uh.getDestPort();
 								sendToRin = false;
-							} 
+							}
 							else {
 								// b) send to the following dispatcher
 								ipDest = dest[currentHop];
@@ -263,22 +269,22 @@ public class TcpDispatcher extends Thread {
 								System.out.println("TcpDispatcherHandler UnicastHeader sendToRin="+sendToRin);
 								if (!sendToRin) {
 									portDest = Dispatcher.DISPATCHER_PORT;
-								} 
+								}
 //								else {
-//									portDest = RampInternetNode.getRemoteRinTcpPort(ipDest); 
+//									portDest = RampInternetNode.getRemoteRinTcpPort(ipDest);
 //								}
 							}
 
 							// nat-t
 							// if sending to a RIN and the RIN is relayed, send to the relayed address
-							
-//							boolean isRemoteRinRelayed = sendToRin && RampInternetNode.isRemoteRinRelayed(ipDest); 
+
+//							boolean isRemoteRinRelayed = sendToRin && RampInternetNode.isRemoteRinRelayed(ipDest);
 //							String finalIpAddress = isRemoteRinRelayed ? RampInternetNode.getRemoteRinRelayedAddress(ipDest) : ipDest;
 							String finalIpAddress = ipDest;
-							
+
 							System.out.println("TcpDispatcherHandler UnicastHeader sending to "+finalIpAddress+":"+portDest);
 							socketAddress = new InetSocketAddress(finalIpAddress, portDest);
-							
+
 							destS = new Socket();
 							destS.setReuseAddress(true);
 							int connectTimeout = uh.getConnectTimeout();
@@ -291,12 +297,12 @@ public class TcpDispatcher extends Thread {
 							destS.connect(socketAddress, connectTimeout);
 							destS.setSoTimeout(60000); // XXX this is to avoid that a thread is blocked indefinitely listening on this socket
 							retry = false;
-							
+
 							// nat-t: wait a while to set up the connection
 //							if(isRemoteRinRelayed){
 //								Thread.sleep(RampInternetNode.natTDelay); // FIXME nat-t necessario??? sembrerebbe di si'. perche'? quale valore ottimale?
 //							}
-						} 
+						}
 						catch (Exception e) {
 							if (destS != null) {
 								destS.close();
@@ -370,7 +376,7 @@ public class TcpDispatcher extends Thread {
 							// System.out.println("TcpDispatcherHandler partial payload read (partial): readBytes "+readBytes);
 							if ( readBytes == -1 ) {
 								finished = true;
-							} 
+							}
 							else {
 								count += readBytes;
 								// if(count == buffer.length){
@@ -429,7 +435,7 @@ public class TcpDispatcher extends Thread {
 			}
 			// System.out.println("TcpDispatcherHandler partial payload finished");
 		}
-		
+
 		private void unicastPacketTcpHandler(boolean firstHop, String remoteAddressString, UnicastPacket up) throws Exception{
 			// System.out.println("TcpDispatcherHandler UnicastPacket");
 			if (!firstHop ||
@@ -470,7 +476,7 @@ public class TcpDispatcher extends Thread {
 				Exception ex = null;
 				if (packetRetry == 0) {
 					missedDeadline = true;
-				} 
+				}
 				else {
 					missedDeadline = false;
 					String[] dest = up.getDest();
@@ -490,7 +496,7 @@ public class TcpDispatcher extends Thread {
 								//System.out.println("TcpDispatcherHandler UnicastPacket ipDest="+ipDest+" sendToRin="+sendToRin);
 								if (!sendToRin) {
 									portDest = Dispatcher.DISPATCHER_PORT;
-								} 
+								}
 //								else if (sendToRin) {
 //									portDest = RampInternetNode.getRemoteRinTcpPort(ipDest);
 //								}
@@ -498,7 +504,7 @@ public class TcpDispatcher extends Thread {
 
 							// nat-t
 							// if sending to a RIN and the RIN is relayed, send to the relayed address
-							
+
 //							boolean isRemoteRinRelayed = sendToRin && RampInternetNode.isRemoteRinRelayed(ipDest);
 //							String finalIpDest = isRemoteRinRelayed ? RampInternetNode.getRemoteRinRelayedAddress(ipDest) : ipDest;
 							String finalIpDest = ipDest;
@@ -506,7 +512,7 @@ public class TcpDispatcher extends Thread {
 //								System.out.println("TcpDispatcherHandler unicast packet sending to "+finalIpDest+":"+portDest);
 //							}
 							socketAddress = new InetSocketAddress(finalIpDest, portDest);
-							
+
 							destS = new Socket();
 							destS.setReuseAddress(true);
 							int connectTimeout = up.getConnectTimeout();
@@ -521,12 +527,12 @@ public class TcpDispatcher extends Thread {
 							//System.out.println("TcpDispatcherHandler unicast packet destS.getRemoteSocketAddress()="+destS.getRemoteSocketAddress());
 							destS.setSoTimeout(60000); // XXX this is to avoid that a thread is blocked indefinitely listening on this socket
 							retry = false;
-							
+
 							// nat-t: wait a while to set up the connection
 //							if(isRemoteRinRelayed){
 //								Thread.sleep(RampInternetNode.natTDelay); // FIXME nat-t necessario??? sembrerebbe di si'. perche'? quale valore ottimale?
 //							}
-						} 
+						}
 						catch (Exception e) {
 							if (destS != null) {
 								destS.close();
@@ -558,14 +564,14 @@ public class TcpDispatcher extends Thread {
 					}
 				}
 			}
-			while ( !((packetRetry != GenericPacket.UNUSED_FIELD && missedDeadline == true) || 
-					retry == false || 
+			while ( !((packetRetry != GenericPacket.UNUSED_FIELD && missedDeadline == true) ||
+					retry == false ||
 					(packetRetry == GenericPacket.UNUSED_FIELD && attempts >= TcpDispatcher.MAX_ATTEMPTS)) );
 
 			if ( destS != null && destS.isConnected() ) {
 				// System.out.println("TcpDispatcher unicast packet: destS.getRemoteSocketAddress() "+destS.getRemoteSocketAddress());
 				GeneralUtils.appendLog("TcpDispatcher sent unicast packet: destS.getRemoteSocketAddress() "+destS.getRemoteSocketAddress());
-				
+
 				OutputStream destOs = destS.getOutputStream();
 				GenericPacket gp = up;
 
@@ -576,7 +582,7 @@ public class TcpDispatcher extends Thread {
 //					RampInternetNode.sendUnicastTcp(up, ipDest, destOs);
 //					//System.out.println("TcpDispatcherHandler post RampInternetNode.sendUnicastTcp ipDest="+ipDest);
 //				}
-			} 
+			}
 			else {
 				System.out.println("TcpDispatcher unicast packet: failed to send to the next hop: socketAddress = " + socketAddress);
 				// throw new Exception();
@@ -587,21 +593,21 @@ public class TcpDispatcher extends Thread {
 				destS = null;
 			}
 		}
-		
+
 		private void broadcastPacketTcpHandler(boolean firstHop, String remoteAddressString, Set<Integer> exploredNodes, final BroadcastPacket bp) throws Exception{
 			// Send to neighbors
 			sendToNeighbors(firstHop, remoteAddressString, exploredNodes, bp);
 		}
-		
+
 		private void broadcastPacketTcpHandler(boolean firstHop, String remoteAddressString, final BroadcastPacket bp) throws Exception{
 			// System.out.println("TcpDispatcherHandler BroadcastPacket");
-			
+
 			if (bp.alreadyTraversed(Dispatcher.getLocalRampId())) {
 				System.out.println("TcpDispatcher broadcast packet: dropping to avoid loop (received packet)");
 			}
 			else {
 				bp.addTraversedId(Dispatcher.getLocalRampId());
-       
+
 				if (!firstHop) {
 					// update source
 					bp.addSource(remoteAddressString);
@@ -634,11 +640,11 @@ public class TcpDispatcher extends Thread {
 
 								OutputStream destOs = destS.getOutputStream();
 								E2EComm.writePacket(bp, destOs);
-							} 
+							}
 							catch (Exception e) {
 								// no problem...
 								// System.out.println("TcpDispatcherHandler.broadcast: send failed to local port " + portDest);
-							} 
+							}
 							finally {
 								try {
 									destS.close();
@@ -682,7 +688,7 @@ public class TcpDispatcher extends Thread {
 					//System.out.println("TcpDispatcher broadcast packet: dropping to avoid loop: destNodeId="+destNodeId+" aNeighbor="+aNeighbor+" (sending packet)");
 				    if((destNodeId!=null && bp.alreadyTraversed(destNodeId)))
 				    	GeneralUtils.appendLog("TcpDispatcher broadcast packet, do not send to already traversed nodes: dropping to avoid loop destNodeId="+destNodeId+" aNeighbor="+aNeighbor+" (sending packet)");
-				
+
 				    if((exploredNodes!=null && exploredNodes.contains(destNodeId)))
 				    	GeneralUtils.appendLog("TcpDispatcher broadcast packet, do not send to explored nodes: dropping to avoid loop destNodeId="+destNodeId+" aNeighbor="+aNeighbor+" (sending packet)");
 				}
@@ -694,7 +700,7 @@ public class TcpDispatcher extends Thread {
 					if (!firstHop && (rem[0].equals(neigh[0]) && rem[1].equals(neigh[1]) && rem[2].equals(neigh[2]))) {
 						// System.out.println("TcpDispatcherHandler broadcast "+neighbors.elementAt(i)+" same subnet of "+remoteAddress);
 						GeneralUtils.appendLog("TcpDispatcher broadcast packet, do not send to the previous node/network "+neighborString+" same subnet of "+remoteAddress);
-					} 
+					}
 					else {
 						// send to a neighbor node in another thread
 						// to not delay broadcast packet dissemination to other neighbor nodes
@@ -714,15 +720,15 @@ public class TcpDispatcher extends Thread {
 
 									OutputStream destOs = destS.getOutputStream();
 									E2EComm.writePacket(bp, destOs);
-								} 
+								}
 								catch (Exception e) {
 									// no problem...
 									// System.out.println("TcpDispatcherHandler.broadcast: send failed to local port " + portDest);
-								} 
+								}
 								finally {
 									try {
 										destS.close();
-									} 
+									}
 									catch (Exception e) {
 										// System.out.println("TcpDispatcherHandler.broadcast: send failed to local port " + portDest);
 									}
@@ -756,35 +762,35 @@ public class TcpDispatcher extends Thread {
 		}
 
 	}
-	
+
 	private static class EnqueuedTcpGenericPacket {
-		
+
 		private GenericPacket gp;
 		private InetAddress remoteAddress;
 		private InputStream is;
 		private Socket socket;
 		//Stefano Lanzone
 		private Set<Integer> exploredNodeIdList;
-		
+
 		public EnqueuedTcpGenericPacket(Socket socket) throws IOException{
 			this.gp = null;
 			this.remoteAddress = socket.getInetAddress();
 			this.is = socket.getInputStream();
 			this.socket = socket;
 		}
-		
+
 		public EnqueuedTcpGenericPacket(GenericPacket gp, InetAddress remoteAddress){
 			this.gp = gp;
 			this.remoteAddress = remoteAddress;
 		}
-		
+
 		//Stefano Lanzone
 		public EnqueuedTcpGenericPacket(GenericPacket gp, InetAddress remoteAddress, Set<Integer> exploredNodeIdList){
 			this.gp = gp;
 			this.remoteAddress = remoteAddress;
 			this.exploredNodeIdList = exploredNodeIdList;
 		}
-		
+
 		public EnqueuedTcpGenericPacket(UnicastHeader uh, InputStream is, InetAddress remoteAddress) {
 			this.gp = uh;
 			this.remoteAddress = remoteAddress;
@@ -798,20 +804,20 @@ public class TcpDispatcher extends Thread {
 		public InetAddress getRemoteAddress() {
 			return remoteAddress;
 		}
-		
+
 		public InputStream getInputStream() {
 			return is;
 		}
-		
+
 		public Socket getSocket(){
 			return socket;
 		}
-		
+
 		//Stefano Lanzone
 		public Set<Integer> getExploredNodeIdList(){
 			return exploredNodeIdList;
 		}
-		
+
 	}
-	
+
 }

@@ -43,20 +43,23 @@ public class FileSharingServiceNoGUI extends Thread{
 	public static boolean isActive(){
         return FileSharingServiceNoGUI.fileSharing != null;
     }
-    public static synchronized FileSharingServiceNoGUI getInstance(){
-        try{
 
-            if(FileSharingServiceNoGUI.fileSharing==null){
-                FileSharingServiceNoGUI.fileSharing = new FileSharingServiceNoGUI(false); // FileSharingService senza GUI
+    public static synchronized FileSharingServiceNoGUI getInstance(){
+		try {
+
+			if (FileSharingServiceNoGUI.fileSharing == null) {
+				// FileSharingService senza GUI
+				FileSharingServiceNoGUI.fileSharing = new FileSharingServiceNoGUI(false);
                 FileSharingServiceNoGUI.fileSharing.start();
 
             }
         }
-        catch(Exception e){
+		catch (Exception e) {
             e.printStackTrace();
         }
         return FileSharingServiceNoGUI.fileSharing;
     }
+
     public static synchronized FileSharingServiceNoGUI getInstanceNoShow(){
         try{
             if(FileSharingServiceNoGUI.fileSharing==null){
@@ -69,7 +72,8 @@ public class FileSharingServiceNoGUI extends Thread{
         }
         return FileSharingServiceNoGUI.fileSharing;
     }
-    protected FileSharingServiceNoGUI(boolean gui) throws Exception{
+
+	protected FileSharingServiceNoGUI(boolean gui) throws Exception {
         serviceSocket = E2EComm.bindPreReceive(protocol);
 
         ServiceManager.getInstance(false).registerService("" +
@@ -89,9 +93,11 @@ public class FileSharingServiceNoGUI extends Thread{
     public void setBestBufferSize(boolean bestBufferSize) {
         this.bestBufferSize = bestBufferSize;
     }
+
     public int getBufferSize() {
         return bufferSize;
     }
+
     public void setBufferSize(int bufferSize) {
         this.bufferSize = bufferSize;
     }
@@ -99,11 +105,12 @@ public class FileSharingServiceNoGUI extends Thread{
     public String getSharedDirectory(){
         return sharedDirectory;
     }
+
     public void setSharedDirectory(String sharedDirectory){
         this.sharedDirectory=sharedDirectory;
     }
 
-    public String[] getFileList(){
+	public String[] getFileList() {
     	String[] res = new String[0];
     	try{
 	        File dir = new File(sharedDirectory);
@@ -163,7 +170,7 @@ public class FileSharingServiceNoGUI extends Thread{
         System.out.println("FileSharingService FINISHED");
     }
 
-    private class FileSharingHandler extends Thread{
+	private class FileSharingHandler extends Thread {
         private GenericPacket gp;
 
         private FileSharingHandler(GenericPacket gp){
@@ -176,15 +183,15 @@ public class FileSharingServiceNoGUI extends Thread{
                     // 1) payload
                     UnicastPacket up = (UnicastPacket)gp;
                     Object payload = E2EComm.deserialize(up.getBytePayload());
-                    if(payload instanceof FileSharingRequest){
+					if (payload instanceof FileSharingRequest) {
                         System.out.println("FileSharingService FileSharingRequest");
-                        FileSharingRequest request=(FileSharingRequest)payload;
+						FileSharingRequest request = (FileSharingRequest) payload;
                         String fileName = request.getFileName();
                         int expiry = request.getExpiry();
-                        long startReceiving=System.currentTimeMillis();
-                        if( ! request.isGet() ){
+						long startReceiving = System.currentTimeMillis();
+						if (!request.isGet()) {
                             // receiving a file
-                            System.out.println("FileSharingService: receiving "+fileName+"...");
+							System.out.println("FileSharingService: receiving " + fileName + "...");
 
                             BoundReceiveSocket receiveFileSocket = E2EComm.bindPreReceive(
                             		E2EComm.TCP //protocol
@@ -214,7 +221,7 @@ public class FileSharingServiceNoGUI extends Thread{
 //                                    E2EComm.serialize(receiveFileSocket.getLocalPort())
 //                            );
 
-                            File f = new File(sharedDirectory+"/"+fileName);
+							File f = new File(sharedDirectory + "/" + fileName);
                             FileOutputStream fos = new FileOutputStream(f);
 
                             int timeout = 10*1000;
@@ -226,7 +233,7 @@ public class FileSharingServiceNoGUI extends Thread{
                             		timeout,
                             		fos
                         		);
-                            long endReceiving=System.currentTimeMillis();
+							long endReceiving = System.currentTimeMillis();
                             fos.close();
                             float receivingTime = (endReceiving-startReceiving) / 1000.0F;
 
@@ -234,9 +241,8 @@ public class FileSharingServiceNoGUI extends Thread{
                             notify(notifyText);
                             System.out.println("FileSharingService: "+fileName+" received in "+receivingTime+"s" );
                             GeneralUtils.appendLog("FileSharingService: "+fileName+" received in "+receivingTime+"s" +" from "+newDest);
-                        }
-                        else{
-                            String[] newDest = E2EComm.ipReverse(up.getSource());
+						} else {
+							String[] newDest = E2EComm.ipReverse(up.getSource());
                             FileSharingList res=null;
                             int sendingBufferSize = bufferSize;
                             if(fileName.equals("")){
@@ -256,7 +262,7 @@ public class FileSharingServiceNoGUI extends Thread{
                                         GenericPacket.UNUSED_FIELD,
                                         sendingBufferSize,
                                         GenericPacket.UNUSED_FIELD, // packetDeliveryTimeout
-                                        (short)GenericPacket.UNUSED_FIELD, // packetTimeoutConnect
+                                        GenericPacket.UNUSED_FIELD, // packetTimeoutConnect
                                         E2EComm.serialize(res)
                                 );
 

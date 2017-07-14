@@ -11,10 +11,12 @@ import it.unibo.deis.lia.ramp.service.management.ServiceManager;
 public class RonTest {
 
 	public static void main(String[] args) throws Exception {
+//		From terminal
+		// java -cp './bin:./libs/*' it.unibo.deis.lia.ramp.RampEntryPoint
 		boolean open = true;
-		
+
 		RampEntryPoint.getInstance(true, null);
-		
+
 		BoundReceiveSocket serviceSocket = E2EComm.bindPreReceive(E2EComm.TCP);
 
 	    ServiceManager.getInstance(false).registerService(
@@ -22,9 +24,9 @@ public class RonTest {
 	    		serviceSocket.getLocalPort(),
 	    		E2EComm.TCP
 			);
-	    
+
 	    System.out.println("RonTest START on port: " + serviceSocket.getLocalPort() + " " + E2EComm.TCP);
-	    
+
 	    while (open) {
             try {
                 // receive
@@ -34,7 +36,7 @@ public class RonTest {
                 //System.out.println("DistributedActuatorService SocketTimeoutException");
             }
         }
-	    
+
         serviceSocket.close();
 	}
 

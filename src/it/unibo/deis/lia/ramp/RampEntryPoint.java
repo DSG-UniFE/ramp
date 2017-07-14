@@ -49,6 +49,7 @@ import it.unibo.deis.lia.ramp.service.application.FileSharingService;
 import it.unibo.deis.lia.ramp.service.application.ResourceDiscovery;
 import it.unibo.deis.lia.ramp.service.application.ResourceProvider;
 import it.unibo.deis.lia.ramp.service.management.ServiceManager;
+import it.unibo.deis.lia.ramp.util.Benchmark;
 //import it.unibo.deis.lia.ramp.service.upnp.UpnpProxyEntrypoint;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 import it.unibo.deis.lia.ramp.util.LogWithTimestamp;
@@ -467,6 +468,9 @@ public class RampEntryPoint {
 	synchronized public void stopRamp() {
 		if (RampEntryPoint.ramp != null) {
 			System.out.println("RampEntryPoint.stopRamp START");
+			// Close file for benchmark
+			Benchmark.closeCsvWriter();
+
 			// BufferSizeManager.deactivate();
 			stopBufferSizeManager();
 
@@ -630,16 +634,16 @@ public class RampEntryPoint {
 	}
 
 	public void startClient(String className) {
-//		if (osgiContext != null) { 
-//			try{ 
-//				org.osgi.framework.Bundle[] bundles = osgiContext.getBundles(); 
+//		if (osgiContext != null) {
+//			try{
+//				org.osgi.framework.Bundle[] bundles = osgiContext.getBundles();
 //				int i=0;
-//				while(!bundles[i].getSymbolicName().contains(className)) 
+//				while(!bundles[i].getSymbolicName().contains(className))
 //					i++;
-//				bundles[i].start(); 
+//				bundles[i].start();
 //			} catch (Exception e) {
 //				System.out.println("Impossibile avviare il bundle " + e.getMessage());
-//			} 
+//			}
 //		} else {
 			try {
 				Class<?> c = Class.forName("it.unibo.deis.lia.ramp.service.application." + className);
