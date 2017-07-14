@@ -74,7 +74,7 @@ public class GeneralUtils {
 	 * 		"http://deis170.deis.unibo.it:8080/getPublicIpAddr",
 	 * 		"http://myip.dnsdynamic.org/" };
 	 */
-	
+
 //	static{
 //		Properties properties = new Properties();
 //		try {
@@ -376,64 +376,77 @@ public class GeneralUtils {
 	// log
 	// ---------------------
 
-	public static void appendLog(String text) {
-		if (isAndroidContext()) {
-			prepareAndroidContext();
+	public static synchronized void appendLog(String text) {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				if (isAndroidContext()) {
+					prepareAndroidContext();
 
-			try {
-				String logDirectory = android.os.Environment.getExternalStorageDirectory() + "/ramp/logs";
-				File logFile = new File(logDirectory + "/log.txt");
-				if (!logFile.exists()) {
-					logFile.createNewFile();
+					try {
+						String logDirectory = android.os.Environment.getExternalStorageDirectory() + "/ramp/logs";
+						File logFile = new File(logDirectory + "/log.txt");
+						if (!logFile.exists()) {
+							logFile.createNewFile();
+						}
+
+						// BufferedWriter for performance, true to set append to
+						// file flag
+						BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
+
+						Calendar date = Calendar.getInstance();
+						SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+						String log = format.format(date.getTime()) + ": " + text;
+
+						// Date date = new Date(System.currentTimeMillis());
+						// @SuppressWarnings("deprecation")
+						// String log = date.toLocaleString() +": "+text;
+
+						buf.append(log);
+						buf.newLine();
+						buf.close();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
-
-				// BufferedWriter for performance, true to set append to
-				// file flag
-				BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
-
-				Calendar date = Calendar.getInstance();
-				SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-				String log = format.format(date.getTime()) + ": " + text;
-
-				// Date date = new Date(System.currentTimeMillis());
-				// @SuppressWarnings("deprecation")
-				// String log = date.toLocaleString() +": "+text;
-
-				buf.append(log);
-				buf.newLine();
-				buf.close();
-			} catch (Exception e) {
-				e.printStackTrace();
 			}
-		}
+		}).start();
 	}
 
-	public static void prepareAndroidContext() {
-		if (isAndroidContext()) {
-			try {
-				File androidShareDirectory = new File(android.os.Environment.getExternalStorageDirectory() + "/ramp");
-				if (!androidShareDirectory.exists())
-					androidShareDirectory.mkdirs();
+	public static synchronized void prepareAndroidContext() {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				if (isAndroidContext()) {
+					try {
+						File androidShareDirectory = new File(
+								android.os.Environment.getExternalStorageDirectory() + "/ramp");
+						if (!androidShareDirectory.exists())
+							androidShareDirectory.mkdirs();
 
-				// This prevents media scanner from reading your media files and
-				// providing them to other apps through the MediaStore content
-				// provider.
-				File file = new File(androidShareDirectory.getAbsolutePath(), "/.nomedia");
-				if (!file.exists()) {
-					FileOutputStream out = new FileOutputStream(file);
-					out.flush();
-					out.close();
+						// This prevents media scanner from reading your media
+						// files and
+						// providing them to other apps through the MediaStore
+						// content
+						// provider.
+						File file = new File(androidShareDirectory.getAbsolutePath(), "/.nomedia");
+						if (!file.exists()) {
+							FileOutputStream out = new FileOutputStream(file);
+							out.flush();
+							out.close();
+						}
+
+						File dir = new File(androidShareDirectory.getAbsolutePath() + "/logs");
+						if (!dir.exists())
+							dir.mkdir();
+
+						propertiesPath = androidShareDirectory.getAbsolutePath() + "/ramp.props";
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
-
-				File dir = new File(androidShareDirectory.getAbsolutePath() + "/logs");
-				if (!dir.exists())
-					dir.mkdir();
-
-				propertiesPath = androidShareDirectory.getAbsolutePath() + "/ramp.props";
-			} catch (Exception e) {
-				e.printStackTrace();
 			}
-		}
+		}).start();
 	}
 
 	public static boolean isAndroidContext() {
