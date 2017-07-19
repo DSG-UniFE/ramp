@@ -91,5 +91,6 @@ genericCP = it.unibo.deis.lia.upnp.controlpoint.GenericControlPoint
 
 upnpMoreInfos = false
 
+
 # Appended configuration 
-nodeID = 277594165
+nodeID = 1236728509
