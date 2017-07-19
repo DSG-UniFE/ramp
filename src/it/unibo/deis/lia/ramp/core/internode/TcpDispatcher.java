@@ -167,13 +167,16 @@ public class TcpDispatcher extends Thread {
 				}
 				// System.out.println("TcpDispatcherHandler firstHop="+firstHop+" remoteAddressString="+remoteAddressString);
 
-				Benchmark.append(System.currentTimeMillis(), "RECEIVED", gp.getPacketId());
-
 				if (gp instanceof UnicastHeader) {
 					UnicastHeader uh = (UnicastHeader) gp;
 					unicastHeaderTcpHandler(firstHop, remoteAddressString, uh);
 				} else if (gp instanceof UnicastPacket) {
 					UnicastPacket up = (UnicastPacket) gp;
+
+					// FIXME
+					Benchmark.append(System.currentTimeMillis(), "tcp_dispatcher_handler", up.getId(),
+							up.getSourceNodeId(), up.getDestNodeId());
+
 					unicastPacketTcpHandler(firstHop, remoteAddressString, up);
 				} else if (gp instanceof BroadcastPacket) {
 					final BroadcastPacket bp = (BroadcastPacket) gp;
@@ -186,7 +189,6 @@ public class TcpDispatcher extends Thread {
 					// not UnicastPacket, not UnicastHeader, not BroadcastPacket
 					throw new Exception("Unknown packet type: " + gp.getClass().getName());
 				}
-
 				// System.out.println("TcpDispatcherHandler finished");
 			} catch (Exception e) {
 				System.out.println("TcpDispatcherHandler exception" + e + " remoteAddress.getHostAddress()="
@@ -540,13 +542,13 @@ public class TcpDispatcher extends Thread {
 							}
 							ex = e;
 							System.out.println("TcpDispatcherHandler UnicastPacket exception: " + e.getMessage() + " to " + ipDest + ":" + portDest);
-							//Object p = E2EComm.deserialize(up.getBytePayload());
-							//System.out.println("TcpDispatcherHandler UnicastPacket payload: " + p.getClass().getName() );
-							//System.out.println("TcpDispatcherHandler UnicastPacket payload: " + p );
-							//System.out.println("TcpDispatcherHandler UnicastPacket Arrays.toString(up.getSource()): " + Arrays.toString(up.getSource()) );
-							//System.out.println("TcpDispatcherHandler UnicastPacket Arrays.toString(up.getDest()): " + Arrays.toString(up.getDest()) );
-							//System.out.println("TcpDispatcherHandler UnicastPacket up.getDestPort(): " + up.getDestPort() );
-							//System.out.println("TcpDispatcherHandler UnicastPacket up.getCurrentHop(): " + up.getCurrentHop() );
+							// Object p = E2EComm.deserialize(up.getBytePayload());
+							// System.out.println("TcpDispatcherHandler UnicastPacket payload: " + p.getClass().getName() );
+							// System.out.println("TcpDispatcherHandler UnicastPacket payload: " + p );
+							// System.out.println("TcpDispatcherHandler UnicastPacket Arrays.toString(up.getSource()): " + Arrays.toString(up.getSource()) );
+							// System.out.println("TcpDispatcherHandler UnicastPacket Arrays.toString(up.getDest()): " + Arrays.toString(up.getDest()) );
+							// System.out.println("TcpDispatcherHandler UnicastPacket up.getDestPort(): " + up.getDestPort() );
+							// System.out.println("TcpDispatcherHandler UnicastPacket up.getCurrentHop(): " + up.getCurrentHop() );
 							e.printStackTrace();
 						}
 					}
@@ -561,6 +563,10 @@ public class TcpDispatcher extends Thread {
 					for (int i = 0; i < listeners.length; i++) {
 						listeners[i].sendingTcpUnicastPacketException(up, ex);
 						System.out.println("POST TcpDispatcherHandler unicast listener ipDest="+ipDest+" portDest="+portDest);
+
+						// FIXME
+						Benchmark.append(System.currentTimeMillis(), "tcp_dispatcher_handler_try_to_send", up.getId(),
+								up.getSourceNodeId(), up.getDestNodeId());
 					}
 				}
 			}
@@ -572,10 +578,14 @@ public class TcpDispatcher extends Thread {
 				// System.out.println("TcpDispatcher unicast packet: destS.getRemoteSocketAddress() "+destS.getRemoteSocketAddress());
 				GeneralUtils.appendLog("TcpDispatcher sent unicast packet: destS.getRemoteSocketAddress() "+destS.getRemoteSocketAddress());
 
+				// FIXME
+				Benchmark.append(System.currentTimeMillis(), "tcp_dispatcher_handler_sent_packet", up.getId(),
+						up.getSourceNodeId(), up.getDestNodeId());
+
 				OutputStream destOs = destS.getOutputStream();
 				GenericPacket gp = up;
 
-				if ( ! sendToRin ) {
+				if (!sendToRin) {
 					E2EComm.writePacket(gp, destOs);
 				}
 //				else{

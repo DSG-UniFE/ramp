@@ -31,6 +31,7 @@ import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastHeader;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
+import it.unibo.deis.lia.ramp.util.Benchmark;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 
 /**
@@ -274,7 +275,7 @@ public class OpportunisticNetworkingManager extends Thread {
 		GenericPacket gp = savedPackets.get(savedPacket);
 		if (gp == null) {
 			String fileNamePacket = savedPacketDirectory + "/" + savedPacket.getId() + FILEPACKET_EXT;
-			File fp= new File(fileNamePacket);
+			File fp = new File(fileNamePacket);
 
 			if (fp.exists()) {
 				byte[] fileData = new byte[(int) fp.length()];
@@ -300,6 +301,16 @@ public class OpportunisticNetworkingManager extends Thread {
 			}
 		}
 
+		// FIXME
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+
+			// FIXME
+			Benchmark.append(System.currentTimeMillis(), "opportunistic_networking_on_restore_packet", up.getId(),
+					up.getSourceNodeId(),
+					up.getDestNodeId());
+		}
+
 	    return gp;
 	}
 
@@ -316,21 +327,31 @@ public class OpportunisticNetworkingManager extends Thread {
 		File fsp= new File(fileNameSavedPacket);
         if (fsp.exists())
         	fsp.delete();
-        File fp= new File(fileNamePacket);
+		File fp = new File(fileNamePacket);
         if (fp.exists())
         	fp.delete();
+
+		// FIXME
+		GenericPacket gp = savedPackets.get(savedPacket);
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+
+			// FIXME
+			Benchmark.append(System.currentTimeMillis(), "opportunistic_networking_on_remove_packet", up.getId(),
+					up.getSourceNodeId(),
+					up.getDestNodeId());
+		}
 
         savedPackets.remove(savedPacket);
 	}
 
 	private void refreshPacketExpiry(SavedPacket savedPacket) {
 		//Aggiornare il valore della variabile expiry
-	    long currentTime=System.currentTimeMillis();
+		long currentTime = System.currentTimeMillis();
 	    long packetSaveTime = savedPacket.getSaveTime();
 	    long deltaTime = currentTime - packetSaveTime;
 	    int expiry = savedPacket.getExpiry();
-	    int newExpiry = (int)(expiry -
-	    		TimeUnit.MILLISECONDS.toSeconds(deltaTime));
+		int newExpiry = (int) (expiry - TimeUnit.MILLISECONDS.toSeconds(deltaTime));
 	    savedPacket.setExpiry(newExpiry);
 	}
 
@@ -416,10 +437,18 @@ public class OpportunisticNetworkingManager extends Thread {
 				sendPacketToNeighbors(gp);
 			}
 
-			if(!sendOK)
+			if (!sendOK) {
 				GeneralUtils.appendLog("OpportunisticNetworkingManager: unicast packet "+savedPacket.getId() +" not sent to neighbors");
-			else
+			} else {
 				GeneralUtils.appendLog("OpportunisticNetworkingManager: sent unicast packet "+savedPacket.getId() +" to neighbors");
+
+				if (up != null) {
+					// FIXME
+					Benchmark.append(System.currentTimeMillis(), "opportunistic_networking_on_sent_packet", up.getId(),
+							up.getSourceNodeId(),
+							up.getDestNodeId());
+				}
+			}
 
 			if(sendOK && isRemovePacketAfterSend())
 			{
@@ -695,50 +724,56 @@ public class OpportunisticNetworkingManager extends Thread {
 	    return length;
 	}
 
-	private void storeSavedPacket(SavedPacket savedPacket)
-	{
-		String fileNameSavedPacket = savedPacketDirectory +"/"+savedPacket.getId() + FILE_SAVEDPACKET_EXT;
+	private void storeSavedPacket(SavedPacket savedPacket) {
+		String fileNameSavedPacket = savedPacketDirectory + "/" + savedPacket.getId() + FILE_SAVEDPACKET_EXT;
 
 		try {
-	         System.out.println("OpportunisticNetworkingManager: fileNameSavedPacket "+fileNameSavedPacket);
-	         File file = new File(fileNameSavedPacket);
-	         FileOutputStream fileOut = new FileOutputStream(file);
-	         System.out.println("OpportunisticNetworkingManager: file.getAbsolutePath(); "+file.getAbsolutePath());
-	         ObjectOutputStream out = new ObjectOutputStream(fileOut);
-	         out.writeObject(savedPacket);
-	         fileOut.flush();
-	         fileOut.close();
+			System.out.println("OpportunisticNetworkingManager: fileNameSavedPacket " + fileNameSavedPacket);
+			File file = new File(fileNameSavedPacket);
+			FileOutputStream fileOut = new FileOutputStream(file);
+			System.out.println("OpportunisticNetworkingManager: file.getAbsolutePath(); " + file.getAbsolutePath());
+			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+			out.writeObject(savedPacket);
+			fileOut.flush();
+			fileOut.close();
 
-	         /*File file2 = new File(fileNameSavedPacket+"x");
-	         FileOutputStream fileOut2 = new FileOutputStream(file2);
-	         ObjectOutputStream out2 = new ObjectOutputStream(fileOut2);
-	         out2.writeObject('c');
-	         fileOut2.flush();
-	         fileOut2.close();*/
+			/*
+			 * File file2 = new File(fileNameSavedPacket+"x"); FileOutputStream
+			 * fileOut2 = new FileOutputStream(file2); ObjectOutputStream out2 =
+			 * new ObjectOutputStream(fileOut2); out2.writeObject('c');
+			 * fileOut2.flush(); fileOut2.close();
+			 */
 
-	         System.out.println("OpportunisticNetworkingManager: Serialized data is saved in "+fileNameSavedPacket);
-	         GeneralUtils.appendLog("OpportunisticNetworkingManager: savedPacket "+savedPacket.getId() +" serialized");
-	      }catch(IOException i) {
+			System.out.println("OpportunisticNetworkingManager: Serialized data is saved in " + fileNameSavedPacket);
+			GeneralUtils
+					.appendLog("OpportunisticNetworkingManager: savedPacket " + savedPacket.getId() + " serialized");
+		} catch (IOException i) {
 	         i.printStackTrace();
 	      }
 	}
 
-	private void storePacket(GenericPacket gp, String fileNamePacket)
-	{
+	private void storePacket(GenericPacket gp, String fileNamePacket) {
 		try {
 			OutputStream output = null;
 			output = new BufferedOutputStream(new FileOutputStream(fileNamePacket));
 	        output.write(E2EComm.serializePacket(gp));
 	        output.flush();
 	        output.close();
-	        System.out.println("OpportunisticNetworkingManager: packet serialized in "+fileNamePacket);
-	        GeneralUtils.appendLog("OpportunisticNetworkingManager: packet serialized in "+fileNamePacket);
-		}
-	    catch(IOException i) {
-        i.printStackTrace();
-        }
-		catch(Exception e)
-		{
+	        System.out.println("OpportunisticNetworkingManager: packet serialized in "+ fileNamePacket);
+	        GeneralUtils.appendLog("OpportunisticNetworkingManager: packet serialized in " +fileNamePacket);
+
+	        // FIXME
+			if (gp instanceof UnicastPacket) {
+				UnicastPacket up = (UnicastPacket) gp;
+
+				// FIXME
+				Benchmark.append(System.currentTimeMillis(), "opportunistic_networking_on_store_packet", up.getId(),
+						up.getSourceNodeId(),
+						up.getDestNodeId());
+			}
+		} catch(IOException i) {
+			i.printStackTrace();
+        } catch(Exception e) {
 			e.printStackTrace();
 		}
 	}

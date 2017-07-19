@@ -9,11 +9,12 @@ import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastHeader;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
+import it.unibo.deis.lia.ramp.util.Benchmark;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 
 
 /**
- * 
+ *
  * @author Carlo Giannelli
  */
 public class ContinuityManager implements PacketForwardingListener {
@@ -21,17 +22,17 @@ public class ContinuityManager implements PacketForwardingListener {
 	private static ContinuityManager continuityManager = null;
 	private static PeriodicMultihopBeat periodicMultihopBeat = null;
 	//Stefano Lanzone
-    private static OpportunisticNetworkingManager opportunisticNetworkingManager = null; 
-	private boolean opportunisticNetworking = false; 
-		
+    private static OpportunisticNetworkingManager opportunisticNetworkingManager = null;
+	private boolean opportunisticNetworking = false;
+
 	public static synchronized ContinuityManager getInstance(boolean forceStart) {
 		if (forceStart) {
 			if (continuityManager == null) {
 				continuityManager = new ContinuityManager();
 				Dispatcher.getInstance(false).addPacketForwardingListener(continuityManager);
-	
+
 				opportunisticNetworkingManager = OpportunisticNetworkingManager.getInstance(true);
-				
+
 				GeneralUtils.appendLog("ContinuityManager ENABLED");
 				System.out.println("ContinuityManager ENABLED");
 			}
@@ -43,7 +44,7 @@ public class ContinuityManager implements PacketForwardingListener {
 		if (continuityManager != null) {
 			continuityManager.stopPeriodicMultihopBeat();
 			Dispatcher.getInstance(false).removePacketForwardingListener(continuityManager);
-			
+
 			//Stefano Lanzone
 			if(opportunisticNetworkingManager != null)
 			{
@@ -51,7 +52,7 @@ public class ContinuityManager implements PacketForwardingListener {
 				opportunisticNetworkingManager.deactivate(false);
 				opportunisticNetworkingManager = null;
 			}
-			
+
 			continuityManager = null;
 			GeneralUtils.appendLog("ContinuityManager DISABLED");
 			System.out.println("ContinuityManager DISABLED");
@@ -80,6 +81,7 @@ public class ContinuityManager implements PacketForwardingListener {
 			active = false;
 		}
 
+		@Override
 		public void run() {
 			System.out.println("ContinuityManager.PeriodicMultihopBeat STARTED");
 			do {
@@ -104,13 +106,16 @@ public class ContinuityManager implements PacketForwardingListener {
 	@Override
 	public void sendingTcpUnicastPacketException(UnicastPacket up, Exception e) {
 		sendingTcpUnicastHeaderException(up.getHeader(), e);
-		
+
 		//Stefano Lanzone
-		if(opportunisticNetworking)
-		{
+		if (opportunisticNetworking) {
 			//Send packet to Opportunistic Networking Manager
 			GeneralUtils.appendLog("ContinuityManager send unicast packet to OpportunisticNetworkingManager");
-			
+
+			// FIXME
+			Benchmark.append(System.currentTimeMillis(), "continuity_manager_to_opportunistic_networking", up.getId(),
+					up.getSourceNodeId(), up.getDestNodeId());
+
 			sendToOpportunisticNetworkingManager(up);
 			up.getHeader().setRetry((byte) 0);
 		}
@@ -118,23 +123,19 @@ public class ContinuityManager implements PacketForwardingListener {
 
 	/* Send packet to Opportunistic Networking Manager
 	 * Stefano Lanzone */
-	private void sendToOpportunisticNetworkingManager(GenericPacket gp)
-	{
-		try
-		{
+	private void sendToOpportunisticNetworkingManager(GenericPacket gp) {
+		try {
 			opportunisticNetworkingManager.receivePacket(gp);
-		}
-		catch(Exception e)
-		{
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	@Override
 	public void sendingTcpUnicastHeaderException(UnicastHeader uh, Exception exception) {
 		// System.out.println("ContinuityManager.sendingTCPUnicastHeaderException at "+System.currentTimeMillis()+" exception: "+exception);
 		opportunisticNetworking = false;
-		
+
 		int destNodeId = uh.getDestNodeId();
 		if (destNodeId == "".hashCode()) {// null){
 			// a) do nothing... (Continuity Manager disabled without destNodeId)
@@ -213,19 +214,19 @@ public class ContinuityManager implements PacketForwardingListener {
 						}
 					}
 				}
-				
+
 				/* Opportunistic Networking
 				 * Stefano Lanzone*/
 				if(bestPath == null)
 				{
 					int expiry = uh.getExpiry();
 					if(expiry != GenericPacket.UNUSED_FIELD)
-					{	
+					{
 						opportunisticNetworking = true;
 						//uh.setRetry((byte) 0);
 					}
-				}		
-				
+				}
+
 				int packetRetry = uh.getRetry();
 				if (bestPath != null || opportunisticNetworking) {
 					// there is a route to destNodeId or packet is managed in opportunistic way
@@ -273,7 +274,7 @@ public class ContinuityManager implements PacketForwardingListener {
 					// System.out.println("ContinuityManager newDest = "+Arrays.toString(newDest));
 					uh.setDest(newDest);
 					GeneralUtils.appendLog("ContinuityManager send unicast packet to new bestPath = "+newDest);
-					
+
 					// 2b) send ResolverAdvice to the sender
 					if (uh.getSource().length > 0) {// .getCurrentHop()>0){
 						// send ResolverAdvice only if the sender is not the local node
@@ -305,8 +306,8 @@ public class ContinuityManager implements PacketForwardingListener {
 
 	@Override
 	public void receivedTcpBroadcastPacket(BroadcastPacket bp) {
-		
-		if(bp.getExpiry() != GenericPacket.UNUSED_FIELD && bp.getTtl() > 0)  
+
+		if(bp.getExpiry() != GenericPacket.UNUSED_FIELD && bp.getTtl() > 0)
 		{
 			//Send packet to Opportunistic Networking Manager
 			GeneralUtils.appendLog("ContinuityManager send broadcast packet to OpportunisticNetworkingManager");
@@ -336,7 +337,7 @@ public class ContinuityManager implements PacketForwardingListener {
 					//Stefano Lanzone: questa verifica la faccio solo nel caso No Opportunistic Networking
 					int expiry = uh.getExpiry();
 //					if(expiry == GenericPacket.UNUSED_FIELD)
-//					{	
+//					{
 						// Vector<ResolverPath> availablePaths = resolver.resolveNow(destNodeId);
 						Vector<ResolverPath> availablePaths = Resolver.getInstance(false).resolveNow(destNodeId);
 
@@ -367,8 +368,8 @@ public class ContinuityManager implements PacketForwardingListener {
 						if (!found) {
 							// the path in dest seems to be not valid;
 							// try to check it via sendingTCPUnicastHeaderException and Resolver!
-							
-							if(expiry == GenericPacket.UNUSED_FIELD) 
+
+							if(expiry == GenericPacket.UNUSED_FIELD)
 								uh.setDest(null); //Stefano Lanzone: metto la dest a null solo nel caso No Opportunistic Networking
 							                      //se sono nel caso Opportunistic consento ugualmente la verifica di un path verso destNodeId
 							System.out.println("ContinuityManager receivedTCPUnicastHeader: dest=" + Arrays.toString(dest) + " NOT FOUND");
