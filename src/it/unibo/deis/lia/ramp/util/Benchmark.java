@@ -23,7 +23,8 @@ public class Benchmark {
 	private static String DATE_FORMAT = new String("yyyy_MM_dd");
 	private static String TIME_FORMAT = new String("HH:mm:ss");
 
-	private static String HEAD = new String("StorageDate#StorageTime#Milliseconds#Type#Packet ID");
+	private static String HEAD = new String(
+			"StorageDate#StorageTime#Device#Milliseconds#Type#Packet ID#Sender#Recipient");
 	// new String("Date#Time#Milliseconds#Type#Packet ID#Sender#Recipient");
 	private static String BENCH_DIR = "./logs";
 	private static String FILENAME = null;
@@ -32,15 +33,26 @@ public class Benchmark {
 	private static String ENDS_WITH = "benchmark";
 
 	private static CSVWriter CSV_WRITER = null;
+	private static String DEVICE = null;
 
 	static {
 		try {
 			if (GeneralUtils.isAndroidContext()) {
 				GeneralUtils.prepareAndroidContext();
 				BENCH_DIR = android.os.Environment.getExternalStorageDirectory() + "/ramp/logs";
+				DEVICE = "android";
 			} else {
 				if (Files.notExists(Paths.get(BENCH_DIR), LinkOption.NOFOLLOW_LINKS)) {
 					Files.createDirectories(new File(BENCH_DIR).toPath());
+				}
+
+				if (System.getProperty("user.name").equalsIgnoreCase("pi")) {
+					DEVICE = "raspberry";
+				} else if (System.getProperty("os.name").startsWith("Windows")
+						|| System.getProperty("os.name").startsWith("Linux")) {
+					DEVICE = "laptop";
+				} else {
+					DEVICE = "unknown";
 				}
 			}
 
@@ -48,11 +60,10 @@ public class Benchmark {
 			if (lastFile == null) {
 				CSV_WRITER = createFile();
 			} else {
-				// writer = new CSVWriter(new
-				// FileWriter(DATE_TIME_FORMAT.format(date.getTime()) + "-" +
-				// filename + ".csv"), ';');
 				CSV_WRITER = new CSVWriter(new FileWriter(lastFile, true), ';');
+				BENCH_PATH = lastFile;
 			}
+			// System.out.println("Benchmark: CSV_WRITER aperto " + lastFile);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -82,6 +93,11 @@ public class Benchmark {
 			csvWriter = new CSVWriter(new FileWriter(BENCH_PATH, true), ';');
 			String[] entries = HEAD.split("#");
 			csvWriter.writeNext(entries);
+
+			// FIXME
+			csvWriter.flush();
+			csvWriter.close();
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -89,19 +105,27 @@ public class Benchmark {
 		return csvWriter;
 	}
 
-	public static synchronized void append(long millis, String type, int packetId) {
+	public static synchronized void append(long millis, String type, int packetId, int sender,
+			int recipient) {
 		// String sender, String recipient
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
+					// FIXME
+					CSVWriter csvWriter = new CSVWriter(new FileWriter(BENCH_PATH, true), ';');
+
 					Date date = new Date();
 					SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
 					SimpleDateFormat timeFormat = new SimpleDateFormat(TIME_FORMAT);
 					String row = dateFormat.format(date.getTime()) + "#" + timeFormat.format(date.getTime()) + "#"
-							+ millis + "#" + type + "#" + packetId;
+							+ DEVICE + "#" + millis + "#" + type + "#" + packetId + "#" + sender + "#" + recipient;
+					// CSV_WRITER.writeNext(row.split("#"));
 
-					CSV_WRITER.writeNext(row.split("#"));
+					// FIXME
+					csvWriter.writeNext(row.split("#"));
+					csvWriter.flush();
+					csvWriter.close();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -109,7 +133,7 @@ public class Benchmark {
 		}).start();
 	}
 
-	public static synchronized String getLastFilename(String dirname, String endsWith, String fileExtension) {
+	public static String getLastFilename(String dirname, String endsWith, String fileExtension) {
 		File[] files = null;
 		try {
 			File dir = new File(dirname);
@@ -153,7 +177,12 @@ public class Benchmark {
 	public static void closeCsvWriter() {
 		try {
 			if (CSV_WRITER != null) {
+				// System.out.println("Benchmark, closeCsvWriter(): CSV_WRITER
+				// prima di chiudere");
+				CSV_WRITER.flush();
 				CSV_WRITER.close();
+				// System.out.println("Benchmark, closeCsvWriter(): CSV_WRITER
+				// chiuso");
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
