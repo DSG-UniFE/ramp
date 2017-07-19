@@ -49,7 +49,6 @@ import it.unibo.deis.lia.ramp.service.application.FileSharingService;
 import it.unibo.deis.lia.ramp.service.application.ResourceDiscovery;
 import it.unibo.deis.lia.ramp.service.application.ResourceProvider;
 import it.unibo.deis.lia.ramp.service.management.ServiceManager;
-import it.unibo.deis.lia.ramp.util.Benchmark;
 //import it.unibo.deis.lia.ramp.service.upnp.UpnpProxyEntrypoint;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 import it.unibo.deis.lia.ramp.util.LogWithTimestamp;
@@ -468,8 +467,6 @@ public class RampEntryPoint {
 	synchronized public void stopRamp() {
 		if (RampEntryPoint.ramp != null) {
 			System.out.println("RampEntryPoint.stopRamp START");
-			// Close file for benchmark
-			Benchmark.closeCsvWriter();
 
 			// BufferSizeManager.deactivate();
 			stopBufferSizeManager();

@@ -275,7 +275,7 @@ public class GeneralUtils {
 		}
 	}
 
-	public static Properties loadProperties() {
+	public static synchronized Properties loadProperties() {
 		prepareAndroidContext();
 
 		Properties properties = new Properties();
@@ -292,7 +292,7 @@ public class GeneralUtils {
 		return properties;
 	}
 
-	public static void storeProperties(Properties properties) throws Exception {
+	public static synchronized void storeProperties(Properties properties) throws Exception {
 		prepareAndroidContext();
 
 		StringBuilder sb = new StringBuilder();
@@ -414,39 +414,33 @@ public class GeneralUtils {
 	}
 
 	public static synchronized void prepareAndroidContext() {
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				if (isAndroidContext()) {
-					try {
-						File androidShareDirectory = new File(
-								android.os.Environment.getExternalStorageDirectory() + "/ramp");
-						if (!androidShareDirectory.exists())
-							androidShareDirectory.mkdirs();
+		if (isAndroidContext()) {
+			try {
+				File androidShareDirectory = new File(android.os.Environment.getExternalStorageDirectory() + "/ramp");
+				if (!androidShareDirectory.exists())
+					androidShareDirectory.mkdirs();
 
-						// This prevents media scanner from reading your media
-						// files and
-						// providing them to other apps through the MediaStore
-						// content
-						// provider.
-						File file = new File(androidShareDirectory.getAbsolutePath(), "/.nomedia");
-						if (!file.exists()) {
-							FileOutputStream out = new FileOutputStream(file);
-							out.flush();
-							out.close();
-						}
-
-						File dir = new File(androidShareDirectory.getAbsolutePath() + "/logs");
-						if (!dir.exists())
-							dir.mkdir();
-
-						propertiesPath = androidShareDirectory.getAbsolutePath() + "/ramp.props";
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+				// This prevents media scanner from reading your media
+				// files and
+				// providing them to other apps through the MediaStore
+				// content
+				// provider.
+				File file = new File(androidShareDirectory.getAbsolutePath(), "/.nomedia");
+				if (!file.exists()) {
+					FileOutputStream out = new FileOutputStream(file);
+					out.flush();
+					out.close();
 				}
+
+				File dir = new File(androidShareDirectory.getAbsolutePath() + "/logs");
+				if (!dir.exists())
+					dir.mkdir();
+
+				propertiesPath = androidShareDirectory.getAbsolutePath() + "/ramp.props";
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-		}).start();
+		}
 	}
 
 	public static boolean isAndroidContext() {
