@@ -15,6 +15,7 @@ import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorRequest.Type;
 import it.unibo.deis.lia.ramp.service.management.ServiceDiscovery;
 import it.unibo.deis.lia.ramp.service.management.ServiceResponse;
+import it.unibo.deis.lia.ramp.util.Benchmark;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 
 
@@ -272,30 +273,32 @@ public class DistributedActuatorClient extends Thread{
 	                    System.out.println("DistributedActuatorClientPacketHandler DistributedActuatorRequest");
 	                    DistributedActuatorRequest request = (DistributedActuatorRequest) payload;
 	                    switch (request.getType()) {
-		                    case PRE_COMMAND:
-		                    	try {
-		                    		appDB.get(request.getAppName()).setTimestamp(System.currentTimeMillis());
-			                    	E2EComm.sendUnicast(
-			                    			E2EComm.ipReverse(up.getSource()),
-		                        			appDB.get(request.getAppName()).getControllerPort(),
-		                        			protocol,
-		                        			E2EComm.serialize(new DistributedActuatorRequest(
-		    		                    			Type.HERE_I_AM,
-		    		                    			request.getAppName()))
-		                        			);
-		                    	} catch (Exception e) {
-		            	            e.printStackTrace();
-		            	        }
-		                    	break;
-		                    case COMMAND:
+						case PRE_COMMAND:
+							Benchmark.append(System.currentTimeMillis(), "dac_received_pre_command", up.getId(),
+									up.getSourceNodeId(), up.getDestNodeId());
+							try {
 	                    		appDB.get(request.getAppName()).setTimestamp(System.currentTimeMillis());
-		                    	appDB.get(request.getAppName()).getDistributedActuatorClientListener().receivedCommand(request);
-								break;
-							default:
-								// received wrong type of request: do nothing...
-		                        System.out.println("DistributedActuatorClientPacketHandler wrong type of request: " +
-		                        		request.getType());
-								break;
+								E2EComm.sendUnicast(E2EComm.ipReverse(up.getSource()),
+										appDB.get(request.getAppName()).getControllerPort(), protocol,
+										E2EComm.serialize(
+												new DistributedActuatorRequest(Type.HERE_I_AM, request.getAppName())));
+								Benchmark.append(System.currentTimeMillis(), "dac_sent_here_i_am", 0, 0, 0);
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+							break;
+						case COMMAND:
+							Benchmark.append(System.currentTimeMillis(), "dac_received_command", up.getId(),
+									up.getSourceNodeId(), up.getDestNodeId());
+							appDB.get(request.getAppName()).setTimestamp(System.currentTimeMillis());
+							appDB.get(request.getAppName()).getDistributedActuatorClientListener()
+									.receivedCommand(request);
+							break;
+						default:
+							// received wrong type of request: do nothing...
+							System.out.println("DistributedActuatorClientPacketHandler wrong type of request: "
+									+ request.getType());
+							break;
 						}
 	                } else {
 	                    // received payload is not DistributedActuatorClientPacketHandler: do nothing...
@@ -379,6 +382,7 @@ public class DistributedActuatorClient extends Thread{
 							boolean ok = registerNewApp(appName, appDescriptor.getDistributedActuatorClientListener());
 
 							if(!ok){
+								Benchmark.append(System.currentTimeMillis(), "dac_activate_resilience", 0, 0, 0);
 								appDescriptor.setControllerNodeId(null);
 								appDescriptor.setControllerPort(null);
 								appDescriptor.setTimestamp(null);

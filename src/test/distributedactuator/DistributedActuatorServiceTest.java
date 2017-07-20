@@ -31,16 +31,17 @@ public class DistributedActuatorServiceTest {
 		das.addApp(appName);
 		System.out.println("DistributedActuatorServiceTest, added app: " + appName);
 
+		System.out.println("DistributedActuatorServiceTest: before sleep 30 seconds");
+		Thread.sleep(30000);
+
+		String sendCommand = "command=python capturing_to_a_file.py,resilience=60";
+		das.sendCommand(appName, sendCommand, 1, 0);
+		System.out.println("DistributedActuatorServiceTest, sent command: " + sendCommand);
+
 		while (true) {
 			Thread.sleep(1000);
 		}
 
-//		Thread.sleep(30000);
-//
-//		String sendCommand = "command=c,resilience=r";
-//		das.sendCommand(appName, sendCommand, 1, 0);
-//		System.out.println("DistributedActuatorServiceTest, sent command: " + sendCommand);
-//
 //		Thread.sleep(5000);
 //
 //    	das.removeApp(appName);

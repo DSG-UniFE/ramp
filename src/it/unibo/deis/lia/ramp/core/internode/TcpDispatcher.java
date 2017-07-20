@@ -90,18 +90,14 @@ public class TcpDispatcher extends Thread {
 	@Override
 	public void run() {
 		try {
-			System.out.println("TcpDispatcher START");
+			// System.out.println("TcpDispatcher START");
 			while (active) {
 				// System.out.println("TcpDispatcher accept");
 				// receive
 				Socket s = ss.accept();
 				s.setSoTimeout(60000); // XXX this is to avoid that a thread is blocked indefinitely listening on this socket
 
-				try {
-					System.out.println("TcpDispatcher, run(): after accept");
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+				// System.out.println("TcpDispatcher, run(): after accept");
 
 				asyncDispatchTcpGenericPacket(s);
 			}
@@ -125,7 +121,7 @@ public class TcpDispatcher extends Thread {
 		private InputStream is;
 		private InetAddress remoteAddress;
 		private Socket socket;
-		//Stefano Lanzone
+		// Stefano Lanzone
 		private Set<Integer> exploredNodeIdList;
 
 		@Override

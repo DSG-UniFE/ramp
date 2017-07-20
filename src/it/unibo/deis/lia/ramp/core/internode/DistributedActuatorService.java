@@ -15,6 +15,7 @@ import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorRequest.Type;
 import it.unibo.deis.lia.ramp.service.management.ServiceManager;
+import it.unibo.deis.lia.ramp.util.Benchmark;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 
 
@@ -111,6 +112,7 @@ public class DistributedActuatorService extends Thread {
 										serviceSocket.getLocalPort(),
 										appName))
 						);
+				Benchmark.append(System.currentTimeMillis(), "das_sent_pre_command", 0, 0, 0);
 				System.out.println("DistributedActuatorService.sendCommand: sent packet PRE_COMMAND");
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -136,8 +138,9 @@ public class DistributedActuatorService extends Thread {
     	}
     	System.out.println("DistributedActuatorService.sendCommand: founded n " + nActiveNodes + " active nodes");
     	System.out.println("DistributedActuatorService.sendCommand: list of active nodes " + Arrays.toString(activeNodes.toArray()));
-    	if ((nActiveNodes/nodes.size()) >= threshold) {
+		if ((nActiveNodes / nodes.size()) >= threshold) {
     		System.out.println("DistributedActuatorService.sendCommand: outdated threshold");
+			Benchmark.append(System.currentTimeMillis(), "das_sending_commands", 0, 0, 0);
     		for(int nodeID : activeNodes) {
     			ClientDescriptor node = nodes.get(nodeID);
     			Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(nodeID, 5*1000);
@@ -164,6 +167,9 @@ public class DistributedActuatorService extends Thread {
     				e.printStackTrace();
     			}
     		}
+			Benchmark.append(System.currentTimeMillis(), "das_sent_commands", 0, 0, 0);
+		} else {
+			Benchmark.append(System.currentTimeMillis(), "das_not_sent_command", 0, 0, 0);
     	}
     }
 
@@ -214,22 +220,31 @@ public class DistributedActuatorService extends Thread {
 	                    DistributedActuatorRequest request = (DistributedActuatorRequest) payload;
 	                    switch (request.getType()) {
 		                    case HERE_I_AM:
+							Benchmark.append(System.currentTimeMillis(), "das_ph_here_i_am", up.getId(),
+									up.getSourceNodeId(), up.getDestNodeId());
 		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest HERE_I_AM");
 		                    	ClientDescriptor cd = appDB.get(request.getAppName(), up.getSourceNodeId());
 		                    	cd.setLastUpdate(System.currentTimeMillis());
 		                    	break;
 		                    case JOIN:
+							Benchmark.append(System.currentTimeMillis(), "das_ph_join", up.getId(),
+									up.getSourceNodeId(), up.getDestNodeId());
 		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest JOIN");
 		                    	appDB.put(request.getAppName(), up.getSourceNodeId(),
 		                    			new ClientDescriptor(request.getPort(),
 		                    					System.currentTimeMillis()));
 		                    	break;
 		                    case LEAVE:
+							Benchmark.append(System.currentTimeMillis(), "das_ph_leave", up.getId(),
+									up.getSourceNodeId(), up.getDestNodeId());
 		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest LEAVE");
 		                    	appDB.removeK2(request.getAppName(), up.getSourceNodeId());
 		                    	break;
 		                    case WHICH_APP:
-		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest WHICH_aAPP");
+							Benchmark.append(System.currentTimeMillis(), "das_ph_which_app", up.getId(),
+									up.getSourceNodeId(), up.getDestNodeId());
+							System.out.println(
+									"DistributedActuatorService PacketHandler DistributedActuatorRequest WHICH_APP");
 		                    	Set<String> sAppNames = appDB.getK1();
 		                    	String[] aAppNames = sAppNames.toArray(new String[sAppNames.size()]);
 		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest aAppNames:" + Arrays.toString(aAppNames));
@@ -251,6 +266,8 @@ public class DistributedActuatorService extends Thread {
 			            					GenericPacket.UNUSED_FIELD,
 			            					E2EComm.serialize(dar)
 			            					);
+								Benchmark.append(System.currentTimeMillis(), "das_ph_which_app_response", up.getId(),
+										up.getSourceNodeId(), up.getDestNodeId());
 			                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest sent packet AVAILABLE_APPS");
 		                    	} catch (Exception e) {
 		            	            e.printStackTrace();
@@ -323,24 +340,22 @@ public class DistributedActuatorService extends Thread {
 	    			for(int nodeID : nodes.keySet()) {
 	    				ClientDescriptor node = nodes.get(nodeID);
 	    				Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(nodeID, 5*1000);
-	    				try {
-							E2EComm.sendUnicast(
-									paths.firstElement().getPath(),
-									nodeID, node.getPort(),
-									PROTOCOL,
-									false,
-									GenericPacket.UNUSED_FIELD,
-									E2EComm.DEFAULT_BUFFERSIZE,
-									GenericPacket.UNUSED_FIELD,
-									GenericPacket.UNUSED_FIELD,
-									GenericPacket.UNUSED_FIELD,
-									E2EComm.serialize(new DistributedActuatorRequest(
-											DistributedActuatorRequest.Type.PRE_COMMAND,
-											serviceSocket.getLocalPort(),
-											appName))
-									);
-						} catch (Exception e) {
-							e.printStackTrace();
+						if (paths != null) {
+							try {
+								E2EComm.sendUnicast(paths.firstElement().getPath(), nodeID, node.getPort(), PROTOCOL,
+										false, GenericPacket.UNUSED_FIELD, E2EComm.DEFAULT_BUFFERSIZE,
+										GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD,
+										GenericPacket.UNUSED_FIELD,
+										E2EComm.serialize(new DistributedActuatorRequest(
+												DistributedActuatorRequest.Type.PRE_COMMAND,
+												serviceSocket.getLocalPort(), appName)));
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						} else {
+							// TODO ?
+							// Rimuovere i nodeID che non hanno più un percorso
+							// appDB.removeK2(appName, nodeID);
 						}
 	    			}
 	    		}

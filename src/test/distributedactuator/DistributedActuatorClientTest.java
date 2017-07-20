@@ -10,7 +10,7 @@ public class DistributedActuatorClientTest {
 		RampEntryPoint ramp = RampEntryPoint.getInstance(true, null);
 		Thread.sleep(2500);
 		ramp.forceNeighborsUpdate();
-		
+
 		Thread.sleep(5000);
 		ramp.forceNeighborsUpdate();
 
@@ -40,7 +40,8 @@ public class DistributedActuatorClientTest {
 
 		Thread.sleep(10000);
 
-    	dac.leave(appName);
-		System.out.println("DistributedActuatorClient, leaved app: " + appName);
+		// dac.leave(appName);
+		// System.out.println("DistributedActuatorClient, leaved app: " +
+		// appName);
 	}
 }
