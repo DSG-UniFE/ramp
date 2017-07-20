@@ -21,34 +21,34 @@ import it.unibo.deis.lia.ramp.util.GeneralUtils;
 public class DistributedActuatorService extends Thread {
 
 	private boolean open;
-	
-	private static final int protocol = E2EComm.TCP;
+
+	private static final int PROTOCOL = E2EComm.TCP;
 	private static BoundReceiveSocket serviceSocket;
-	
+
 	private static DistributedActuatorService distribuitedActuator = null;
 	private static Heartbeater heartbeater = null;
-	
-	// <app_name, <node_id, ClientDescriptor>
+
+	// <app_name, node_id, ClientDescriptor>
 	private BiHashtable<String, Integer, ClientDescriptor> appDB  = new BiHashtable<String, Integer, ClientDescriptor>();
-	
-	
-	protected DistributedActuatorService(boolean gui) throws Exception {
+
+
+	public DistributedActuatorService(boolean gui) throws Exception {
 		open = true;
-		
-	    serviceSocket = E2EComm.bindPreReceive(protocol);
+
+	    serviceSocket = E2EComm.bindPreReceive(PROTOCOL);
 
 	    ServiceManager.getInstance(false).registerService(
-	    		"DistributedActuator",
+				"DistributedActuator",
 	    		serviceSocket.getLocalPort(),
-	    		protocol
+	    		PROTOCOL
 			);
 	}
-	
+
 	public static synchronized DistributedActuatorService getInstance() {
 	    try {
 	        if (DistributedActuatorService.distribuitedActuator == null) {
 	        	// DistributedActuatorService senza GUI
-	        	DistributedActuatorService.distribuitedActuator = new DistributedActuatorService(false); 
+	        	DistributedActuatorService.distribuitedActuator = new DistributedActuatorService(false);
 	        	DistributedActuatorService.distribuitedActuator.start();
 	        }
 	    }
@@ -57,11 +57,11 @@ public class DistributedActuatorService extends Thread {
 	    }
 	    return DistributedActuatorService.distribuitedActuator;
 	}
-	
+
 	public static boolean isActive(){
 	    return DistributedActuatorService.distribuitedActuator != null;
 	}
-	
+
 	public void stopService(){
 	    System.out.println("DistributedActuatorService close");
 	    ServiceManager.getInstance(false).removeService("DistribuitedActuator");
@@ -77,16 +77,18 @@ public class DistributedActuatorService extends Thread {
     public void addApp(String appName) {
     	appDB.putK1(appName);
     }
-    
+
     public void removeApp(String appName) {
     	appDB.removeK1(appName);
     }
-    
+
     /**
 	 * @param threshold value from 0 to 1
 	 */
-    public void sendCommand(String appName, String command, int timeToWait, float threshold) { // "primaryValue=xxx,resilience=yyy"
-	    System.out.println("DistributedActuatorService.sendCommand: appName="+appName+" command="+command);
+	public void sendCommand(String appName, String command, int secondsToWait, float threshold) {
+		secondsToWait = secondsToWait * 1000;
+		// "primaryValue=xxx,resilience=yyy"
+		System.out.println("DistributedActuatorService.sendCommand: appName=" + appName + " command=" + command);
     	Hashtable<Integer, ClientDescriptor> nodes = appDB.getK2(appName);
     	for(int nodeID : nodes.keySet()) {
 			ClientDescriptor node = nodes.get(nodeID);
@@ -94,10 +96,10 @@ public class DistributedActuatorService extends Thread {
 			try {
 				E2EComm.sendUnicast(
 						paths.firstElement().getPath(),
-						nodeID, 
-						node.getPort(), 
-						protocol,
-						false, 
+						nodeID,
+						node.getPort(),
+						PROTOCOL,
+						false,
 						GenericPacket.UNUSED_FIELD,
 						E2EComm.DEFAULT_BUFFERSIZE,
 						GenericPacket.UNUSED_FIELD,
@@ -114,19 +116,20 @@ public class DistributedActuatorService extends Thread {
 				e.printStackTrace();
 			}
 		}
-    	
+
     	try {
-    		System.out.println("DistributedActuatorService.sendCommand: waiting for " + timeToWait + " milliseconds");
-			sleep(timeToWait);
+			System.out
+					.println("DistributedActuatorService.sendCommand: waiting for " + secondsToWait + " milliseconds");
+			sleep(secondsToWait);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-    	
+
     	float nActiveNodes = 0;
     	ArrayList<Integer> activeNodes = new ArrayList<Integer>();
     	for(int nodeID : nodes.keySet()) {
     		ClientDescriptor node = nodes.get(nodeID);
-    		if (node.lastUpdate > (System.currentTimeMillis()-timeToWait)) {
+			if (node.lastUpdate > (System.currentTimeMillis() - secondsToWait)) {
     			nActiveNodes++;
     			activeNodes.add(nodeID);
     		}
@@ -141,9 +144,9 @@ public class DistributedActuatorService extends Thread {
     			try {
     				E2EComm.sendUnicast(
     						paths.firstElement().getPath(),
-    						nodeID, node.getPort(), 
-    						protocol,
-    						false, 
+    						nodeID, node.getPort(),
+    						PROTOCOL,
+    						false,
     						GenericPacket.UNUSED_FIELD,
     						E2EComm.DEFAULT_BUFFERSIZE,
     						GenericPacket.UNUSED_FIELD,
@@ -153,7 +156,7 @@ public class DistributedActuatorService extends Thread {
     								new DistributedActuatorRequest(
     										DistributedActuatorRequest.Type.COMMAND,
     										serviceSocket.getLocalPort(),
-    										appName, 
+    										appName,
     										command))
     						);
     				System.out.println("DistributedActuatorService.sendCommand: sent packet COMMAD=" + command);
@@ -163,13 +166,13 @@ public class DistributedActuatorService extends Thread {
     		}
     	}
     }
-    
+
 	@Override
 	public void run() {
 	    try {
 	        System.out.println("DistributedActuatorService START");
-	        GeneralUtils.appendLog("DistributedActuatorService START " + 
-	        		serviceSocket.getLocalPort() + " " + protocol);
+	        GeneralUtils.appendLog("DistributedActuatorService START " +
+	        		serviceSocket.getLocalPort() + " " + PROTOCOL);
 	        DistributedActuatorService.heartbeater = new Heartbeater(5, TimeUnit.SECONDS);
 	        while (open) {
 	            try {
@@ -190,15 +193,15 @@ public class DistributedActuatorService extends Thread {
 	    GeneralUtils.appendLog("DistributedActuatorService FINISHED");
 	}
 
-	
+
 	private class PacketHandler extends Thread {
 	    private GenericPacket gp;
 
-	    
+
 	    private PacketHandler(GenericPacket gp) {
 	        this.gp = gp;
 	    }
-	    
+
 	    @Override
 	    public void run() {
 	        try {
@@ -218,7 +221,7 @@ public class DistributedActuatorService extends Thread {
 		                    case JOIN:
 		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest JOIN");
 		                    	appDB.put(request.getAppName(), up.getSourceNodeId(),
-		                    			new ClientDescriptor(request.getPort(), 
+		                    			new ClientDescriptor(request.getPort(),
 		                    					System.currentTimeMillis()));
 		                    	break;
 		                    case LEAVE:
@@ -240,7 +243,7 @@ public class DistributedActuatorService extends Thread {
 			                    			up.getSourceNodeId(),
 		                        			request.getPort(),
 			            					E2EComm.TCP,
-			            					false, 
+			            					false,
 			            					GenericPacket.UNUSED_FIELD,
 			            					E2EComm.DEFAULT_BUFFERSIZE,
 			            					GenericPacket.UNUSED_FIELD,
@@ -255,7 +258,7 @@ public class DistributedActuatorService extends Thread {
 		                    	break;
 							default:
 								// received wrong type of request: do nothing...
-		                        System.out.println("DistribuitedActuatorService PacketHandler wrong type of request: " + 
+		                        System.out.println("DistribuitedActuatorService PacketHandler wrong type of request: " +
 		                        		request.getType());
 								break;
 						}
@@ -266,7 +269,7 @@ public class DistributedActuatorService extends Thread {
 	            }
 	            else{
 	                // received packet is not UnicastPacket: do nothing...
-	                System.out.println("DistributedActuatorService PacketHandler wrong packet: " + 
+	                System.out.println("DistributedActuatorService PacketHandler wrong packet: " +
 	                		gp.getClass().getName());
 	            }
 	        } catch(Exception e) {
@@ -275,32 +278,32 @@ public class DistributedActuatorService extends Thread {
 	    }
 	}
 
-	
+
 	private class Heartbeater extends Thread {
 
 		private boolean open;
 		private final Object monitor = new Object();
 		private long millisToSleep = TimeUnit.SECONDS.toMillis(15); // default time
 		private Heartbeater heartbeater = null;
-		
-		
+
+
 		private Heartbeater(int timeToSleep, TimeUnit timeUnit) {
 			this.open = true;
 	        setMillisToSleep(timeToSleep, timeUnit);
 	        start();
 	    }
-	    
+
 		protected boolean isActive(){
 		    return heartbeater != null;
 		}
-		
+
 		public void stopHeartbeater(){
 		    open = false;
 		    synchronized (monitor) {
 		    	monitor.notify();
 	        }
 		}
-		
+
 	    @Override
 	    public void run() {
 	    	System.out.println("DistributedActuatorServiceHeartbeater START");
@@ -323,9 +326,9 @@ public class DistributedActuatorService extends Thread {
 	    				try {
 							E2EComm.sendUnicast(
 									paths.firstElement().getPath(),
-									nodeID, node.getPort(), 
-									protocol,
-									false, 
+									nodeID, node.getPort(),
+									PROTOCOL,
+									false,
 									GenericPacket.UNUSED_FIELD,
 									E2EComm.DEFAULT_BUFFERSIZE,
 									GenericPacket.UNUSED_FIELD,
@@ -351,19 +354,19 @@ public class DistributedActuatorService extends Thread {
 //	            monitor.notify();
 	        }
 		}
-	    
+
 	}
 
-	
-	
+
+
 	public class BiHashtable<K1, K2, V> {
 		/*
 		 * http://stackoverflow.com/questions/28362502/can-we-put-hash-tables-inside-a-hash-table
 		 */
-		
+
 		private final Hashtable<K1, Hashtable<K2, V>> tTable;
 
-		
+
 		public BiHashtable() {
 			tTable = new Hashtable<K1, Hashtable<K2, V>>();
 		}
@@ -371,7 +374,7 @@ public class DistributedActuatorService extends Thread {
 		/*
 		 * Associates the specified value with the specified keys in this map (optional operation). If the map previously
 		 * contained a mapping for the key, the old value is replaced by the specified value.
-		 * 
+		 *
 		 * @param key1
 		 *            the first key
 		 * @param key2
@@ -392,17 +395,17 @@ public class DistributedActuatorService extends Thread {
 
 		    return table.put(key2, object);
 		}
-		
+
 		public void putK1(K1 key1) {
 		    if (!tTable.containsKey(key1)) {
 		    	tTable.put(key1, new Hashtable<K2, V>());
-		    }    
+		    }
 		}
-		
+
 		/**
 		 * Returns the object to which the specified key is mapped, or <code>null</code> if this map contains no mapping for
 		 * the key.
-		 * 
+		 *
 		 * @param key1
 		 *            the first key whose associated value is to be returned
 		 * @param key2
@@ -418,11 +421,11 @@ public class DistributedActuatorService extends Thread {
 		        return null;
 		    }
 		}
-		
+
 		public Set<K1> getK1() {
 	        return tTable.keySet();
 		}
-		
+
 		public Hashtable<K2, V> getK2(K1 key1) {
 		    if (tTable.containsKey(key1)) {
 		        return tTable.get(key1);
@@ -430,7 +433,7 @@ public class DistributedActuatorService extends Thread {
 		        return null;
 		    }
 		}
-		
+
 		public Hashtable<K2, V> removeK1(K1 key1) {
 		    if (tTable.containsKey(key1)) {
 		        return tTable.remove(key1);
@@ -438,7 +441,7 @@ public class DistributedActuatorService extends Thread {
 		        return null;
 		    }
 		}
-		
+
 		public V removeK2(K1 key1, K2 key2) {
 		    if (tTable.containsKey(key1) && tTable.get(key1).containsKey(key2)) {
 		        return tTable.get(key1).remove(key2);
@@ -449,7 +452,7 @@ public class DistributedActuatorService extends Thread {
 
 		/**
 		 * Returns <code>true</code> if this map contains a mapping for the specified key
-		 * 
+		 *
 		 * @param key1
 		 *            the first key whose presence in this map is to be tested
 		 * @param key2
@@ -465,30 +468,30 @@ public class DistributedActuatorService extends Thread {
 		    tTable.clear();
 		}
 	}
-	
-	
+
+
 	private class ClientDescriptor {
 		private int port;
 		private long lastUpdate; // unix epoch
-		
-		
+
+
 		protected ClientDescriptor(int port, long lastUpdate) {
 			this.port = port;
 			this.lastUpdate = lastUpdate;
 		}
-		
+
 		protected int getPort() {
 			return port;
 		}
-		
+
 		protected void setPort(int port) {
 			this.port = port;
 		}
-		
+
 		protected long getLastUpdate() {
 			return lastUpdate;
 		}
-		
+
 		protected void setLastUpdate(long lastUpdate) {
 			this.lastUpdate = lastUpdate;
 		}

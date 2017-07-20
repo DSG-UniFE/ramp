@@ -670,6 +670,10 @@ public class TcpDispatcher extends Thread {
 
 				// 2) send to neighbors (if TTL is greater than 0)
 				if (bp.getTtl() > 0) {
+					// FIXME
+					System.out.println("TcpDispatcher broadcastPacketTcpHandler: sendToNeighbors()");
+
+
 					sendToNeighbors(firstHop, remoteAddressString, null, bp);
 
 //					boolean isFromRin = Dispatcher.isFromRin(remoteAddressString);

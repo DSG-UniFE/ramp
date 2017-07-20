@@ -54,6 +54,8 @@ public class GeneralUtils {
 	private static String localHost = null;
 
 	public static String getLocalHost(boolean forceRefresh) throws UnknownHostException {
+
+
 		if (localHost == null || forceRefresh) {
 			localHost = InetAddress.getLocalHost().getHostAddress().replaceAll("/", "");
 		}
