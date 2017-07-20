@@ -8,6 +8,11 @@ public class DistributedActuatorClientTest {
 
 	public static void main(String[] args) throws InterruptedException {
 		RampEntryPoint ramp = RampEntryPoint.getInstance(true, null);
+		Thread.sleep(2500);
+		ramp.forceNeighborsUpdate();
+		
+		Thread.sleep(5000);
+		ramp.forceNeighborsUpdate();
 
 		System.out.println("DistributedActuatorClientTest, main(): registering shutdown hook");
 		// Setup signal handling in order to always stop RAMP gracefully

@@ -32,7 +32,7 @@ public class DistributedActuatorServiceTest {
 		System.out.println("DistributedActuatorServiceTest, added app: " + appName);
 
 		while (true) {
-
+			Thread.sleep(1000);
 		}
 
 //		Thread.sleep(30000);

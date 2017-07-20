@@ -333,7 +333,8 @@ public class E2EComm {
             //System.out.println("E2EComm.sendBroadcast udp");
             
         	InetAddress localhost = InetAddress.getLocalHost();
-            //System.out.println("E2EComm.sendUnicast udp localhost = "+localhost);
+        	//InetAddress localhost = InetAddress.getByName("127.0.0.1");
+        	System.out.println("E2EComm.sendBroadcast udp localhost = "+localhost);
             //(new UdpDispatcher.UdpDispatcherHandler(bp, localhost)).start();
             UdpDispatcher.asyncDispatchUdpGenericPacket(bp, localhost);
             
@@ -606,7 +607,7 @@ public class E2EComm {
                 up.setSourcePortAck(dsAck.getLocalPort());
             }
             InetAddress localhost = InetAddress.getLocalHost();
-            //System.out.println("E2EComm.sendUnicast udp localhost = "+localhost);
+            System.out.println("E2EComm.sendUnicast udp localhost = "+localhost);
             UdpDispatcher.asyncDispatchUdpGenericPacket(up, localhost);
             
         }
