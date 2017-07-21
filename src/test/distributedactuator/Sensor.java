@@ -23,7 +23,7 @@ public class Sensor extends Thread implements DistributedActuatorClientListener 
 	private static String SCRIPT_DIR = "/home/pi/testCamera/";
 	private boolean open = false;
 	// resilience from 0 to 100
-	private float resilience = 40;
+	private float resilience = 20;
 	private String command = null;
 	BufferedImage oldImg = null;
 

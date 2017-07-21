@@ -2,10 +2,14 @@ package test.distributedactuator;
 
 import it.unibo.deis.lia.ramp.RampEntryPoint;
 import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorService;
+import it.unibo.deis.lia.ramp.util.Benchmark;
 
 public class DistributedActuatorServiceTest {
 
 	public static void main(String[] args) throws InterruptedException {
+		Benchmark.createFile();
+		Benchmark.append(System.currentTimeMillis(), "started_das", 0, 0, 0);
+
 		RampEntryPoint ramp = RampEntryPoint.getInstance(true, null);
 
 		System.out.println("DistributedActuatorServiceTest, main(): registering shutdown hook");
@@ -24,7 +28,6 @@ public class DistributedActuatorServiceTest {
 			}
 		}));
 
-		// ramp.startService("DistributedActuatorService");
 		DistributedActuatorService das = DistributedActuatorService.getInstance();
 
 		String appName = "QuorumBasedTest";
@@ -34,7 +37,7 @@ public class DistributedActuatorServiceTest {
 		System.out.println("DistributedActuatorServiceTest: before sleep 30 seconds");
 		Thread.sleep(30000);
 
-		String sendCommand = "command=python capturing_to_a_file.py,resilience=60";
+		String sendCommand = "command=python capturing_to_a_file.py,resilience=20";
 		das.sendCommand(appName, sendCommand, 1, 0);
 		System.out.println("DistributedActuatorServiceTest, sent command: " + sendCommand);
 

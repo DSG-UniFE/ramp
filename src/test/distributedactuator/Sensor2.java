@@ -20,6 +20,7 @@ public class Sensor2 extends Thread implements DistributedActuatorClientListener
 	public void run() {
 		while(open) {
 			try {
+				Benchmark.append(System.currentTimeMillis(), "s_executed_command", 0, 0, 0);
 				sleep(5*1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
