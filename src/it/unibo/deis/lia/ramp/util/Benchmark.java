@@ -75,7 +75,11 @@ public class Benchmark {
 			int nfiles = getNumberFiles(BENCH_DIR, ENDS_WITH, FILE_EXTENSION);
 			if (nfiles == 0) {
 				nfiles++;
+			} else {
+				// FIXME
+				nfiles++;
 			}
+
 			FILENAME = getDate(DATE_FORMAT.toString()) + "-" + String.format("%02d", nfiles) + "-" + ENDS_WITH
 					+ FILE_EXTENSION;
 			BENCH_PATH = BENCH_DIR + "/" + FILENAME;
