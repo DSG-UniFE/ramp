@@ -63,7 +63,6 @@ public class RampEntryPoint {
 
 	// RAMP main
 	public static void main(String args[]) {
-
 		// System.setProperty("java.awt.headless", "true");
 
 		PrintStream defaultOutPrintStream = System.out;

@@ -17,6 +17,8 @@ public class RonTest {
 		// java -cp './bin:./libs/*' it.unibo.deis.lia.ramp.RampEntryPoint
 		boolean open = true;
 
+		Benchmark.createFile();
+
 		RampEntryPoint ramp = RampEntryPoint.getInstance(true, null);
 
 		BoundReceiveSocket serviceSocket = E2EComm.bindPreReceive(E2EComm.TCP);

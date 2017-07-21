@@ -2,11 +2,15 @@ package test.distributedactuator;
 
 import it.unibo.deis.lia.ramp.RampEntryPoint;
 import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorClient;
+import it.unibo.deis.lia.ramp.util.Benchmark;
 
 
 public class DistributedActuatorClientTest {
 
 	public static void main(String[] args) throws InterruptedException {
+		Benchmark.createFile();
+		Benchmark.append(System.currentTimeMillis(), "started_dac", 0, 0, 0);
+
 		RampEntryPoint ramp = RampEntryPoint.getInstance(true, null);
 		Thread.sleep(2500);
 		ramp.forceNeighborsUpdate();
@@ -38,7 +42,8 @@ public class DistributedActuatorClientTest {
     	dac.registerNewApp(appName, sensor);
 		System.out.println("DistributedActuatorClient, registered app: " + appName);
 
-		Thread.sleep(10000);
+		System.out.println("DistributedActuatorClient: before sleep 600 seconds");
+		Thread.sleep(600000);
 
 		// dac.leave(appName);
 		// System.out.println("DistributedActuatorClient, leaved app: " +

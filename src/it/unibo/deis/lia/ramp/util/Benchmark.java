@@ -90,12 +90,11 @@ public class Benchmark {
 				}
 			}
 			csvWriter = new CSVWriter(new FileWriter(BENCH_PATH, true), ';');
-			String[] entries = HEAD.split("#");
-			csvWriter.writeNext(entries);
+			csvWriter.writeNext(HEAD.split("#"));
 
 			// FIXME
-			// csvWriter.flush();
-			// csvWriter.close();
+			csvWriter.flush();
+			csvWriter.close();
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -122,9 +121,9 @@ public class Benchmark {
 					CSV_WRITER.writeNext(row.split("#"));
 
 					// FIXME
-					// csvWriter.writeNext(row.split("#"));
-					// csvWriter.flush();
-					// csvWriter.close();
+					csvWriter.writeNext(row.split("#"));
+					csvWriter.flush();
+					csvWriter.close();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
