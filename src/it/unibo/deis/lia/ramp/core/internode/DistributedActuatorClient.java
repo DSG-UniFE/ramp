@@ -70,11 +70,11 @@ public class DistributedActuatorClient extends Thread{
                 try{
                     // receive
                     GenericPacket gp = E2EComm.receive(clientSocket, 5*1000);
-                    //System.out.println("DistributedActuatorClient new request");
+                    // System.out.println("DistributedActuatorClient new request");
                     new PacketHandler(gp).start();
                 }
                 catch(SocketTimeoutException ste){
-                    //System.out.println("DistributedActuatorClient SocketTimeoutException");
+                    // System.out.println("DistributedActuatorClient SocketTimeoutException");
                 }
             }
             clientSocket.close();
@@ -96,15 +96,10 @@ public class DistributedActuatorClient extends Thread{
 		for(ServiceResponse service : services) {
 			try {
 				BoundReceiveSocket newAppSocket = E2EComm.bindPreReceive(service.getProtocol());
-				E2EComm.sendUnicast(
-		                service.getServerDest(),
-		                service.getServerPort(),
-		                service.getProtocol(),
-		                E2EComm.serialize(new DistributedActuatorRequest(
-		                		DistributedActuatorRequest.Type.WHICH_APP,
-		                		newAppSocket.getLocalPort())
-		                )
-		        );
+				E2EComm.sendUnicast(service.getServerDest(), service.getServerPort(), service.getProtocol(),
+						E2EComm.serialize(new DistributedActuatorRequest(DistributedActuatorRequest.Type.WHICH_APP,
+								newAppSocket.getLocalPort())));
+				Benchmark.append(System.currentTimeMillis(), "dac_sent_which_app", 0, 0, 0);
 		        System.out.println("DistributedActuatorClient registerNewApp service.getServerDest(): " +
 		        		Arrays.toString(service.getServerDest()) + ", service.getServerPort: " +
 		        		service.getServerPort() + ", service.getProtocol: " + service.getProtocol());
@@ -126,15 +121,16 @@ public class DistributedActuatorClient extends Thread{
 	                    DistributedActuatorRequest request = (DistributedActuatorRequest) payload;
 	                    System.out.println("DistributedActuatorClient registerNewApp DistributedActuatorRequest: "+request);
 	                    switch (request.getType()) {
-		                    case AVAILABLE_APPS:
-		                    	servicesReceived.add(up);
-		                    	break;
-		                    default:
-								// received wrong type of request: do nothing...
-		                        System.out.println("DistributedActuatorClient registerNewApp wrong type of request: " +
-		                        		request.getType());
-
-								break;
+						case AVAILABLE_APPS:
+							Benchmark.append(System.currentTimeMillis(), "dac_received_available_apps", up.getId(),
+									up.getSourceNodeId(), up.getDestNodeId());
+							servicesReceived.add(up);
+							break;
+						default:
+							// received wrong type of request: do nothing...
+							System.out.println("DistributedActuatorClient registerNewApp wrong type of request: "
+									+ request.getType());
+							break;
 	                    }
 	                }
 				}
@@ -172,13 +168,11 @@ public class DistributedActuatorClient extends Thread{
 			try {
 				// If the join triggers an error, 'clientActuatorAppDb.put' is not executed
 				join(appName, bestControllerNodeID, bestControllerPort);
-				appDB.put(appName, new AppDescriptor(
-						bestControllerNodeID,
-						bestControllerPort,
-						System.currentTimeMillis(),
-						dcl));
+				appDB.put(appName,
+						new AppDescriptor(bestControllerNodeID, bestControllerPort, System.currentTimeMillis(), dcl));
 				System.out.println("DistributedActuatorClient registerNewApp: added '" +
 						appName + "', nodeID " + bestControllerNodeID);
+				Benchmark.append(System.currentTimeMillis(), "dac_register_new_app", 0, 0, bestControllerNodeID);
 				return true;
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -186,6 +180,7 @@ public class DistributedActuatorClient extends Thread{
 		} else {
 			System.out.println("DistributedActuatorClient registerNewApp: no service found for '" +
 					appName + "'");
+			Benchmark.append(System.currentTimeMillis(), "dac_not_register_new_app", 0, 0, bestControllerNodeID);
 		}
 		return false;
 	}
@@ -196,21 +191,16 @@ public class DistributedActuatorClient extends Thread{
 			AppDescriptor controller = appDB.get(appName);
 			System.out.println("DistributedActuatorClient.leave controller: " + controller);
 			Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(controller.getControllerNodeId(), 5*1000);
-			E2EComm.sendUnicast(
-					paths.firstElement().getPath(),
-					controller.getControllerNodeId(),
-					controller.getControllerPort(),
-					protocol,
-					false,
-					GenericPacket.UNUSED_FIELD,
-					E2EComm.DEFAULT_BUFFERSIZE,
-					GenericPacket.UNUSED_FIELD,
-					GenericPacket.UNUSED_FIELD,
-					GenericPacket.UNUSED_FIELD,
-					E2EComm.serialize(new DistributedActuatorRequest(
-							DistributedActuatorRequest.Type.LEAVE,
-							appName))
-					);
+			if (paths != null) {
+				E2EComm.sendUnicast(paths.firstElement().getPath(), controller.getControllerNodeId(),
+						controller.getControllerPort(), protocol, false, GenericPacket.UNUSED_FIELD,
+						E2EComm.DEFAULT_BUFFERSIZE, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD,
+						GenericPacket.UNUSED_FIELD, E2EComm.serialize(
+								new DistributedActuatorRequest(DistributedActuatorRequest.Type.LEAVE, appName)));
+				Benchmark.append(System.currentTimeMillis(), "dac_sent_leave", 0, 0, 0);
+			} else {
+				Benchmark.append(System.currentTimeMillis(), "dac_not_sent_leave", 0, 0, 0);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -234,23 +224,21 @@ public class DistributedActuatorClient extends Thread{
     }
 
 	private void join(String appName, int nodeID, int port) throws Exception {
-		Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(nodeID, 5*1000);
-		E2EComm.sendUnicast(
-				paths.firstElement().getPath(),
-				nodeID,
-				port,
-				protocol,
-				false,
-				GenericPacket.UNUSED_FIELD,
-				E2EComm.DEFAULT_BUFFERSIZE,
-				GenericPacket.UNUSED_FIELD,
-				GenericPacket.UNUSED_FIELD,
-				GenericPacket.UNUSED_FIELD,
-				E2EComm.serialize(new DistributedActuatorRequest(
-						DistributedActuatorRequest.Type.JOIN,
-						clientSocket.getLocalPort(),
-						appName))
-				);
+		try {
+			Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(nodeID, 5 * 1000);
+			if (paths != null) {
+				E2EComm.sendUnicast(paths.firstElement().getPath(), nodeID, port, protocol, false,
+						GenericPacket.UNUSED_FIELD, E2EComm.DEFAULT_BUFFERSIZE, GenericPacket.UNUSED_FIELD,
+						GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD,
+						E2EComm.serialize(new DistributedActuatorRequest(DistributedActuatorRequest.Type.JOIN,
+								clientSocket.getLocalPort(), appName)));
+				Benchmark.append(System.currentTimeMillis(), "dac_sent_join", 0, 0, 0);
+			} else {
+				Benchmark.append(System.currentTimeMillis(), "dac_not_sent_join", 0, 0, 0);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 
