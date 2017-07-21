@@ -382,34 +382,37 @@ public class GeneralUtils {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				if (isAndroidContext()) {
-					prepareAndroidContext();
+				try {
+					String logDirectory = "./logs";
 
-					try {
-						String logDirectory = android.os.Environment.getExternalStorageDirectory() + "/ramp/logs";
-						File logFile = new File(logDirectory + "/log.txt");
-						if (!logFile.exists()) {
-							logFile.createNewFile();
-						}
+					if (isAndroidContext()) {
+						prepareAndroidContext();
 
-						// BufferedWriter for performance, true to set append to
-						// file flag
-						BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
-
-						Calendar date = Calendar.getInstance();
-						SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-						String log = format.format(date.getTime()) + ": " + text;
-
-						// Date date = new Date(System.currentTimeMillis());
-						// @SuppressWarnings("deprecation")
-						// String log = date.toLocaleString() +": "+text;
-
-						buf.append(log);
-						buf.newLine();
-						buf.close();
-					} catch (Exception e) {
-						e.printStackTrace();
+						logDirectory = android.os.Environment.getExternalStorageDirectory() + "/ramp/logs";
 					}
+
+					File logFile = new File(logDirectory + "/log.txt");
+					if (!logFile.exists()) {
+						logFile.createNewFile();
+					}
+
+					// BufferedWriter for performance, true to set append to
+					// file flag
+					BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
+
+					Calendar date = Calendar.getInstance();
+					SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+					String log = format.format(date.getTime()) + ": " + text;
+
+					// Date date = new Date(System.currentTimeMillis());
+					// @SuppressWarnings("deprecation")
+					// String log = date.toLocaleString() +": "+text;
+
+					buf.append(log);
+					buf.newLine();
+					buf.close();
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 		}).start();

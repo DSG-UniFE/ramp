@@ -170,12 +170,15 @@ public class TcpDispatcher extends Thread {
 					UnicastPacket up = (UnicastPacket) gp;
 
 					// FIXME
-					Benchmark.append(System.currentTimeMillis(), "tcp_dispatcher_handler", up.getId(),
+					Benchmark.append(System.currentTimeMillis(), "tcp_dispatcher_handler_unicast", up.getId(),
 							up.getSourceNodeId(), up.getDestNodeId());
 
 					unicastPacketTcpHandler(firstHop, remoteAddressString, up);
 				} else if (gp instanceof BroadcastPacket) {
 					final BroadcastPacket bp = (BroadcastPacket) gp;
+
+					Benchmark.append(System.currentTimeMillis(), "tcp_dispatcher_handler_broadcast", bp.getId(),
+							bp.getSourceNodeId(), bp.getDestPort());
 
 					if(exploredNodeIdList == null)
 						broadcastPacketTcpHandler(firstHop, remoteAddressString, bp);
@@ -683,6 +686,11 @@ public class TcpDispatcher extends Thread {
 
 		//Stefano Lanzone
 		private void sendToNeighbors(boolean firstHop, String remoteAddressString, Set<Integer> exploredNodes, final BroadcastPacket bp) {
+			System.out.println("TcpDispatcher.sendToNeighbors()");
+			// FIXME
+			Benchmark.append(System.currentTimeMillis(), "tcp_dispatcher_handler_send_to_neighbors", bp.getId(),
+					bp.getSourceNodeId(), bp.getDestPort());
+			
 			Vector<InetAddress> neighbors = Heartbeater.getInstance(false).getNeighbors();
 			if (neighbors.size() == 0) {
 				// System.out.println("TcpDispatcherHandler sending broadcast ERROR!!! neighbors.size() == 0 !!!");
