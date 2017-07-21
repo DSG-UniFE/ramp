@@ -247,7 +247,9 @@ public class DistributedActuatorService extends Thread {
 									"DistributedActuatorService PacketHandler DistributedActuatorRequest WHICH_APP");
 		                    	Set<String> sAppNames = appDB.getK1();
 		                    	String[] aAppNames = sAppNames.toArray(new String[sAppNames.size()]);
-		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest aAppNames:" + Arrays.toString(aAppNames));
+							System.out.println(
+									"DistributedActuatorService PacketHandler DistributedActuatorRequest AppNames:"
+											+ Arrays.toString(aAppNames));
 		                    	DistributedActuatorRequest dar = new DistributedActuatorRequest(
 		                    			Type.AVAILABLE_APPS,
 		                    			serviceSocket.getLocalPort(),
