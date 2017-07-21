@@ -73,12 +73,7 @@ public class Benchmark {
 		CSVWriter csvWriter = null;
 		try {
 			int nfiles = getNumberFiles(BENCH_DIR, ENDS_WITH, FILE_EXTENSION);
-			if (nfiles == 0) {
-				nfiles++;
-			} else {
-				// FIXME
-				nfiles++;
-			}
+			nfiles++;
 
 			FILENAME = getDate(DATE_FORMAT.toString()) + "-" + String.format("%02d", nfiles) + "-" + ENDS_WITH
 					+ FILE_EXTENSION;
@@ -99,8 +94,8 @@ public class Benchmark {
 			csvWriter.writeNext(entries);
 
 			// FIXME
-			csvWriter.flush();
-			csvWriter.close();
+			// csvWriter.flush();
+			// csvWriter.close();
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -124,12 +119,12 @@ public class Benchmark {
 					SimpleDateFormat timeFormat = new SimpleDateFormat(TIME_FORMAT);
 					String row = dateFormat.format(date.getTime()) + "#" + timeFormat.format(date.getTime()) + "#"
 							+ DEVICE + "#" + millis + "#" + type + "#" + packetId + "#" + sender + "#" + recipient;
-					// CSV_WRITER.writeNext(row.split("#"));
+					CSV_WRITER.writeNext(row.split("#"));
 
 					// FIXME
-					csvWriter.writeNext(row.split("#"));
-					csvWriter.flush();
-					csvWriter.close();
+					// csvWriter.writeNext(row.split("#"));
+					// csvWriter.flush();
+					// csvWriter.close();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -181,12 +176,8 @@ public class Benchmark {
 	public static void closeCsvWriter() {
 		try {
 			if (CSV_WRITER != null) {
-				// System.out.println("Benchmark, closeCsvWriter(): CSV_WRITER
-				// prima di chiudere");
 				CSV_WRITER.flush();
 				CSV_WRITER.close();
-				// System.out.println("Benchmark, closeCsvWriter(): CSV_WRITER
-				// chiuso");
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
