@@ -155,21 +155,23 @@ public class OpportunisticNetworkingManager extends Thread {
 	}
 
 	private OpportunisticNetworkingManager() {
-		 this.savedPackets = new HashMap<SavedPacket, GenericPacket>();
-		 this.managedPackets = new HashMap<Integer, Long>();
+		this.savedPackets = new HashMap<SavedPacket, GenericPacket>();
+		this.managedPackets = new HashMap<Integer, Long>();
 
 		if (RampEntryPoint.getAndroidContext() != null) {
 			savedPacketDirectory = RampEntryPoint.getAndroidSharedDirectory().getAbsolutePath() + "/savedPacket";
-			File dir = new File(savedPacketDirectory);
-			if (!dir.exists())
-				dir.mkdir();
-	     }
+		}
 
-		 this.opportunisticNetworkingSettings = deserializeSettings();
+		File dir = new File(savedPacketDirectory);
+		if (!dir.exists())
+			dir.mkdir();
 
-	     //get packet information from persistent storage and restore in savedPackets table
-	     String[] savedPacketsFileList = getSavedPacketsFileList();
-	     for(String fileName:savedPacketsFileList) {
+		this.opportunisticNetworkingSettings = deserializeSettings();
+
+		// get packet information from persistent storage and restore in
+		// savedPackets table
+		String[] savedPacketsFileList = getSavedPacketsFileList();
+		for (String fileName : savedPacketsFileList) {
 			System.out.println("OpportunisticNetworkingManager: restored " + fileName);
 			SavedPacket savedPacket = restoreSavedPacket(savedPacketDirectory + "/" + fileName);
 			savedPackets.put(savedPacket, null);
@@ -995,6 +997,9 @@ public class OpportunisticNetworkingManager extends Thread {
 
 			while (active) {
 				try {
+					// FIXME
+					RampEntryPoint.getInstance(false, null).forceNeighborsUpdate();
+
 					//Periodically send packet not expired
 					System.out.println("OpportunisticNetworkingManager: Periodically send packet not expired");
 
