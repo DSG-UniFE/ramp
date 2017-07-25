@@ -997,16 +997,12 @@ public class OpportunisticNetworkingManager extends Thread {
 
 			while (active) {
 				try {
-					// FIXME
-					RampEntryPoint.getInstance(false, null).forceNeighborsUpdate();
-
-					//Periodically send packet not expired
+					// Periodically send packet not expired
 					System.out.println("OpportunisticNetworkingManager: Periodically send packet not expired");
 
 					List<SavedPacket> listSp = new ArrayList<SavedPacket>(savedPackets.keySet());
 
-					for(SavedPacket sp : listSp)
-					    {
+					for (SavedPacket sp : listSp) {
 						System.out.println("OpportunisticNetworkingManager: managing packet " + sp.getId());
 						    //Refresh expiry
 						    refreshPacketExpiry(sp);

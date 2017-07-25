@@ -634,7 +634,7 @@ public class TcpDispatcher extends Thread {
 						listeners[i].receivedTcpBroadcastPacket(bp);
 				}
 
-				if ( ! firstHop ) {
+				if (!firstHop) {
 					// send to localhost in another thread
 					// to not delay broadcast packet dissemination to other neighbor nodes
 					Thread localhostSend = new Thread(new Runnable() {
@@ -674,8 +674,8 @@ public class TcpDispatcher extends Thread {
 				// 2) send to neighbors (if TTL is greater than 0)
 				if (bp.getTtl() > 0) {
 					// FIXME
-					System.out.println("TcpDispatcher broadcastPacketTcpHandler: sendToNeighbors()");
-
+					System.out.println("TcpDispatcher.broadcastPacketTcpHandler: sendToNeighbors()");
+					GeneralUtils.appendLog("TcpDispatcher.broadcastPacketTcpHandler, packet: " + bp.getId());
 
 					sendToNeighbors(firstHop, remoteAddressString, null, bp);
 
@@ -692,6 +692,7 @@ public class TcpDispatcher extends Thread {
 		private void sendToNeighbors(boolean firstHop, String remoteAddressString, Set<Integer> exploredNodes, final BroadcastPacket bp) {
 			System.out.println("TcpDispatcher.sendToNeighbors()");
 			// FIXME
+			GeneralUtils.appendLog("TcpDispatcher.sendToNeighbors, packet: " + bp.getId());
 			Benchmark.append(System.currentTimeMillis(), "tcp_dispatcher_handler_send_to_neighbors", bp.getId(),
 					bp.getSourceNodeId(), bp.getDestPort());
 
@@ -709,12 +710,17 @@ public class TcpDispatcher extends Thread {
 					// do not send to already traversed nodes
 					//System.out.println("TcpDispatcher broadcast packet: dropping to avoid loop: destNodeId="+destNodeId+" aNeighbor="+aNeighbor+" (sending packet)");
 				    if((destNodeId!=null && bp.alreadyTraversed(destNodeId)))
-				    	GeneralUtils.appendLog("TcpDispatcher broadcast packet, do not send to already traversed nodes: dropping to avoid loop destNodeId="+destNodeId+" aNeighbor="+aNeighbor+" (sending packet)");
+						GeneralUtils.appendLog(
+								"TcpDispatcher broadcast packet, do not send to already traversed nodes: dropping "
+										+ bp.getId() + " packet to avoid loop destNodeId=" + destNodeId + " aNeighbor="
+										+ aNeighbor + " (sending packet)");
 
 				    if((exploredNodes!=null && exploredNodes.contains(destNodeId)))
-				    	GeneralUtils.appendLog("TcpDispatcher broadcast packet, do not send to explored nodes: dropping to avoid loop destNodeId="+destNodeId+" aNeighbor="+aNeighbor+" (sending packet)");
-				}
-				else{
+						GeneralUtils
+								.appendLog("TcpDispatcher broadcast packet, do not send to explored nodes: dropping "
+								+ bp.getId() + " packet to avoid loop destNodeId=" + destNodeId + " aNeighbor="
+								+ aNeighbor + " (sending packet)");
+				} else {
 					// do not send to the previous node/network
 					String neighborString = aNeighbor.getHostAddress().replaceAll("/", "");
 					String[] neigh = neighborString.split("[.]");
@@ -726,7 +732,8 @@ public class TcpDispatcher extends Thread {
 					else {
 						// send to a neighbor node in another thread
 						// to not delay broadcast packet dissemination to other neighbor nodes
-						GeneralUtils.appendLog("TcpDispatcher broadcast packet, send to a neighbor node "+neighborString);
+						GeneralUtils.appendLog("TcpDispatcher broadcast packet, send " + bp.getId()
+								+ " to a neighbor node " + neighborString);
 						Thread neighborSend = new Thread(new Runnable() {
 							@Override
 							public void run() {

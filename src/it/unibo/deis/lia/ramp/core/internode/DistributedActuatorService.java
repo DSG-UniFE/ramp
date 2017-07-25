@@ -87,7 +87,7 @@ public class DistributedActuatorService extends Thread {
 	 * @param threshold value from 0 to 1
 	 */
 	public void sendCommand(String appName, String command, int secondsToWait, float threshold) {
-		secondsToWait = secondsToWait * 1000;
+		int millisToWait = secondsToWait * 1000;
 		// "primaryValue=xxx,resilience=yyy"
 		System.out.println("DistributedActuatorService.sendCommand: appName=" + appName + " command=" + command);
     	Hashtable<Integer, ClientDescriptor> nodes = appDB.getK2(appName);
@@ -121,8 +121,8 @@ public class DistributedActuatorService extends Thread {
 
     	try {
 			System.out
-					.println("DistributedActuatorService.sendCommand: waiting for " + secondsToWait + " milliseconds");
-			sleep(secondsToWait);
+					.println("DistributedActuatorService.sendCommand: waiting for " + millisToWait + " milliseconds");
+			sleep(millisToWait);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -131,7 +131,7 @@ public class DistributedActuatorService extends Thread {
     	ArrayList<Integer> activeNodes = new ArrayList<Integer>();
     	for(int nodeID : nodes.keySet()) {
     		ClientDescriptor node = nodes.get(nodeID);
-			if (node.lastUpdate > (System.currentTimeMillis() - secondsToWait)) {
+			if (node.lastUpdate > (System.currentTimeMillis() - millisToWait)) {
     			nActiveNodes++;
     			activeNodes.add(nodeID);
     		}

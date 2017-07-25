@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -23,12 +22,12 @@ import java.util.Arrays;
 import java.util.Set;
 
 import it.unibo.deis.lia.ramp.RampEntryPoint;
-
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
 import it.unibo.deis.lia.ramp.core.internode.HeartbeatRequest;
 import it.unibo.deis.lia.ramp.core.internode.HeartbeatResponse;
 import it.unibo.deis.lia.ramp.core.internode.TcpDispatcher;
 import it.unibo.deis.lia.ramp.core.internode.UdpDispatcher;
+import it.unibo.deis.lia.ramp.util.GeneralUtils;
 
 
 /**
@@ -43,8 +42,8 @@ public class E2EComm {
     public static final int DEFAULT_BUFFERSIZE = 50*1024;
 
 	private static int E2ECOMM_SERVER_SOCKET_BACKLOG = 20;
-    
-    
+
+
     // -----------------------------------------------------------------
     // bindPreReceive: used to reserve a local port, either TCP or UDP
     // -----------------------------------------------------------------
@@ -79,8 +78,8 @@ public class E2EComm {
         		+"\nlocalPort="+localPort+" protocol="+protocol+" localSocket="+localSocket+" backLog="+backLog+"\n");/**/
         return res;
     }
-    
-    
+
+
 
     // -----------------------------------------------------------------
     // receive: wait for a GenericPacket via either TCP or UDP
@@ -121,7 +120,7 @@ public class E2EComm {
 
                 // process payload
             	byte[] data = dp.getData();
-                resGenericPacket = (GenericPacket)E2EComm.deserializePacket(data,0,dp.getLength());
+                resGenericPacket = E2EComm.deserializePacket(data,0,dp.getLength());
             } // end DatagramSocket
             else if( ss != null ){
                 ss.setSoTimeout(timeout);
@@ -135,16 +134,16 @@ public class E2EComm {
                 catch(SocketTimeoutException ste){
                     throw ste;
                 }
-                
+
                 try{
 
 	                s.setSoTimeout(timeout);
 	                s.setReuseAddress(true);
 	                InputStream is = s.getInputStream();
-	                
+
 	                // process payload
 	                Object receivedObject = E2EComm.readPacket(is);
-	
+
 	                // if received only the header,
 	                // then wait for the payload
 	                ByteArrayOutputStream destBuffer = null;
@@ -155,16 +154,16 @@ public class E2EComm {
 	                	//System.out.println("E2EComm.receive tcp: received header");
 	                    // the received object is an Unicast Header:
 	                    // receiving the payload...
-	
+
 	            		// receiving the payload step-by-step
 	            		// and forwarding read bytes to the destination output stream
 	            		UnicastHeader receivedUnicastHeader = (UnicastHeader)receivedObject;
-	
+
 	            		BufferedInputStream bis = new BufferedInputStream(is, receivedUnicastHeader.getBufferSize());
-		                
+
 	                    OutputStream destination = null;
 	                	if( outputStreamPayloadDestination == null ){
-	                		// storing received data in a byte buffer 
+	                		// storing received data in a byte buffer
 	                		destBuffer = new ByteArrayOutputStream();
 	                		destination = new BufferedOutputStream(destBuffer, receivedUnicastHeader.getBufferSize());
 	                	}
@@ -172,17 +171,17 @@ public class E2EComm {
 	                		// forwarding received data in to "outputStreamPayloadDestination"
 	                		destination = outputStreamPayloadDestination;
 	                	}
-	            		
+
 	            		int readBytes;
 	            		int totBytes = 0;
 		                boolean finished=false;
 		                byte[] buffer = new byte[receivedUnicastHeader.getBufferSize()];
-		                
+
 		                //System.out.println("E2EComm.receive: "  + Thread.currentThread() + " partial payload (start) ");
 		                while( ! finished ){
 		                    // attempt to read enough bytes to fulfill the buffer
 		                    readBytes = bis.read(buffer, 0, buffer.length);
-		                	
+
 		                    //System.out.println("E2EComm partial payload read (partial): readBytes "+readBytes);
 		                	if( readBytes == -1 ){
 		                		finished = true;
@@ -199,8 +198,8 @@ public class E2EComm {
 		                //System.out.println("E2EComm.receive: " + Thread.currentThread() + " partial payload written (end): totBytes = " + totBytes);
 		                s.close();
 	                }
-	                
-	                // what should I return? 
+
+	                // what should I return?
 	                if( receivedObject instanceof UnicastHeader ){
 	                	if( outputStreamPayloadDestination != null ){
 	                    	// return only unicast header (payload already sent to destination output stream)
@@ -215,14 +214,14 @@ public class E2EComm {
 	                    // either unicast packet or broadcast packet (one shot)
 	                    resGenericPacket = (GenericPacket)receivedObject;
 	                }
-                
+
                 } catch (Exception e){
                 	try {
                 		s.close();
 					} catch (Exception e2) {}
                 	throw e;
                 }
-                
+
             } // end ServerSocket
             else{
                 throw new Exception("Wrong socket");
@@ -263,51 +262,51 @@ public class E2EComm {
         //}
         return resGenericPacket;
     }
-    
-    
+
+
     // -----------------------------------------------------------------
     // sendBroadcast
     // -----------------------------------------------------------------
     public static void sendBroadcast(int TTL, int destPort, int protocol, byte[] payload) throws Exception{
         //System.out.println("E2EComm.sendBroadcast START");
-        
+
     	int expiry = GenericPacket.UNUSED_FIELD;
-        
+
     	// 1) check parameters
     	checkParameterSendBroadcast(payload, expiry);
-        
+
         // 2) setup packet
         int localNodeId = Dispatcher.getLocalRampId();
-        BroadcastPacket bp = new BroadcastPacket( 
+        BroadcastPacket bp = new BroadcastPacket(
                 (byte)TTL,
                 destPort,
                 localNodeId,
-                expiry,			
+                expiry,
                 payload
         );
 
         executeSendBroadcast(protocol, null, bp);
     }
-    
+
     //Stefano Lanzone
     public static void sendBroadcast(int TTL, int destPort, int protocol, int expiry, byte[] payload) throws Exception{
 
     	// 1) check parameters
     	checkParameterSendBroadcast(payload, expiry);
-        
+
         // 2) setup packet
         int localNodeId = Dispatcher.getLocalRampId();
-        BroadcastPacket bp = new BroadcastPacket( 
+        BroadcastPacket bp = new BroadcastPacket(
                 (byte)TTL,
                 destPort,
                 localNodeId,
-                expiry,			
+                expiry,
                 payload
         );
 
         executeSendBroadcast(protocol, null, bp);
     }
-    
+
 	private static void checkParameterSendBroadcast(byte[] payload, int expiry) throws Exception {
 		// check maximum payload size
         int payloadSize;
@@ -320,59 +319,70 @@ public class E2EComm {
         if(payloadSize > BroadcastPacket.MAX_BROADCAST_PAYLOAD){
             throw new Exception("Maximum payload size of BroadcastPacket is "+BroadcastPacket.MAX_BROADCAST_PAYLOAD+" but current payloadSize is "+payloadSize);
         }
-        
+
         //Stefano Lanzone
         if( expiry!=GenericPacket.UNUSED_FIELD && expiry<=0 ){
             throw new Exception("expiry must be greater than 0 but current expiry = "+expiry);
         }
 	}
-    
+
 	private static void executeSendBroadcast(int protocol, Set<Integer> exploredNodeIdList, BroadcastPacket bp) throws UnknownHostException, Exception {
 		// 3) send packet to local Dispatcher
         if(protocol==E2EComm.UDP){
             //System.out.println("E2EComm.sendBroadcast udp");
-            
+
         	InetAddress localhost = InetAddress.getLocalHost();
         	//InetAddress localhost = InetAddress.getByName("127.0.0.1");
         	System.out.println("E2EComm.sendBroadcast udp localhost = "+localhost);
             //(new UdpDispatcher.UdpDispatcherHandler(bp, localhost)).start();
             UdpDispatcher.asyncDispatchUdpGenericPacket(bp, localhost);
-            
+
             //System.out.println("E2EComm.sendBroadcast udp end");
         }
         else if(protocol==E2EComm.TCP){
             //System.out.println("E2EComm.sendBroadcast tcp");
-            
+
+			// FIXME
+			if (exploredNodeIdList != null) {
+				for (Integer nodeID : exploredNodeIdList) {
+					GeneralUtils.appendLog(
+							"E2EComm.executeSendBroadcast packet: " + bp.getId() + ", explore node ID: " + nodeID);
+				}
+			} else {
+				GeneralUtils
+						.appendLog("E2EComm.executeSendBroadcast packet: " + bp.getId() + ", explore node ID: NULL");
+			}
+
         	// send broadcast packet via local dispatcher
             InetAddress localhost = InetAddress.getLocalHost();
         	//(new TcpDispatcher.TcpDispatcherHandler(bp, localhost)).start();
-            
+
             //Stefano Lanzone
             if(exploredNodeIdList == null)
             	TcpDispatcher.asyncDispatchTcpGenericPacket(bp, localhost);
             else
             	TcpDispatcher.asyncDispatchTcpGenericPacket(bp, localhost, exploredNodeIdList);
-            
+
             //System.out.println("E2EComm.sendBroadcast tcp end");
         }
         else{
             throw new Exception("Unknown protocol: must be either E2EComm.UDP or E2EComm.TCP: "+protocol);
         }
 	}
-    
+
     //Stefano Lanzone
 	 //sendBroadcast with input parameters for Opportunistic Networking
     public static void sendBroadcast(int protocol, Set<Integer> exploredNodeIdList, BroadcastPacket bp) throws Exception{
-    	
+
     	if(bp == null)
     		throw new Exception("BroadcastPacket is null!");
     	if(exploredNodeIdList == null)
     		throw new Exception("BroadcastPacket exploredNodeIdList is null!");
-    	
+
     	executeSendBroadcast(protocol, exploredNodeIdList, bp);
     }
 
-    
+
     // -----------------------------------------------------------------
     // sendUnicast: receiver via nodeId, payload as byte[]
     // -----------------------------------------------------------------
@@ -380,7 +390,7 @@ public class E2EComm {
         // destNodeId!!! static sender-side version
         boolean res;
         boolean ack = false;
-        int bufferSize = E2EComm.DEFAULT_BUFFERSIZE; 
+        int bufferSize = E2EComm.DEFAULT_BUFFERSIZE;
         res = sendUnicastDestNodeId(
                 destNodeId,
                 destPort,
@@ -426,7 +436,7 @@ public class E2EComm {
     }*/
 
 
-    
+
     // -----------------------------------------------------------------
     // sendUnicast: receiver via IP address sequence, payload as byte[]
     // -----------------------------------------------------------------
@@ -446,71 +456,71 @@ public class E2EComm {
         );
         return res;
     }
-    
+
     //Stefano Lanzone
     //sendUnicast with input parameters for Opportunistic Networking
     public static boolean sendUnicast(
-    		String[] dest, 
-    		int destNodeId, 
-    		int destPort, 
-    		int protocol, 
-    		boolean ack, int timeoutAck, 
-    		int bufferSize, 
+    		String[] dest,
+    		int destNodeId,
+    		int destPort,
+    		int protocol,
+    		boolean ack, int timeoutAck,
+    		int bufferSize,
     		int timeWait,
     		int expiry,                     // if != -1 OPPORTUNISTIC NETWORKING
-    		short packetTimeoutConnect, 	// inter-node socket connect timeout (only TCP) 
+    		short packetTimeoutConnect, 	// inter-node socket connect timeout (only TCP)
     		byte[] payload
     		) throws Exception{
-    	
+
     	boolean res = true;
     	int retry = GenericPacket.UNUSED_FIELD;
     	int packetDeliveryTimeout = GenericPacket.UNUSED_FIELD;
-    	
+
     	 // check parameters
         checkParameterSendUnicast(dest, destNodeId, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, expiry);
         // execute
         res = executeSendUnicast(dest, destNodeId, destPort, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, packetTimeoutConnect, payload, retry, timeWait, expiry, null);
-        
+
     	return res;
     }
-    
-    //Stefano Lanzone 
+
+    //Stefano Lanzone
     //sendUnicast with UnicastPacket input parameter
     public static boolean sendUnicast(int protocol, UnicastPacket up) throws Exception
     {
     	boolean res = true;
-    	
+
     	if(up==null){
             throw new Exception("UnicastPacket is null!");
         }
 
     	// check parameters
         checkParameterSendUnicast(up.getDest(), up.getDestNodeId(), protocol, false, GenericPacket.UNUSED_FIELD, E2EComm.DEFAULT_BUFFERSIZE, GenericPacket.UNUSED_FIELD, up.getExpiry());
-        
+
         res = executeSendUnicast(up.getDest(), up.getDestNodeId(), up.getDestPort(), protocol, false, GenericPacket.UNUSED_FIELD, up.getBufferSize(), GenericPacket.UNUSED_FIELD, up.getConnectTimeout(), up.getBytePayload(), up.getRetry(), up.getTimeWait(), up.getExpiry(), up);
-        
+
         return res;
     }
-    		
+
     public static boolean sendUnicast(
-    		String[] dest, 
-    		int destNodeId, 
-    		int destPort, 
-    		int protocol, 
-    		boolean ack, int timeoutAck, 
-    		int bufferSize, 
+    		String[] dest,
+    		int destNodeId,
+    		int destPort,
+    		int protocol,
+    		boolean ack, int timeoutAck,
+    		int bufferSize,
     		int packetDeliveryTimeout, 		// delay-tolerant messaging
-    		short packetTimeoutConnect, 	// inter-node socket connect timeout (only TCP) 
+    		short packetTimeoutConnect, 	// inter-node socket connect timeout (only TCP)
     		byte[] payload
     		) throws Exception{
-    	
+
     	//System.out.println("E2EComm.sendUnicast byte[] payload.length="+payload.length);
-    	
+
         boolean res = true;
         int retry = GenericPacket.UNUSED_FIELD;
         int timeWait = GenericPacket.UNUSED_FIELD;
         int expiry = GenericPacket.UNUSED_FIELD;
-        
+
         // check parameters
         checkParameterSendUnicast(dest, destNodeId, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, expiry);
         // execute
@@ -518,15 +528,15 @@ public class E2EComm {
 
         return res;
     }
-    
+
 	private static boolean executeSendUnicast(String[] dest, int destNodeId, int destPort, int protocol, boolean ack, int timeoutAck, int bufferSize, int packetDeliveryTimeout,
 			short packetTimeoutConnect, byte[] payload, int retry, int timeWait, int expiry, UnicastPacket gp) throws Exception, SocketException, UnknownHostException, IOException {
-		
+
 		boolean res = true;
 		UnicastPacket up;
 		UnicastHeader uh;
 		int payloadSize;
-		
+
 		if(gp == null)
 		{
 			if( (bufferSize!=GenericPacket.UNUSED_FIELD) && (bufferSize==0)){
@@ -539,7 +549,7 @@ public class E2EComm {
 			else{
 				payloadSize = 0;
 			}
-        
+
 			// packetDeliveryTimeout (seconds)
 			if( packetDeliveryTimeout != GenericPacket.UNUSED_FIELD ){
 				// delay-tolerant
@@ -571,7 +581,7 @@ public class E2EComm {
 					expiry,			// expiry, if != -1 OPPORTUNISTIC NETWORKING
 					packetTimeoutConnect
 					);
-        
+
 			up = new UnicastPacket(uh, payload);
 		}
 		else
@@ -580,7 +590,7 @@ public class E2EComm {
 			uh = up.getHeader();
 			payloadSize = up.getBytePayload().length;
 		}
-			
+
         // 2) send packet via local Dispatcher
         DatagramSocket dsAck = null;
         ServerSocket ssAck = null;
@@ -600,7 +610,7 @@ public class E2EComm {
                     }
                 }
             }
-            
+
             if(ack){
             	dsAck = new DatagramSocket();
             	dsAck.setReuseAddress(true);
@@ -609,11 +619,11 @@ public class E2EComm {
             InetAddress localhost = InetAddress.getLocalHost();
             System.out.println("E2EComm.sendUnicast udp localhost = "+localhost);
             UdpDispatcher.asyncDispatchUdpGenericPacket(up, localhost);
-            
+
         }
         else if(protocol==E2EComm.TCP){
             //System.out.println("E2EComm.sendUnicast tcp start");
-            
+
             // use bufferSize to decide if sending
             // the whole packet
             // or
@@ -625,12 +635,12 @@ public class E2EComm {
             }
 
             // send unicast packet to the local Dispatcher
-            
+
             InetAddress localhost = InetAddress.getLocalHost();
             //System.out.println("E2EComm.sendUnicast tcp localhost = "+localhost);
             //(new TcpDispatcher.TcpDispatcherHandler(up, localhost)).start();
             TcpDispatcher.asyncDispatchTcpGenericPacket(up, localhost);
-            
+
             //System.out.println("E2EComm.sendUnicast tcp s.getSendBufferSize() = "+socketToLocalhost.getSendBufferSize());
             /*
 
@@ -639,7 +649,7 @@ public class E2EComm {
              there could be two issues...
 
              1) first of all reduce the TIME_WAIT windows socket value
-                a) Start Registry Editor.   
+                a) Start Registry Editor.
                 b) locate the following subkey, and then click Parameters:
                     HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters
                 c) On the Edit menu, click New, and then add the following registry entry:
@@ -687,7 +697,7 @@ public class E2EComm {
 
                     // process payload
                     // from byte to object
-                    gpAck = (GenericPacket)E2EComm.deserializePacket(dp.getData());
+                    gpAck = E2EComm.deserializePacket(dp.getData());
                 }
                 else if(protocol==E2EComm.TCP){
                     //System.out.println("E2EComm.sendUnicast tcp ack localPort = "+up.getSourcePortAck());
@@ -702,7 +712,7 @@ public class E2EComm {
                     // process payload
                     try {
                     	InputStream is = s.getInputStream();
-                    	gpAck = (GenericPacket)E2EComm.readPacket(is);
+                    	gpAck = E2EComm.readPacket(is);
 					} catch (Exception e) {
 						throw e;
 					} finally {
@@ -748,9 +758,9 @@ public class E2EComm {
         }
 		return res;
 	}
-    
+
 	private static void checkParameterSendUnicast(String[] dest, int destNodeId, int protocol, boolean ack, int timeoutAck, int bufferSize, int packetDeliveryTimeout, int expiry) throws Exception {
-		
+
 		if( bufferSize!=GenericPacket.UNUSED_FIELD && bufferSize!=0 && (bufferSize<5*1024 || bufferSize>1024*1024)){
             throw new Exception("bufferSize must be in the [5KB,1MB] range but current bufferSize = "+bufferSize);
         }
@@ -773,7 +783,7 @@ public class E2EComm {
         if( (destNodeId=="".hashCode()) && (dest==null || dest.length==0) ){
             throw new Exception("both dest and destNodeId are incorrect: dest="+(dest==null?dest:Arrays.toString(dest))+" destNodeId="+destNodeId);
         }
-        
+
         //Stefano Lanzone
         if( expiry!=GenericPacket.UNUSED_FIELD && expiry<=0 ){
             throw new Exception("expiry must be greater than 0 but current expiry = "+expiry);
@@ -824,7 +834,7 @@ public class E2EComm {
                     packetTimeoutConnect,
                     null,
                     payload
-                    
+
             );
         }
         else{
@@ -833,7 +843,7 @@ public class E2EComm {
         return res;
     }*/
 
-    
+
 
     // -----------------------------------------------------------------
     // sendUnicast: receiver via IP address sequence, payload as input stream
@@ -856,11 +866,11 @@ public class E2EComm {
                 expiry,
                 GenericPacket.UNUSED_FIELD, // packetTimeoutConnect
                 payload
-                
+
         );
         return res;
     }
-    
+
     //Stefano Lanzone
     //sendUnicast with input parameters for Opportunistic Networking
     public static boolean sendUnicast(String[] dest, int destNodeId, int destPort, int protocol, int timeWait, int expiry, InputStream payload) throws Exception{
@@ -879,11 +889,11 @@ public class E2EComm {
                 expiry,
                 GenericPacket.UNUSED_FIELD, // packetTimeoutConnect
                 payload
-                
+
         );
         return res;
     }
-    
+
 //    public static boolean sendUnicast(String[] dest, int destPort, int protocol,InetAddress bindAddress, InputStream payload ) throws Exception{
 //        boolean res;
 //        res = sendUnicast(
@@ -896,41 +906,41 @@ public class E2EComm {
 //                E2EComm.DEFAULT_BUFFERSIZE,	// bufferSize
 //                GenericPacket.UNUSED_FIELD, // packetTimeoutConnect
 //                payload
-//                
+//
 //        );
 //        return res;
 //    }
-    
+
     public static boolean sendUnicast(
-    		String[] dest, 
-    		int destNodeId, 
-    		int destPort, 
-    		int protocol, 
-    		boolean ack, int timeoutAck, 
+    		String[] dest,
+    		int destNodeId,
+    		int destPort,
+    		int protocol,
+    		boolean ack, int timeoutAck,
     		int bufferSize,
     		int timeWait,
     		int expiry,                     // if != -1 OPPORTUNISTIC NETWORKING
-    		short packetTimeoutConnect,		// inter-node socket connect timeout (only for TCP) 
+    		short packetTimeoutConnect,		// inter-node socket connect timeout (only for TCP)
     		InputStream payload
     		) throws Exception{
     	//System.out.println("E2EComm.sendUnicast InputStream");
-    	
+
         boolean res = true;
         int retry = GenericPacket.UNUSED_FIELD;
     	int packetDeliveryTimeout = GenericPacket.UNUSED_FIELD;
-    	
+
         if( protocol!=E2EComm.TCP ){
             throw new Exception("InputStream but protocol is not E2EComm.TCP (protocol="+protocol+")");
         }
-        
+
     	// check parameters
         checkParameterSendUnicast(dest, destNodeId, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, expiry);
 
-        
+
         if( (bufferSize!=GenericPacket.UNUSED_FIELD) && (bufferSize==0)){
             bufferSize = E2EComm.DEFAULT_BUFFERSIZE;
         }
-        
+
         // 1) setup packet
         int localNodeId = Dispatcher.getLocalRampId();
         UnicastHeader uh = new UnicastHeader(
@@ -947,7 +957,7 @@ public class E2EComm {
                 expiry,			// expiry, NON OPORTUNISTIC NETWORKING
                 packetTimeoutConnect
             );
-        
+
         ServerSocket ssAck = null;
         if(ack){
         	ssAck = new ServerSocket();
@@ -956,19 +966,19 @@ public class E2EComm {
         }
 
         // send unicast packet to the local Dispatcher
-        
+
         InetAddress localhost = InetAddress.getLocalHost();
         //System.out.println("E2EComm.sendUnicast tcp localhost = "+localhost);
-        
-        // In this case, sendUnicast could be synchronous, i.e., 
+
+        // In this case, sendUnicast could be synchronous, i.e.,
         // E2EComm.sendUnicast returns only when TcpDispatcherHandler returns
         // and thus only when the InputStream "payload" closes
         //(new TcpDispatcher.TcpDispatcherHandler(uh, payload, localhost)).run();	// synchronous
-        
+
         // send unicast header via the local Dispatcher
         //(new TcpDispatcher.TcpDispatcherHandler(uh, payload, localhost)).start(); 	// asynchronous
         TcpDispatcher.asyncDispatchTcpGenericPacket(uh, payload, localhost);
-        
+
         // 3) ack
         if(ack==true){
             // receive ack
@@ -986,7 +996,7 @@ public class E2EComm {
                 // process payload
                 try {
                 	InputStream is = s.getInputStream();
-                    gpAck = (GenericPacket) E2EComm.readPacket(is);
+                    gpAck = E2EComm.readPacket(is);
 				} catch (Exception e) {
 					throw e;
 				} finally {
@@ -1032,11 +1042,11 @@ public class E2EComm {
 
         return res;
     }
-    
+
     // -----------------------------------------------------------------
     // general purpose utility methods
     // -----------------------------------------------------------------
-    
+
     // used to reverse "source" header field
     public static String[] ipReverse(String[] dest){
         String[] res = new String[dest.length];
@@ -1045,8 +1055,8 @@ public class E2EComm {
         }
         return res;
     }
-    
-    // used to get the "best" size of unicast packet payload chunks 
+
+    // used to get the "best" size of unicast packet payload chunks
     public static int bestBufferSize(int pathLength, long packetSize){
         int res = E2EComm.DEFAULT_BUFFERSIZE;
         if(pathLength==1){
@@ -1078,17 +1088,17 @@ public class E2EComm {
 
 
     // -----------------------------------------------------------------
-    // serialization methods 
+    // serialization methods
     // -----------------------------------------------------------------
-    
+
     // object size if serialized via Java serialization mechanism
     public static int objectSize(Object object) {
         int objectSize = -1;
         try{
         	ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        	
+
         	ObjectOutputStream out = new ObjectOutputStream(baos);
-        	
+
             out.writeObject(object);
             out.close();
             objectSize = baos.toByteArray().length;
@@ -1098,7 +1108,7 @@ public class E2EComm {
         }
         return objectSize;
     }
-    
+
     // RAMP packet size if serialized via either protobuf or Java default mechanism
     public static int objectSizePacket(GenericPacket gp) {
     	int objectSize = -1;
@@ -1110,13 +1120,13 @@ public class E2EComm {
     	}
         return objectSize;
     }
-    
+
     public static byte[] serialize(Object obj) throws Exception {
     	byte[] serialized;
     	ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    	
+
     	ObjectOutputStream out = new ObjectOutputStream(baos);
-    	
+
     	out.writeObject(obj);
         out.close();
         serialized = baos.toByteArray();
@@ -1142,10 +1152,10 @@ public class E2EComm {
     	//System.out.println("E2EComm.deserialize bytes.length="+bytes.length);
     	Object deserialized;
     	ByteArrayInputStream bin = new ByteArrayInputStream(bytes, offset, length);
-    	
+
     	ObjectInputStream in = new ObjectInputStream(bin);
-    	
-    	deserialized = in.readObject();    
+
+    	deserialized = in.readObject();
     	in.close();
     	bin.close();
     	return deserialized;
@@ -1224,15 +1234,15 @@ public class E2EComm {
     		return (GenericPacket)in.readObject();
     		//return (GenericPacket)E2EComm.readObject(is);
     	}
-    	
+
     	return res;
     }
-    
+
 //    public static void writeObject(Object obj, OutputStream os) throws Exception{
 //    	ObjectOutputStream out = new ObjectOutputStream(os);
 //    	out.writeObject(obj);
 //    }
-    
+
     public static void writePacket(GenericPacket gp, OutputStream os) throws Exception{
     	if(RampEntryPoint.protobuf){
     		//System.out.println("E2EComm.writeObjectPacket gp.getPacketId()="+gp.getPacketId()+" (int)gp.getPacketId()="+(int)gp.getPacketId());
@@ -1245,6 +1255,6 @@ public class E2EComm {
     		//E2EComm.writeObject(gp, os);
     	}
     }
-        
+
 }
 
