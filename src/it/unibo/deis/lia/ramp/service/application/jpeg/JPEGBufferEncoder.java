@@ -5,13 +5,26 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import com.sun.image.codec.jpeg.ImageFormatException;
+/*import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGEncodeParam;
-import com.sun.image.codec.jpeg.JPEGImageEncoder;
+import com.sun.image.codec.jpeg.JPEGImageEncoder;*/
 
 public class JPEGBufferEncoder {
-	private JPEGImageEncoder encoder;
+	
+	public JPEGBufferEncoder(BufferedImage img, int quality) {}
+	public byte[] encode(BufferedImage bufferedImage) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	public void setQuality(int quality) {
+		// TODO Auto-generated method stub
+	}
+	public void close() {
+		// TODO Auto-generated method stub
+	}
+	
+	/*private JPEGImageEncoder encoder;
 	private ByteArrayOutputStream outStream;
 	private BufferedOutputStream bufOutStream;
 
@@ -54,5 +67,5 @@ public class JPEGBufferEncoder {
 			System.out.println("Error: close()");
 			e.printStackTrace();
 		}
-	}
+	}*/
 }

@@ -12,12 +12,11 @@ public class FileSharingService extends FileSharingServiceNoGUI {
     private static FileSharingService fileSharing = null;
     private static FileSharingServiceJFrame fssjf = null;
     
-	
-    public static synchronized FileSharingService getInstance(){
-        try{
+    public static synchronized FileSharingService getInstance(boolean gui){
+    	try{
             if(FileSharingService.fileSharing==null){
-                FileSharingService.fileSharing = new FileSharingService(false); // FileSharingService senza GUI
-                FileSharingServiceNoGUI.getInstance();
+                FileSharingService.fileSharing = new FileSharingService(gui);
+                //FileSharingServiceNoGUI.getInstance();
             }
             if(fssjf!=null){
                 fssjf.setVisible(true);
@@ -26,13 +25,18 @@ public class FileSharingService extends FileSharingServiceNoGUI {
         catch(Exception e){
             e.printStackTrace();
         }
-        return FileSharingService.fileSharing;
+    	return FileSharingService.fileSharing;
     }
-    public static synchronized FileSharingService getInstanceNoShow(){
+	
+    public static synchronized FileSharingService getInstance(){
+        return FileSharingService.getInstance(false); // FileSharingService senza GUI
+        
+    }
+    /*public static synchronized FileSharingService getInstanceNoShow(){
         try {
             if(FileSharingService.fileSharing==null){
                 FileSharingService.fileSharing = new FileSharingService(false);
-                FileSharingServiceNoGUI.getInstance();
+                //FileSharingServiceNoGUI.getInstance();
             }
             if(fssjf!=null) {
                 
@@ -42,7 +46,7 @@ public class FileSharingService extends FileSharingServiceNoGUI {
             e.printStackTrace();
         }
         return FileSharingService.fileSharing;
-    }
+    }*/
     
     private FileSharingService(boolean gui) throws Exception{
     	super(gui);

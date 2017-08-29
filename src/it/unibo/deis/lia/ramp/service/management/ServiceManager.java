@@ -1,17 +1,17 @@
 
 package it.unibo.deis.lia.ramp.service.management;
 
-import it.unibo.deis.lia.ramp.core.e2e.BoundReceiveSocket;
-import it.unibo.deis.lia.ramp.core.e2e.BroadcastPacket;
-import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
-import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
-import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
-
 import java.lang.reflect.Method;
 import java.net.SocketException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Vector;
+
+import it.unibo.deis.lia.ramp.core.e2e.BoundReceiveSocket;
+import it.unibo.deis.lia.ramp.core.e2e.BroadcastPacket;
+import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
+import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
+import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 
 /**
  *
@@ -46,17 +46,17 @@ public class ServiceManager extends Thread{
     }
 
 
-    
+
     private ServiceManager(){
         serviceDB = new HashMap<String,ServiceDescriptor>();
     }
     private static ServiceManager serviceManager=null;
     public static synchronized ServiceManager getInstance(boolean forceStart){
         if(forceStart && serviceManager==null){
-        	
+
             serviceManager = new ServiceManager();
             serviceManager.start();
-            
+
         }
         return serviceManager;
     }
@@ -69,11 +69,11 @@ public class ServiceManager extends Thread{
             if( receiveServiceManagerSocket != null ){
             	receiveServiceManagerSocket.close();
             }
-        } 
+        }
         catch (Exception ex) {
             ex.printStackTrace();
         }
-        
+
     	String[] services = serviceDB.keySet().toArray(new String[0]);
     	for(String serviceName : services ){
         	try{
@@ -87,7 +87,7 @@ public class ServiceManager extends Thread{
                 System.out.println("ServiceManager stop: "+serviceName);
             }
         }
-        
+
         serviceDB = null;
         serviceManager = null;
     }
@@ -118,14 +118,16 @@ public class ServiceManager extends Thread{
         }
         System.out.println("ServiceManager.run FINISHED");
     }
-    
-    private class ServiceManagerHandler extends Thread{
+
+	private class ServiceManagerHandler extends Thread {
         private GenericPacket recGP;
-        private ServiceManagerHandler(GenericPacket recGP){
+
+		private ServiceManagerHandler(GenericPacket recGP) {
             this.recGP=recGP;
         }
+
         @Override
-        public void run(){
+		public void run() {
             //System.out.println("ServiceManagerHandler.run START");
             try{
                 if( recGP instanceof BroadcastPacket ){
@@ -141,7 +143,7 @@ public class ServiceManager extends Thread{
                         /*############# START REGION #############
                         ####### Edited by Lorenzo Donini #########
                         ########################################*/
-                        
+
                         String serviceName = recSReq.getServiceName();
                         if(serviceName==null){
                             // provide every local service
@@ -175,7 +177,7 @@ public class ServiceManager extends Thread{
                         		ServiceResponse sRes = new ServiceResponse(recSReq.getServiceName(), sd);
                         		String[] source=recBP.getSource();
                         		String[] dest=E2EComm.ipReverse(source);
-                            
+
                         		E2EComm.sendUnicast(
                         				dest,
                         				recBP.getSourceNodeId(), // destNodeId
@@ -188,10 +190,9 @@ public class ServiceManager extends Thread{
                         				GenericPacket.UNUSED_FIELD, // packetTimeoutConnect
                         				E2EComm.serialize(sRes)
                         				);
-                        	}
-                        	else{
+							} else {
                         		// do nothing...
-                        		//System.out.println("ServiceManagerHandler: required service not avaiable on the local node ("+recSReq.getServiceName()+")");
+                        		// System.out.println("ServiceManagerHandler: required service not avaiable on the local node ("+recSReq.getServiceName()+")");
                         	}
                         }
                         /*############## END REGION ##############

@@ -16,34 +16,34 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import android.content.Context;
-import android.net.DhcpInfo;
-import android.net.wifi.WifiManager;
-//import android.net.wifi.WifiManager.MulticastLock;
-
-import it.unibo.deis.lia.ramp.RampEntryPoint;
-import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
-
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 
+import android.content.Context;
+import android.net.DhcpInfo;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
+//import android.net.wifi.WifiManager.MulticastLock;
+import it.unibo.deis.lia.ramp.RampEntryPoint;
+import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
+
 /**
- * 
+ *
  * @author Carlo Giannelli
  */
 public class Heartbeater extends Thread {
 
 	private Hashtable<InetAddress, NeighborData> neighbors = new Hashtable<InetAddress, NeighborData>();
 	private HashSet<InetAddress> neighborsBlackList = new HashSet<InetAddress>();
-	
+
 	private int heartbeatPeriod = 60 * 1000; // millis
 	private byte[] heartbeatRequestBytes;
 
 	private static Heartbeater heartbeater = null;
-	
+
 	// UPnP/SSDP group, but different port
 	public static final String HEARTBEAT_MULTICAST_ADDRESS = "239.255.255.250";
-	
+
 	public static synchronized Heartbeater getInstance(boolean forceStart) {
 		if (forceStart && heartbeater == null) {
 			heartbeater = new Heartbeater();
@@ -66,13 +66,13 @@ public class Heartbeater extends Thread {
 		} catch (UnknownHostException e1) {
 			e1.printStackTrace();
 		}
-		
+
 		HeartbeatRequest hReq = new HeartbeatRequest();
 
 		try {
 			// from object to byte[]
 			heartbeatRequestBytes = E2EComm.serializePacket(hReq);
-		} 
+		}
 		catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -81,7 +81,7 @@ public class Heartbeater extends Thread {
 	private boolean active = true;
 
 	public void stopHeartbeater() {
-		System.out.println("Heartbeater.stopHeartbeater");
+		System.out.println("Heartbeater STOP");
 		active = false;
 		interrupt();
 	}
@@ -103,19 +103,19 @@ public class Heartbeater extends Thread {
 		heartbeater = null;
 		System.out.println("Heartbeater END");
 	}
-	
+
 	public void sendHeartbeat(boolean force) {
 		//System.out.println("Heartbeater.sendHeartbeat force="+force);
 		//System.out.println("Heartbeater.sendHeartbeat");
-		
+
 		Vector<String> localInterfaces = null;
 		try {
 			localInterfaces = Dispatcher.getLocalNetworkAddresses(force);
-		} 
+		}
 		catch (Exception e1) {
 			e1.printStackTrace();
 		}
-		
+
 		/*if (RampEntryPoint.getAndroidContext() != null) {
 			WifiManager wifi = (WifiManager) RampEntryPoint.getAndroidContext().getSystemService(Context.WIFI_SERVICE);
 			if (wifi != null) {
@@ -123,25 +123,25 @@ public class Heartbeater extends Thread {
 				wifiMulticastLock.acquire();
 			}
 		}*/
-		
+
 		// multicast
 		for (int i = 0; localInterfaces!=null && i < localInterfaces.size(); i++) {
 			String anInterface = localInterfaces.elementAt(i);
 			//for(int i=0; i<10; i++){
 				try{
-					
+
 					MulticastSocket ms = new MulticastSocket();
 					ms.setReuseAddress(true);
 					ms.setBroadcast(true);
 					NetworkInterface netInt = NetworkInterface.getByInetAddress(InetAddress.getByName(anInterface));
 					ms.setNetworkInterface(netInt);
-					
+
 					//System.out.println("Heartbeater.sendHeartbeat: sending multicast via "+anInterface);
 					// required to send even towards the multicast heartbeat address
 					DatagramPacket dp = new DatagramPacket(
-							heartbeatRequestBytes, 
-							heartbeatRequestBytes.length, 
-							InetAddress.getByName(Heartbeater.HEARTBEAT_MULTICAST_ADDRESS), 
+							heartbeatRequestBytes,
+							heartbeatRequestBytes.length,
+							InetAddress.getByName(Heartbeater.HEARTBEAT_MULTICAST_ADDRESS),
 							Dispatcher.DISPATCHER_PORT
 						);
 					//ms.setTimeToLive(1);
@@ -151,22 +151,22 @@ public class Heartbeater extends Thread {
 				catch (Exception e) {
 					e.printStackTrace();
 				}
-				
+
 				// just wait a bit...
 				try {
 					sleep(50);
-				} 
+				}
 				catch (InterruptedException e) {
 					//e.printStackTrace();
 				}
-			//} 
+			//}
 		} // end for
-		
+
 		/*if (RampEntryPoint.getAndroidContext() != null) {
 			if (wifiMulticastLock != null && wifiMulticastLock.isHeld())
 				wifiMulticastLock.release();
 		}*/
-		
+
 		// broadcast
 		/**/try {
 			//Vector<String> localInterfaces = Dispatcher.getLocalNetworkAddresses(force);
@@ -180,40 +180,48 @@ public class Heartbeater extends Thread {
 
 					Set<InetAddress> broadcastAddresses = new HashSet<InetAddress>();
 					if (RampEntryPoint.getAndroidContext() != null) {
-						WifiManager manager = (WifiManager) RampEntryPoint.getAndroidContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-						DhcpInfo dhcp = manager.getDhcpInfo();
-						// System.out.println("Heartbeater dhcp.netmask " + dhcp.netmask);
-						// int broadcast = (dhcp.ipAddress & dhcp.netmask) | ~dhcp.netmask;
-						// int broadcast = dhcp.ipAddress | ( ~dhcp.netmask );
+						WifiManager wifiManager = (WifiManager) RampEntryPoint.getAndroidContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+						// Wi-Fi adapter is ON
+						if (wifiManager.isWifiEnabled()) {
+							WifiInfo wifiInfo = wifiManager.getConnectionInfo();
 
-						byte[] ipaddressQuads = new byte[4];
-						for (int k = 0; k < 4; k++) {
-							ipaddressQuads[k] = (byte) ((manager.getConnectionInfo().getIpAddress() >> k * 8) & 0xFF);
-							// System.out.println("Heartbeater ipaddressQuads["+k+"] " + ipaddressQuads[k]);
+							// Connected to an access point
+					        if (wifiInfo.getNetworkId() != -1) {
+								DhcpInfo dhcp = wifiManager.getDhcpInfo();
+								// System.out.println("Heartbeater dhcp.netmask " + dhcp.netmask);
+								// int broadcast = (dhcp.ipAddress & dhcp.netmask) | ~dhcp.netmask;
+								// int broadcast = dhcp.ipAddress | ( ~dhcp.netmask );
+
+								byte[] ipaddressQuads = new byte[4];
+								for (int k = 0; k < 4; k++) {
+									ipaddressQuads[k] = (byte) ((wifiManager.getConnectionInfo().getIpAddress() >> k * 8) & 0xFF);
+									// System.out.println("Heartbeater ipaddressQuads["+k+"] " + ipaddressQuads[k]);
+								}
+								// System.out.println("Heartbeater InetAddress.getByAddress(ipaddressQuads) " + InetAddress.getByAddress(ipaddressQuads));
+								// broadcastAddresses.add(InetAddress.getByAddress(ipaddressQuads));
+
+								byte[] netmaskQuads = new byte[4];
+								for (int k = 0; k < 4; k++) {
+									netmaskQuads[k] = (byte) ((dhcp.netmask >> k * 8) & 0xFF);
+									// System.out.println("Heartbeater netmaskQuads["+k+"] " + netmaskQuads[k]);
+								}
+								// System.out.println("Heartbeater InetAddress.getByAddress(netmaskQuads) " + InetAddress.getByAddress(netmaskQuads));
+								// broadcastAddresses.add(InetAddress.getByAddress(netmaskQuads));
+
+								int broadcast = wifiManager.getConnectionInfo().getIpAddress() | (~dhcp.netmask);
+								// System.out.println("Heartbeater broadcast " + broadcast);
+								byte[] broadcastQuads = new byte[4];
+								for (int k = 0; k < 4; k++) {
+									broadcastQuads[k] = (byte) ((broadcast >> k * 8) & 0xFF);
+									// System.out.println("Heartbeater broadcast["+k+"] " + broadcastQuads[k]);
+								}
+								// System.out.println("Heartbeater InetAddress.getByAddress(broadcastQuads) " + InetAddress.getByAddress(broadcastQuads));
+
+								broadcastAddresses.add(InetAddress.getByAddress(broadcastQuads));
+					        }
 						}
-						// System.out.println("Heartbeater InetAddress.getByAddress(ipaddressQuads) " + InetAddress.getByAddress(ipaddressQuads));
-						// broadcastAddresses.add(InetAddress.getByAddress(ipaddressQuads));
 
-						byte[] netmaskQuads = new byte[4];
-						for (int k = 0; k < 4; k++) {
-							netmaskQuads[k] = (byte) ((dhcp.netmask >> k * 8) & 0xFF);
-							// System.out.println("Heartbeater netmaskQuads["+k+"] " + netmaskQuads[k]);
-						}
-						// System.out.println("Heartbeater InetAddress.getByAddress(netmaskQuads) " + InetAddress.getByAddress(netmaskQuads));
-						// broadcastAddresses.add(InetAddress.getByAddress(netmaskQuads));
-
-						int broadcast = manager.getConnectionInfo().getIpAddress() | (~dhcp.netmask);
-						// System.out.println("Heartbeater broadcast " + broadcast);
-						byte[] broadcastQuads = new byte[4];
-						for (int k = 0; k < 4; k++) {
-							broadcastQuads[k] = (byte) ((broadcast >> k * 8) & 0xFF);
-							// System.out.println("Heartbeater broadcast["+k+"] " + broadcastQuads[k]);
-						}
-						// System.out.println("Heartbeater InetAddress.getByAddress(broadcastQuads) " + InetAddress.getByAddress(broadcastQuads));
-
-						broadcastAddresses.add(InetAddress.getByAddress(broadcastQuads));
-
-					} 
+					}
 					else {
 						// NOT Android
 						List<InterfaceAddress> interfaceAddresses = netA.getInterfaceAddresses();
@@ -235,7 +243,7 @@ public class Heartbeater extends Thread {
 					DatagramSocket ds = new DatagramSocket(0, inetA);
 					ds.setReuseAddress(true);
 					ds.setBroadcast(true);
-					
+
 					// required to send even towards the multicast heartbeat address
 					//broadcastAddresses.add(InetAddress.getByName(Heartbeater.HEARTBEAT_MULTICAST_ADDRESS));
 
@@ -254,23 +262,23 @@ public class Heartbeater extends Thread {
 						InetAddress broadcastAddress = it.next();
 						//System.out.println("Heartbeater: sending from " + inetA + " to " + broadcastAddress);
 						DatagramPacket dp = new DatagramPacket(
-								heartbeatRequestBytes, 
-								heartbeatRequestBytes.length, 
-								broadcastAddress, 
+								heartbeatRequestBytes,
+								heartbeatRequestBytes.length,
+								broadcastAddress,
 								Dispatcher.DISPATCHER_PORT
 							);
 						try {
 							ds.send(dp);
 							sleep(50);
-						} 
+						}
 						catch (java.net.SocketException se) {
 							// System.out.println("Heartbeater ds.send(dp) SocketException to "+broadcastAddress+": "+se.getMessage());
 							// se.printStackTrace();
 							// System.out.println("Heartbeater: sending to 255.255.255.255 instead of " + broadcastAddress);
 							dp = new DatagramPacket(
-									heartbeatRequestBytes, 
-									heartbeatRequestBytes.length, 
-									InetAddress.getByName("255.255.255.255"), 
+									heartbeatRequestBytes,
+									heartbeatRequestBytes.length,
+									InetAddress.getByName("255.255.255.255"),
 									Dispatcher.DISPATCHER_PORT
 								);
 							ds.send(dp);
@@ -278,13 +286,13 @@ public class Heartbeater extends Thread {
 					}
 					ds.close();
 					Thread.sleep(100);
-				} 
+				}
 				catch (Exception e) {
 					System.out.println("Heartbeater Exception from " + anInterface + ": " + e.getMessage());
 					e.printStackTrace();
 				}
 			}
-		} 
+		}
 		catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("Heartbeater " + e.getMessage());
@@ -297,7 +305,7 @@ public class Heartbeater extends Thread {
 			// and finally invoke
 			// "invoke-rc.d procps restart"
 		}/**/
-		
+
 		//STEFANO LANZONE: Fare N Unicast
 		//implement unicast-based discovery exploiting netmask...
 		for (int i = 0; localInterfaces!=null && i < localInterfaces.size(); i++) {
@@ -305,62 +313,94 @@ public class Heartbeater extends Thread {
 			try {
 				InetAddress inetA = InetAddress.getByName(anInterface);
 				NetworkInterface netA = NetworkInterface.getByInetAddress(inetA);
-				
+
 				if (RampEntryPoint.getAndroidContext() != null) {
-					WifiManager manager = (WifiManager) RampEntryPoint.getAndroidContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-					DhcpInfo dhcp = manager.getDhcpInfo();
-					
-					byte[] ipaddressQuads = new byte[4];
-					for (int k = 0; k < 4; k++) {
-						ipaddressQuads[k] = (byte) ((manager.getConnectionInfo().getIpAddress() >> k * 8) & 0xFF);
+					WifiManager wifiManager = (WifiManager) RampEntryPoint.getAndroidContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+					// Wi-Fi adapter is ON
+					if (wifiManager.isWifiEnabled()) {
+						WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+
+						// Connected to an access point
+				        if (wifiInfo.getNetworkId() != -1) {
+							DhcpInfo dhcp = wifiManager.getDhcpInfo();
+
+							byte[] ipaddressQuads = new byte[4];
+							for (int k = 0; k < 4; k++) {
+								ipaddressQuads[k] = (byte) ((wifiManager.getConnectionInfo().getIpAddress() >> k * 8) & 0xFF);
+							}
+
+							byte[] netmaskQuads = new byte[4];
+							for (int k = 0; k < 4; k++) {
+								netmaskQuads[k] = (byte) ((dhcp.netmask >> k * 8) & 0xFF);
+							}
+
+							InetAddress ipaddress = InetAddress.getByAddress(ipaddressQuads);
+							InetAddress netmask = InetAddress.getByAddress(netmaskQuads);
+
+							DatagramSocket ds = new DatagramSocket(0, ipaddress);
+
+							String ip = ipaddress.toString().replaceAll("/", "").split(":")[0];
+
+							SubnetUtils utils = new SubnetUtils(ip, netmask.toString().replaceAll("/", "").split(":")[0]);
+							SubnetInfo info = utils.getInfo();
+
+							unicastDiscovery(ipaddress, ds, ip, info);
+				        }
 					}
-					
-					byte[] netmaskQuads = new byte[4];
-					for (int k = 0; k < 4; k++) {
-						netmaskQuads[k] = (byte) ((dhcp.netmask >> k * 8) & 0xFF);
-					}
-					
-					InetAddress ipaddress = InetAddress.getByAddress(ipaddressQuads);
-					InetAddress netmask = InetAddress.getByAddress(netmaskQuads);
-//					System.out.println("Heartbeater Android ipaddress: " + ipaddress + " netmask: " + netmask);
-					
-					DatagramSocket ds = new DatagramSocket(0, ipaddress);
-					
-					String ip = ipaddress.toString().replaceAll("/", "").split(":")[0];
-					SubnetUtils utils = new SubnetUtils(ip, netmask.toString().replaceAll("/", "").split(":")[0]);
-					SubnetInfo info = utils.getInfo();
-					
-					unicastDiscovery(ipaddress, ds, ip, info);
-				}
-				else
-				{	// NOT Android	
+
+//					BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+//					// Temporary workaround
+//					if (bluetoothAdapter != null) {
+//					    // Device support Bluetooth
+//						if (bluetoothAdapter.isEnabled()) {
+//							System.out.println("---->DENTRO BLUETOOTH");
+//
+//							DatagramSocket ds = new DatagramSocket(0, inetA);
+//
+//							String ip = inetA.toString().replaceAll("/", "").split(":")[0];
+//							int prefixLength = 24;
+//							String subnet = ip + "/" + prefixLength;
+//
+//							SubnetUtils utils = new SubnetUtils(subnet);
+//							SubnetInfo info = utils.getInfo();
+//
+//							System.out.println("Heartbeater - sendHeartbeat: inetAddress " + inetA);
+//							System.out.println("Heartbeater - sendHeartbeat: ip " + ip + ", prefixLength: " + prefixLength);
+//							System.out.println("Heartbeater - sendHeartbeat: subnet " + subnet);
+//							System.out.println("Heartbeater - sendHeartbeat: info " + info);
+//
+//							unicastDiscovery(inetA, ds, ip, info);
+//						}
+//					}
+
+				} else {	// NOT Android
 					for (InterfaceAddress address : netA.getInterfaceAddresses()) {
-						InetAddress inetAddress = address.getAddress();	
-						
+						InetAddress inetAddress = address.getAddress();
+
 						DatagramSocket ds = new DatagramSocket(0, inetAddress);
-					
+
 						String ip = inetAddress.toString().replaceAll("/", "").split(":")[0];
 						int prefixLength = address.getNetworkPrefixLength();
-						String subnet = ip + "/" +prefixLength;
-				    
+						String subnet = ip + "/" + prefixLength;
+
 						SubnetUtils utils = new SubnetUtils(subnet);
 						SubnetInfo info = utils.getInfo();
-                    
+
 						unicastDiscovery(inetAddress, ds, ip, info);
-						
+
 						Thread.sleep(50);
-					}					 
-				}	
-			}	
+					}
+				}
+			}
 			catch (Exception e) {
 				System.out.println("Heartbeater Exception from " + anInterface + ": " + e.getMessage());
 				e.printStackTrace();
-			}	
+			}
 		}
 	}
 
 	private void unicastDiscovery(InetAddress inetAddress, DatagramSocket ds, String ip, SubnetInfo info) throws UnknownHostException {
-		
+
 		if (info.getAddressCount() < 255) //Impostato limite sul numero di unicast...
 		{
 			for (String ipDest : info.getAllAddresses())
@@ -368,17 +408,17 @@ public class Heartbeater extends Thread {
 				if(!ip.equals(ipDest))
 				{
 					DatagramPacket dp = new DatagramPacket(
-					heartbeatRequestBytes, 
-					heartbeatRequestBytes.length, 
-					InetAddress.getByName(ipDest), 
+					heartbeatRequestBytes,
+					heartbeatRequestBytes.length,
+					InetAddress.getByName(ipDest),
 					Dispatcher.DISPATCHER_PORT
 					);
-		
+
 					try {
-						//System.out.println("Heartbeater Unicast: sending from " + inetAddress + " to " + ipDest);
+//						System.out.println("Heartbeater Unicast: sending from " + inetAddress + " to " + ipDest);
 						ds.send(dp);
 						//sleep(50);
-					} 
+					}
 					catch (Exception e) {
 						System.out.println("Heartbeater Unicast Error: sending from " + inetAddress + " to " + ipDest);
 						e.printStackTrace();
@@ -392,7 +432,7 @@ public class Heartbeater extends Thread {
 	protected void addNeighbor(InetAddress neighborInetAddress, int nodeId) {
 		if(!neighborsBlackList.contains(neighborInetAddress)){
 			neighbors.put(
-					neighborInetAddress, 
+					neighborInetAddress,
 					new NeighborData(
 							System.currentTimeMillis(),
 							nodeId
@@ -400,11 +440,11 @@ public class Heartbeater extends Thread {
 					);
 		}
 	}
-	
+
 	protected boolean isNeighbor(InetAddress neighborInetAddress) {
 		return neighbors.containsKey(neighborInetAddress);
 	}
-	
+
 	// public synchronized Vector<InetAddress> getNeighbors() throws Exception{
 	public Vector<InetAddress> getNeighbors() {
 		// System.out.println("Heartbeater.getNeighbors start");
@@ -419,7 +459,7 @@ public class Heartbeater extends Thread {
 				if (lastUpdate != null) {
 					if (System.currentTimeMillis() - lastUpdate > heartbeatPeriod + (heartbeatPeriod / 2)) {
 						neighbors.remove(address);
-					} 
+					}
 					else {
 						res.addElement(address);
 					}
@@ -428,7 +468,7 @@ public class Heartbeater extends Thread {
 		}
 		return res;
 	}
-	
+
 	public Integer getNodeId(InetAddress address){
 		Integer res = null;
 		NeighborData data = this.neighbors.get(address);
@@ -437,25 +477,25 @@ public class Heartbeater extends Thread {
 		}
 		return res;
 	}
-	
+
 	public static class NeighborData {
-		
+
 		private long lastRefersh;
 		private int nodeId;
-		
+
 		private NeighborData(long lastRefersh, int nodeId) {
 			super();
 			this.lastRefersh = lastRefersh;
 			this.nodeId = nodeId;
 		}
-		
+
 		public long getLastRefersh() {
 			return lastRefersh;
 		}
 		public int getNodeId() {
 			return nodeId;
 		}
-		
+
 	}
 
 }

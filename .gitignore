@@ -1,7 +1,11 @@
+# Properties
+resources/ramp.props
+
 # Compiled class file
 *.class
 
 # Log file
+logs/
 *.log
 
 # BlueJ files
@@ -24,6 +28,7 @@ hs_err_pid*
 ### My additions
 RAMP.iml
 nbproject
+temp/
 
 .metadata
 bin/
@@ -37,6 +42,8 @@ local.properties
 .settings/
 .loadpath
 .recommenders
+.classpath
+.project
 
 # External tool builders
 .externalToolBuilders/
