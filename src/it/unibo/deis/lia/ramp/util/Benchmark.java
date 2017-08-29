@@ -92,10 +92,6 @@ public class Benchmark {
 			csvWriter = new CSVWriter(new FileWriter(BENCH_PATH, true), ';');
 			csvWriter.writeNext(HEAD.split("#"));
 
-			// FIXME
-			csvWriter.flush();
-			csvWriter.close();
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -110,20 +106,12 @@ public class Benchmark {
 			@Override
 			public void run() {
 				try {
-					// FIXME
-					CSVWriter csvWriter = new CSVWriter(new FileWriter(BENCH_PATH, true), ';');
-
 					Date date = new Date();
 					SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
 					SimpleDateFormat timeFormat = new SimpleDateFormat(TIME_FORMAT);
 					String row = dateFormat.format(date.getTime()) + "#" + timeFormat.format(date.getTime()) + "#"
 							+ DEVICE + "#" + millis + "#" + type + "#" + packetId + "#" + sender + "#" + recipient;
 					CSV_WRITER.writeNext(row.split("#"));
-
-					// FIXME
-					csvWriter.writeNext(row.split("#"));
-					csvWriter.flush();
-					csvWriter.close();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

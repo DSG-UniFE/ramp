@@ -27,7 +27,6 @@ import it.unibo.deis.lia.ramp.core.internode.HeartbeatRequest;
 import it.unibo.deis.lia.ramp.core.internode.HeartbeatResponse;
 import it.unibo.deis.lia.ramp.core.internode.TcpDispatcher;
 import it.unibo.deis.lia.ramp.core.internode.UdpDispatcher;
-import it.unibo.deis.lia.ramp.util.GeneralUtils;
 
 
 /**
@@ -341,17 +340,6 @@ public class E2EComm {
         }
         else if(protocol==E2EComm.TCP){
             //System.out.println("E2EComm.sendBroadcast tcp");
-
-			// FIXME
-			if (exploredNodeIdList != null) {
-				for (Integer nodeID : exploredNodeIdList) {
-					GeneralUtils.appendLog(
-							"E2EComm.executeSendBroadcast packet: " + bp.getId() + ", explore node ID: " + nodeID);
-				}
-			} else {
-				GeneralUtils
-						.appendLog("E2EComm.executeSendBroadcast packet: " + bp.getId() + ", explore node ID: NULL");
-			}
 
         	// send broadcast packet via local dispatcher
             InetAddress localhost = InetAddress.getLocalHost();

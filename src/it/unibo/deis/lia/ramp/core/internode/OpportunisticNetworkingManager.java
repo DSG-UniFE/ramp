@@ -31,7 +31,6 @@ import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastHeader;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
-import it.unibo.deis.lia.ramp.util.Benchmark;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 
 /**
@@ -193,10 +192,11 @@ public class OpportunisticNetworkingManager extends Thread {
 				fileIn.close();
 				System.out.println("OpportunisticNetworkingManager: OpportunisticNetworkingSettings data deserialized");
 			} catch (IOException i) {
-	         i.printStackTrace();
+				i.printStackTrace();
 			} catch (ClassNotFoundException c) {
-	         System.out.println("OpportunisticNetworkingManager: OpportunisticNetworkingSettings class not found in deserializeSettings");
-	         c.printStackTrace();
+				System.out.println(
+						"OpportunisticNetworkingManager: OpportunisticNetworkingSettings class not found in deserializeSettings");
+				c.printStackTrace();
 			}
 		}
 
@@ -303,16 +303,6 @@ public class OpportunisticNetworkingManager extends Thread {
 			}
 		}
 
-		// FIXME
-		if (gp instanceof UnicastPacket) {
-			UnicastPacket up = (UnicastPacket) gp;
-
-			// FIXME
-			Benchmark.append(System.currentTimeMillis(), "opportunistic_networking_on_restore_packet", up.getId(),
-					up.getSourceNodeId(),
-					up.getDestNodeId());
-		}
-
 	    return gp;
 	}
 
@@ -332,17 +322,6 @@ public class OpportunisticNetworkingManager extends Thread {
 		File fp = new File(fileNamePacket);
         if (fp.exists())
         	fp.delete();
-
-		// FIXME
-		GenericPacket gp = savedPackets.get(savedPacket);
-		if (gp instanceof UnicastPacket) {
-			UnicastPacket up = (UnicastPacket) gp;
-
-			// FIXME
-			Benchmark.append(System.currentTimeMillis(), "opportunistic_networking_on_remove_packet", up.getId(),
-					up.getSourceNodeId(),
-					up.getDestNodeId());
-		}
 
         savedPackets.remove(savedPacket);
 	}
@@ -443,13 +422,6 @@ public class OpportunisticNetworkingManager extends Thread {
 				GeneralUtils.appendLog("OpportunisticNetworkingManager: unicast packet "+savedPacket.getId() +" not sent to neighbors");
 			} else {
 				GeneralUtils.appendLog("OpportunisticNetworkingManager: sent unicast packet "+savedPacket.getId() +" to neighbors");
-
-				if (up != null) {
-					// FIXME
-					Benchmark.append(System.currentTimeMillis(), "opportunistic_networking_on_sent_packet", up.getId(),
-							up.getSourceNodeId(),
-							up.getDestNodeId());
-				}
 			}
 
 			if(sendOK && isRemovePacketAfterSend())
@@ -764,15 +736,6 @@ public class OpportunisticNetworkingManager extends Thread {
 	        System.out.println("OpportunisticNetworkingManager: packet serialized in "+ fileNamePacket);
 	        GeneralUtils.appendLog("OpportunisticNetworkingManager: packet serialized in " +fileNamePacket);
 
-	        // FIXME
-			if (gp instanceof UnicastPacket) {
-				UnicastPacket up = (UnicastPacket) gp;
-
-				// FIXME
-				Benchmark.append(System.currentTimeMillis(), "opportunistic_networking_on_store_packet", up.getId(),
-						up.getSourceNodeId(),
-						up.getDestNodeId());
-			}
 		} catch(IOException i) {
 			i.printStackTrace();
         } catch(Exception e) {

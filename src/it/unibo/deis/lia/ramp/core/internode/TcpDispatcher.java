@@ -20,7 +20,6 @@ import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastHeader;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
-import it.unibo.deis.lia.ramp.util.Benchmark;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 import it.unibo.deis.lia.ramp.util.ThreadPool;
 import it.unibo.deis.lia.ramp.util.ThreadPool.IThreadPoolCallback;
@@ -168,21 +167,9 @@ public class TcpDispatcher extends Thread {
 					unicastHeaderTcpHandler(firstHop, remoteAddressString, uh);
 				} else if (gp instanceof UnicastPacket) {
 					UnicastPacket up = (UnicastPacket) gp;
-
-					// FIXME
-					Benchmark.append(System.currentTimeMillis(), "tcp_dispatcher_handler_unicast", up.getId(),
-							up.getSourceNodeId(), up.getDestNodeId());
-					System.out.println("TcpDispatcherHandler.tcp_dispatcher_handler_unicast, packetID: " + up.getId());
-
 					unicastPacketTcpHandler(firstHop, remoteAddressString, up);
 				} else if (gp instanceof BroadcastPacket) {
 					final BroadcastPacket bp = (BroadcastPacket) gp;
-
-					// FIXME
-					Benchmark.append(System.currentTimeMillis(), "tcp_dispatcher_handler_broadcast", bp.getId(),
-							bp.getSourceNodeId(), bp.getDestPort());
-					System.out
-							.println("TcpDispatcherHandler.tcp_dispatcher_handler_broadcast, packetID: " + bp.getId());
 
 					if(exploredNodeIdList == null)
 						broadcastPacketTcpHandler(firstHop, remoteAddressString, bp);
@@ -566,10 +553,6 @@ public class TcpDispatcher extends Thread {
 					for (int i = 0; i < listeners.length; i++) {
 						listeners[i].sendingTcpUnicastPacketException(up, ex);
 						System.out.println("POST TcpDispatcherHandler unicast listener ipDest="+ipDest+" portDest="+portDest);
-
-						// FIXME
-						Benchmark.append(System.currentTimeMillis(), "tcp_dispatcher_handler_try_to_send", up.getId(),
-								up.getSourceNodeId(), up.getDestNodeId());
 					}
 				}
 			}
@@ -580,10 +563,6 @@ public class TcpDispatcher extends Thread {
 			if ( destS != null && destS.isConnected() ) {
 				// System.out.println("TcpDispatcher unicast packet: destS.getRemoteSocketAddress() "+destS.getRemoteSocketAddress());
 				GeneralUtils.appendLog("TcpDispatcher sent unicast packet: destS.getRemoteSocketAddress() "+destS.getRemoteSocketAddress());
-
-				// FIXME
-				Benchmark.append(System.currentTimeMillis(), "tcp_dispatcher_handler_sent_packet", up.getId(),
-						up.getSourceNodeId(), up.getDestNodeId());
 
 				OutputStream destOs = destS.getOutputStream();
 				GenericPacket gp = up;
@@ -673,10 +652,6 @@ public class TcpDispatcher extends Thread {
 
 				// 2) send to neighbors (if TTL is greater than 0)
 				if (bp.getTtl() > 0) {
-					// FIXME
-					System.out.println("TcpDispatcher.broadcastPacketTcpHandler: sendToNeighbors()");
-					GeneralUtils.appendLog("TcpDispatcher.broadcastPacketTcpHandler, packet: " + bp.getId());
-
 					sendToNeighbors(firstHop, remoteAddressString, null, bp);
 
 //					boolean isFromRin = Dispatcher.isFromRin(remoteAddressString);
@@ -691,10 +666,6 @@ public class TcpDispatcher extends Thread {
 		//Stefano Lanzone
 		private void sendToNeighbors(boolean firstHop, String remoteAddressString, Set<Integer> exploredNodes, final BroadcastPacket bp) {
 			System.out.println("TcpDispatcher.sendToNeighbors()");
-			// FIXME
-			GeneralUtils.appendLog("TcpDispatcher.sendToNeighbors, packet: " + bp.getId());
-			Benchmark.append(System.currentTimeMillis(), "tcp_dispatcher_handler_send_to_neighbors", bp.getId(),
-					bp.getSourceNodeId(), bp.getDestPort());
 
 			Vector<InetAddress> neighbors = Heartbeater.getInstance(false).getNeighbors();
 			if (neighbors.size() == 0) {

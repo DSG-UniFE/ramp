@@ -9,7 +9,6 @@ import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastHeader;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
-import it.unibo.deis.lia.ramp.util.Benchmark;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 
 
@@ -111,10 +110,6 @@ public class ContinuityManager implements PacketForwardingListener {
 		if (opportunisticNetworking) {
 			//Send packet to Opportunistic Networking Manager
 			GeneralUtils.appendLog("ContinuityManager send unicast packet to OpportunisticNetworkingManager");
-
-			// FIXME
-			Benchmark.append(System.currentTimeMillis(), "continuity_manager_to_opportunistic_networking", up.getId(),
-					up.getSourceNodeId(), up.getDestNodeId());
 
 			sendToOpportunisticNetworkingManager(up);
 			up.getHeader().setRetry((byte) 0);

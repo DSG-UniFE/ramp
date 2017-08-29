@@ -15,7 +15,6 @@ import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorRequest.Type;
 import it.unibo.deis.lia.ramp.service.management.ServiceManager;
-import it.unibo.deis.lia.ramp.util.Benchmark;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 
 
@@ -64,7 +63,7 @@ public class DistributedActuatorService extends Thread {
 	}
 
 	public void stopService(){
-	    System.out.println("DistributedActuatorService close");
+		System.out.println("DistributedActuatorService STOP");
 	    ServiceManager.getInstance(false).removeService("DistribuitedActuator");
 	    open = false;
 	    DistributedActuatorService.heartbeater.stopHeartbeater();
@@ -89,7 +88,7 @@ public class DistributedActuatorService extends Thread {
 	public void sendCommand(String appName, String command, int secondsToWait, float threshold) {
 		int millisToWait = secondsToWait * 1000;
 		// "primaryValue=xxx,resilience=yyy"
-		System.out.println("DistributedActuatorService.sendCommand: appName=" + appName + " command=" + command);
+//		System.out.println("DistributedActuatorService.sendCommand: appName=" + appName + " command=" + command);
     	Hashtable<Integer, ClientDescriptor> nodes = appDB.getK2(appName);
     	for(int nodeID : nodes.keySet()) {
 			ClientDescriptor node = nodes.get(nodeID);
@@ -112,8 +111,7 @@ public class DistributedActuatorService extends Thread {
 										serviceSocket.getLocalPort(),
 										appName))
 						);
-				Benchmark.append(System.currentTimeMillis(), "das_sent_pre_command", 0, 0, 0);
-				System.out.println("DistributedActuatorService.sendCommand: sent packet PRE_COMMAND");
+//				System.out.println("DistributedActuatorService.sendCommand: sent packet PRE_COMMAND");
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -136,11 +134,10 @@ public class DistributedActuatorService extends Thread {
     			activeNodes.add(nodeID);
     		}
     	}
-    	System.out.println("DistributedActuatorService.sendCommand: founded n " + nActiveNodes + " active nodes");
-    	System.out.println("DistributedActuatorService.sendCommand: list of active nodes " + Arrays.toString(activeNodes.toArray()));
+//    	System.out.println("DistributedActuatorService.sendCommand: founded n " + nActiveNodes + " active nodes");
+//    	System.out.println("DistributedActuatorService.sendCommand: list of active nodes " + Arrays.toString(activeNodes.toArray()));
 		if ((nActiveNodes / nodes.size()) >= threshold) {
-    		System.out.println("DistributedActuatorService.sendCommand: outdated threshold");
-			Benchmark.append(System.currentTimeMillis(), "das_sending_commands", 0, 0, 0);
+//    		System.out.println("DistributedActuatorService.sendCommand: outdated threshold");
     		for(int nodeID : activeNodes) {
     			ClientDescriptor node = nodes.get(nodeID);
     			Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(nodeID, 5*1000);
@@ -162,15 +159,12 @@ public class DistributedActuatorService extends Thread {
     										appName,
     										command))
     						);
-    				System.out.println("DistributedActuatorService.sendCommand: sent packet COMMAD=" + command);
+//    				System.out.println("DistributedActuatorService.sendCommand: sent packet COMMAD=" + command);
     			} catch (Exception e) {
     				e.printStackTrace();
     			}
     		}
-			Benchmark.append(System.currentTimeMillis(), "das_sent_commands", 0, 0, 0);
-		} else {
-			Benchmark.append(System.currentTimeMillis(), "das_not_sent_command", 0, 0, 0);
-    	}
+		}
     }
 
 	@Override
@@ -184,7 +178,7 @@ public class DistributedActuatorService extends Thread {
 	            try {
 	                // receive
 	                GenericPacket gp = E2EComm.receive(serviceSocket, 5*1000);
-	                System.out.println("DistributedActuatorService new request");
+//	                System.out.println("DistributedActuatorService new request");
 	                new PacketHandler(gp).start();
 	            } catch(SocketTimeoutException ste) {
 	                //System.out.println("DistributedActuatorService SocketTimeoutException");
@@ -216,40 +210,32 @@ public class DistributedActuatorService extends Thread {
 	                UnicastPacket up = (UnicastPacket) gp;
 	                Object payload = E2EComm.deserialize(up.getBytePayload());
 	                if (payload instanceof DistributedActuatorRequest) {
-	                    System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest");
+//	                    System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest");
 	                    DistributedActuatorRequest request = (DistributedActuatorRequest) payload;
 	                    switch (request.getType()) {
 		                    case HERE_I_AM:
-							Benchmark.append(System.currentTimeMillis(), "das_ph_here_i_am", up.getId(),
-									up.getSourceNodeId(), up.getDestNodeId());
-		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest HERE_I_AM");
+//		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest HERE_I_AM");
 		                    	ClientDescriptor cd = appDB.get(request.getAppName(), up.getSourceNodeId());
 		                    	cd.setLastUpdate(System.currentTimeMillis());
 		                    	break;
 		                    case JOIN:
-							Benchmark.append(System.currentTimeMillis(), "das_ph_join", up.getId(),
-									up.getSourceNodeId(), up.getDestNodeId());
-		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest JOIN");
+//		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest JOIN");
 		                    	appDB.put(request.getAppName(), up.getSourceNodeId(),
 		                    			new ClientDescriptor(request.getPort(),
 		                    					System.currentTimeMillis()));
 		                    	break;
 		                    case LEAVE:
-							Benchmark.append(System.currentTimeMillis(), "das_ph_leave", up.getId(),
-									up.getSourceNodeId(), up.getDestNodeId());
-		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest LEAVE");
+//		                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest LEAVE");
 		                    	appDB.removeK2(request.getAppName(), up.getSourceNodeId());
 		                    	break;
 		                    case WHICH_APP:
-							Benchmark.append(System.currentTimeMillis(), "das_ph_which_app", up.getId(),
-									up.getSourceNodeId(), up.getDestNodeId());
-							System.out.println(
-									"DistributedActuatorService PacketHandler DistributedActuatorRequest WHICH_APP");
+//		                    	System.out.println(
+//									"DistributedActuatorService PacketHandler DistributedActuatorRequest WHICH_APP");
 		                    	Set<String> sAppNames = appDB.getK1();
 		                    	String[] aAppNames = sAppNames.toArray(new String[sAppNames.size()]);
-							System.out.println(
-									"DistributedActuatorService PacketHandler DistributedActuatorRequest AppNames:"
-											+ Arrays.toString(aAppNames));
+//		                    	System.out.println(
+//									"DistributedActuatorService PacketHandler DistributedActuatorRequest AppNames:"
+//											+ Arrays.toString(aAppNames));
 		                    	DistributedActuatorRequest dar = new DistributedActuatorRequest(
 		                    			Type.AVAILABLE_APPS,
 		                    			serviceSocket.getLocalPort(),
@@ -268,28 +254,26 @@ public class DistributedActuatorService extends Thread {
 			            					GenericPacket.UNUSED_FIELD,
 			            					E2EComm.serialize(dar)
 			            					);
-								Benchmark.append(System.currentTimeMillis(), "das_ph_which_app_response", up.getId(),
-										up.getSourceNodeId(), up.getDestNodeId());
-			                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest sent packet AVAILABLE_APPS");
+//			                    	System.out.println("DistributedActuatorService PacketHandler DistributedActuatorRequest sent packet AVAILABLE_APPS");
 		                    	} catch (Exception e) {
 		            	            e.printStackTrace();
 		            	        }
 		                    	break;
 							default:
 								// received wrong type of request: do nothing...
-		                        System.out.println("DistribuitedActuatorService PacketHandler wrong type of request: " +
-		                        		request.getType());
+//		                        System.out.println("DistribuitedActuatorService PacketHandler wrong type of request: " +
+//		                        		request.getType());
 								break;
 						}
 	                } else {
 	                    // received payload is not DistribuitedActuatorHandler: do nothing...
-	                    System.out.println("DistributedActuatorService PacketHandler wrong payload: " + payload);
+//	                    System.out.println("DistributedActuatorService PacketHandler wrong payload: " + payload);
 	                }
 	            }
 	            else{
 	                // received packet is not UnicastPacket: do nothing...
-	                System.out.println("DistributedActuatorService PacketHandler wrong packet: " +
-	                		gp.getClass().getName());
+//	                System.out.println("DistributedActuatorService PacketHandler wrong packet: " +
+//	                		gp.getClass().getName());
 	            }
 	        } catch(Exception e) {
 	            e.printStackTrace();
@@ -329,14 +313,14 @@ public class DistributedActuatorService extends Thread {
 	    	while (open) {
 	    		synchronized (monitor) {
 	    			try {
-	    		    	System.out.println("DistributedActuatorServiceHeartbeater: waiting...");
+//	    		    	System.out.println("DistributedActuatorServiceHeartbeater: waiting...");
 						monitor.wait(millisToSleep);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
 	    		}
 	    		Set<String> appNames = appDB.getK1();
-		    	System.out.println("DistributedActuatorServiceHeartbeater: appNames "+appNames);
+//		    	System.out.println("DistributedActuatorServiceHeartbeater: appNames "+appNames);
 	    		for (String appName: appNames) {
 	    			Hashtable<Integer, ClientDescriptor> nodes = appDB.getK2(appName);
 	    			for(int nodeID : nodes.keySet()) {
@@ -355,8 +339,8 @@ public class DistributedActuatorService extends Thread {
 								e.printStackTrace();
 							}
 						} else {
-							// TODO ?
-							// Rimuovere i nodeID che non hanno più un percorso
+							// TODO Rimuovere i nodeID che non hanno più un
+							// percorso
 							// appDB.removeK2(appName, nodeID);
 						}
 	    			}

@@ -15,7 +15,6 @@ import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 import it.unibo.deis.lia.ramp.core.internode.DistributedActuatorRequest.Type;
 import it.unibo.deis.lia.ramp.service.management.ServiceDiscovery;
 import it.unibo.deis.lia.ramp.service.management.ServiceResponse;
-import it.unibo.deis.lia.ramp.util.Benchmark;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 
 
@@ -50,7 +49,7 @@ public class DistributedActuatorClient extends Thread{
 	}
 
     public void stopClient(){
-        System.out.println("DistributedActuatorClient stop");
+        System.out.println("DistributedActuatorClient STOP");
         open = false;
         try {
             clientSocket.close();
@@ -99,7 +98,6 @@ public class DistributedActuatorClient extends Thread{
 				E2EComm.sendUnicast(service.getServerDest(), service.getServerPort(), service.getProtocol(),
 						E2EComm.serialize(new DistributedActuatorRequest(DistributedActuatorRequest.Type.WHICH_APP,
 								newAppSocket.getLocalPort())));
-				Benchmark.append(System.currentTimeMillis(), "dac_sent_which_app", 0, 0, 0);
 		        System.out.println("DistributedActuatorClient registerNewApp service.getServerDest(): " +
 		        		Arrays.toString(service.getServerDest()) + ", service.getServerPort: " +
 		        		service.getServerPort() + ", service.getProtocol: " + service.getProtocol());
@@ -108,9 +106,9 @@ public class DistributedActuatorClient extends Thread{
 	            try {
 	                // receive
 	                 gp = E2EComm.receive(newAppSocket, 10*1000);
-	                System.out.println("DistributedActuatorClient registerNewApp: received packet");
+					// System.out.println("DistributedActuatorClient registerNewApp: received packet");
 	            } catch(SocketTimeoutException ste) {
-	                System.out.println("DistributedActuatorClient registerNewApp: SocketTimeoutException");
+	                // System.out.println("DistributedActuatorClient registerNewApp: SocketTimeoutException");
 	            }
 
 				if (gp instanceof UnicastPacket) {
@@ -119,17 +117,16 @@ public class DistributedActuatorClient extends Thread{
 	                Object payload = E2EComm.deserialize(up.getBytePayload());
 	                if (payload instanceof DistributedActuatorRequest) {
 	                    DistributedActuatorRequest request = (DistributedActuatorRequest) payload;
-	                    System.out.println("DistributedActuatorClient registerNewApp DistributedActuatorRequest: "+request);
+//						System.out.println(
+//								"DistributedActuatorClient registerNewApp DistributedActuatorRequest: " + request);
 	                    switch (request.getType()) {
 						case AVAILABLE_APPS:
-							Benchmark.append(System.currentTimeMillis(), "dac_received_available_apps", up.getId(),
-									up.getSourceNodeId(), up.getDestNodeId());
 							servicesReceived.add(up);
 							break;
 						default:
 							// received wrong type of request: do nothing...
-							System.out.println("DistributedActuatorClient registerNewApp wrong type of request: "
-									+ request.getType());
+//							System.out.println("DistributedActuatorClient registerNewApp wrong type of request: "
+//									+ request.getType());
 							break;
 	                    }
 	                }
@@ -170,26 +167,21 @@ public class DistributedActuatorClient extends Thread{
 				join(appName, bestControllerNodeID, bestControllerPort);
 				appDB.put(appName,
 						new AppDescriptor(bestControllerNodeID, bestControllerPort, System.currentTimeMillis(), dcl));
-				System.out.println("DistributedActuatorClient registerNewApp: added '" +
-						appName + "', nodeID " + bestControllerNodeID);
-				Benchmark.append(System.currentTimeMillis(), "dac_register_new_app", 0, 0, bestControllerNodeID);
+//				System.out.println("DistributedActuatorClient registerNewApp: added '" +
+//						appName + "', nodeID " + bestControllerNodeID);
 				return true;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-		} else {
-			System.out.println("DistributedActuatorClient registerNewApp: no service found for '" +
-					appName + "'");
-			Benchmark.append(System.currentTimeMillis(), "dac_not_register_new_app", 0, 0, bestControllerNodeID);
 		}
 		return false;
 	}
 
 	public void leave(String appName) {
-		System.out.println("DistributedActuatorClient leave appName: '" + appName + "'");
+//		System.out.println("DistributedActuatorClient leave appName: '" + appName + "'");
 		try {
 			AppDescriptor controller = appDB.get(appName);
-			System.out.println("DistributedActuatorClient.leave controller: " + controller);
+//			System.out.println("DistributedActuatorClient.leave controller: " + controller);
 			Vector<ResolverPath> paths = Resolver.getInstance(true).resolveBlocking(controller.getControllerNodeId(), 5*1000);
 			if (paths != null) {
 				E2EComm.sendUnicast(paths.firstElement().getPath(), controller.getControllerNodeId(),
@@ -197,9 +189,6 @@ public class DistributedActuatorClient extends Thread{
 						E2EComm.DEFAULT_BUFFERSIZE, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD,
 						GenericPacket.UNUSED_FIELD, E2EComm.serialize(
 								new DistributedActuatorRequest(DistributedActuatorRequest.Type.LEAVE, appName)));
-				Benchmark.append(System.currentTimeMillis(), "dac_sent_leave", 0, 0, 0);
-			} else {
-				Benchmark.append(System.currentTimeMillis(), "dac_not_sent_leave", 0, 0, 0);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -219,7 +208,7 @@ public class DistributedActuatorClient extends Thread{
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println("DistributedActuatorClient findDistributedActuatorService services: " + services);
+//		System.out.println("DistributedActuatorClient findDistributedActuatorService services: " + services);
         return services;
     }
 
@@ -232,9 +221,6 @@ public class DistributedActuatorClient extends Thread{
 						GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD,
 						E2EComm.serialize(new DistributedActuatorRequest(DistributedActuatorRequest.Type.JOIN,
 								clientSocket.getLocalPort(), appName)));
-				Benchmark.append(System.currentTimeMillis(), "dac_sent_join", 0, 0, 0);
-			} else {
-				Benchmark.append(System.currentTimeMillis(), "dac_not_sent_join", 0, 0, 0);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -258,45 +244,40 @@ public class DistributedActuatorClient extends Thread{
 	                UnicastPacket up = (UnicastPacket) gp;
 	                Object payload = E2EComm.deserialize(up.getBytePayload());
 	                if (payload instanceof DistributedActuatorRequest) {
-	                    System.out.println("DistributedActuatorClientPacketHandler DistributedActuatorRequest");
+//	                    System.out.println("DistributedActuatorClientPacketHandler DistributedActuatorRequest");
 	                    DistributedActuatorRequest request = (DistributedActuatorRequest) payload;
 	                    switch (request.getType()) {
 						case PRE_COMMAND:
-							Benchmark.append(System.currentTimeMillis(), "dac_received_pre_command", up.getId(),
-									up.getSourceNodeId(), up.getDestNodeId());
 							try {
 	                    		appDB.get(request.getAppName()).setTimestamp(System.currentTimeMillis());
 								E2EComm.sendUnicast(E2EComm.ipReverse(up.getSource()),
 										appDB.get(request.getAppName()).getControllerPort(), protocol,
 										E2EComm.serialize(
 												new DistributedActuatorRequest(Type.HERE_I_AM, request.getAppName())));
-								Benchmark.append(System.currentTimeMillis(), "dac_sent_here_i_am", 0, 0, 0);
 							} catch (Exception e) {
 								e.printStackTrace();
 							}
 							break;
 						case COMMAND:
-							Benchmark.append(System.currentTimeMillis(), "dac_received_command", up.getId(),
-									up.getSourceNodeId(), up.getDestNodeId());
 							appDB.get(request.getAppName()).setTimestamp(System.currentTimeMillis());
 							appDB.get(request.getAppName()).getDistributedActuatorClientListener()
 									.receivedCommand(request);
 							break;
 						default:
 							// received wrong type of request: do nothing...
-							System.out.println("DistributedActuatorClientPacketHandler wrong type of request: "
-									+ request.getType());
+//							System.out.println("DistributedActuatorClientPacketHandler wrong type of request: "
+//									+ request.getType());
 							break;
 						}
 	                } else {
 	                    // received payload is not DistributedActuatorClientPacketHandler: do nothing...
-	                    System.out.println("DistributedActuatorClientPacketHandler wrong payload: " + payload);
+//	                    System.out.println("DistributedActuatorClientPacketHandler wrong payload: " + payload);
 	                }
 	            }
 	            else{
 	                // received packet is not UnicastPacket: do nothing...
-	                System.out.println("DistributedActuatorClientPacketHandler wrong packet: " +
-	                		gp.getClass().getName());
+//	                System.out.println("DistributedActuatorClientPacketHandler wrong packet: " +
+//	                		gp.getClass().getName());
 	            }
 	        } catch(Exception e) {
 	            e.printStackTrace();
@@ -360,7 +341,7 @@ public class DistributedActuatorClient extends Thread{
 			while (open) {
 				try {
 					sleep(5*1000);
-                    System.out.println("DistributedActuatorClientPacketHandler.ResilienceHandler");
+					// System.out.println("DistributedActuatorClientPacketHandler.ResilienceHandler");
 					for (String appName: appDB.keySet()) {
 						AppDescriptor appDescriptor = appDB.get(appName);
 						Long lastTimeout = appDescriptor.getTimestamp();
@@ -370,7 +351,6 @@ public class DistributedActuatorClient extends Thread{
 							boolean ok = registerNewApp(appName, appDescriptor.getDistributedActuatorClientListener());
 
 							if(!ok){
-								Benchmark.append(System.currentTimeMillis(), "dac_activate_resilience", 0, 0, 0);
 								appDescriptor.setControllerNodeId(null);
 								appDescriptor.setControllerPort(null);
 								appDescriptor.setTimestamp(null);
