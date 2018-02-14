@@ -39,6 +39,8 @@ message UnicastHeader{
 	optional int32 expiry = 13;
 	
 	required int32 connectTimeout = 14; // [default = 500];
+	
+	optional int32 flowId = 15; // Alessandro Dolci
 }
 
 // packet id 3
@@ -64,7 +66,9 @@ message UnicastPacket{
 	
 	required int32 connectTimeout = 14; // [default = 500];
 	
-	required bytes payload = 15;
+	optional int32 flowId = 15; // Alessandro Dolci
+	
+	required bytes payload = 16;
 }
 	
 // packet id 2

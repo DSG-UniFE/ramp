@@ -463,11 +463,12 @@ public class E2EComm {
     	boolean res = true;
     	int retry = GenericPacket.UNUSED_FIELD;
     	int packetDeliveryTimeout = GenericPacket.UNUSED_FIELD;
+    	int flowId = GenericPacket.UNUSED_FIELD;
 
     	 // check parameters
-        checkParameterSendUnicast(dest, destNodeId, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, expiry);
+        checkParameterSendUnicast(dest, destNodeId, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, expiry, flowId);
         // execute
-        res = executeSendUnicast(dest, destNodeId, destPort, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, packetTimeoutConnect, payload, retry, timeWait, expiry, null);
+        res = executeSendUnicast(dest, destNodeId, destPort, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, packetTimeoutConnect, payload, retry, timeWait, expiry, flowId, null);
 
     	return res;
     }
@@ -483,9 +484,9 @@ public class E2EComm {
         }
 
     	// check parameters
-        checkParameterSendUnicast(up.getDest(), up.getDestNodeId(), protocol, false, GenericPacket.UNUSED_FIELD, E2EComm.DEFAULT_BUFFERSIZE, GenericPacket.UNUSED_FIELD, up.getExpiry());
+        checkParameterSendUnicast(up.getDest(), up.getDestNodeId(), protocol, false, GenericPacket.UNUSED_FIELD, E2EComm.DEFAULT_BUFFERSIZE, GenericPacket.UNUSED_FIELD, up.getExpiry(), GenericPacket.UNUSED_FIELD);
 
-        res = executeSendUnicast(up.getDest(), up.getDestNodeId(), up.getDestPort(), protocol, false, GenericPacket.UNUSED_FIELD, up.getBufferSize(), GenericPacket.UNUSED_FIELD, up.getConnectTimeout(), up.getBytePayload(), up.getRetry(), up.getTimeWait(), up.getExpiry(), up);
+        res = executeSendUnicast(up.getDest(), up.getDestNodeId(), up.getDestPort(), protocol, false, GenericPacket.UNUSED_FIELD, up.getBufferSize(), GenericPacket.UNUSED_FIELD, up.getConnectTimeout(), up.getBytePayload(), up.getRetry(), up.getTimeWait(), up.getExpiry(), GenericPacket.UNUSED_FIELD, up);
 
         return res;
     }
@@ -508,17 +509,46 @@ public class E2EComm {
         int retry = GenericPacket.UNUSED_FIELD;
         int timeWait = GenericPacket.UNUSED_FIELD;
         int expiry = GenericPacket.UNUSED_FIELD;
+        int flowId = GenericPacket.UNUSED_FIELD;
 
         // check parameters
-        checkParameterSendUnicast(dest, destNodeId, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, expiry);
+        checkParameterSendUnicast(dest, destNodeId, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, expiry, flowId);
         // execute
-        res = executeSendUnicast(dest, destNodeId, destPort, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, packetTimeoutConnect, payload, retry, timeWait, expiry, null);
+        res = executeSendUnicast(dest, destNodeId, destPort, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, packetTimeoutConnect, payload, retry, timeWait, expiry, flowId, null);
 
         return res;
     }
+    
+    // Alessandro Dolci
+    // sendUnicast with flowId input parameter
+    public static boolean sendUnicast(
+    		String[] dest,
+    		int destNodeId,
+    		int destPort,
+    		int protocol,
+    		boolean ack, int timeoutAck,
+    		int bufferSize,
+    		int timeWait,
+    		int expiry,                     // if != -1 OPPORTUNISTIC NETWORKING
+    		short packetTimeoutConnect, 	// inter-node socket connect timeout (only TCP)
+    		int flowId,
+    		byte[] payload
+    		) throws Exception{
+
+    	boolean res = true;
+    	int retry = GenericPacket.UNUSED_FIELD;
+    	int packetDeliveryTimeout = GenericPacket.UNUSED_FIELD;
+
+    	 // check parameters
+        checkParameterSendUnicast(dest, destNodeId, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, expiry, flowId);
+        // execute
+        res = executeSendUnicast(dest, destNodeId, destPort, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, packetTimeoutConnect, payload, retry, timeWait, expiry, flowId, null);
+
+    	return res;
+    }
 
 	private static boolean executeSendUnicast(String[] dest, int destNodeId, int destPort, int protocol, boolean ack, int timeoutAck, int bufferSize, int packetDeliveryTimeout,
-			short packetTimeoutConnect, byte[] payload, int retry, int timeWait, int expiry, UnicastPacket gp) throws Exception, SocketException, UnknownHostException, IOException {
+			short packetTimeoutConnect, byte[] payload, int retry, int timeWait, int expiry, int flowId, UnicastPacket gp) throws Exception, SocketException, UnknownHostException, IOException {
 
 		boolean res = true;
 		UnicastPacket up;
@@ -567,7 +597,8 @@ public class E2EComm {
 					(byte)retry,
 					timeWait,
 					expiry,			// expiry, if != -1 OPPORTUNISTIC NETWORKING
-					packetTimeoutConnect
+					packetTimeoutConnect,
+					flowId // Alessandro Dolci
 					);
 
 			up = new UnicastPacket(uh, payload);
@@ -747,7 +778,7 @@ public class E2EComm {
 		return res;
 	}
 
-	private static void checkParameterSendUnicast(String[] dest, int destNodeId, int protocol, boolean ack, int timeoutAck, int bufferSize, int packetDeliveryTimeout, int expiry) throws Exception {
+	private static void checkParameterSendUnicast(String[] dest, int destNodeId, int protocol, boolean ack, int timeoutAck, int bufferSize, int packetDeliveryTimeout, int expiry, int flowId) throws Exception {
 
 		if( bufferSize!=GenericPacket.UNUSED_FIELD && bufferSize!=0 && (bufferSize<5*1024 || bufferSize>1024*1024)){
             throw new Exception("bufferSize must be in the [5KB,1MB] range but current bufferSize = "+bufferSize);
@@ -898,6 +929,38 @@ public class E2EComm {
 //        );
 //        return res;
 //    }
+    
+    // Alessandro Dolci
+    // Adapts the two previous sendUnicast methods to the new signature of the last one
+    public static boolean sendUnicast(
+    		String[] dest,
+    		int destNodeId,
+    		int destPort,
+    		int protocol,
+    		boolean ack, int timeoutAck,
+    		int bufferSize,
+    		int timeWait,
+    		int expiry,                     // if != -1 OPPORTUNISTIC NETWORKING
+    		short packetTimeoutConnect,		// inter-node socket connect timeout (only for TCP)
+    		InputStream payload
+    		) throws Exception {
+    	int flowId = GenericPacket.UNUSED_FIELD;
+    	boolean res = sendUnicast(
+    			dest,
+    			destNodeId,
+    			destPort,
+    			protocol,
+    			ack,
+    			timeoutAck,
+    			bufferSize,
+    			timeWait,
+    			expiry,
+    			packetTimeoutConnect,
+    			flowId,
+    			payload
+    	);
+    	return res;
+    }
 
     public static boolean sendUnicast(
     		String[] dest,
@@ -909,6 +972,7 @@ public class E2EComm {
     		int timeWait,
     		int expiry,                     // if != -1 OPPORTUNISTIC NETWORKING
     		short packetTimeoutConnect,		// inter-node socket connect timeout (only for TCP)
+    		int flowId, // Alessandro Dolci
     		InputStream payload
     		) throws Exception{
     	//System.out.println("E2EComm.sendUnicast InputStream");
@@ -922,7 +986,7 @@ public class E2EComm {
         }
 
     	// check parameters
-        checkParameterSendUnicast(dest, destNodeId, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, expiry);
+        checkParameterSendUnicast(dest, destNodeId, protocol, ack, timeoutAck, bufferSize, packetDeliveryTimeout, expiry, flowId);
 
 
         if( (bufferSize!=GenericPacket.UNUSED_FIELD) && (bufferSize==0)){
@@ -943,7 +1007,8 @@ public class E2EComm {
                 (byte)retry, 	// (byte)retry,
                 timeWait,			// timeWait,
                 expiry,			// expiry, NON OPORTUNISTIC NETWORKING
-                packetTimeoutConnect
+                packetTimeoutConnect,
+                flowId // Alessandro Dolci
             );
 
         ServerSocket ssAck = null;

@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -429,13 +430,56 @@ public class Heartbeater extends Thread {
 		ds.close();
 	}
 
+	// Alessandro Dolci
+	private short getNeighborAddressNetworkPrefixLength(InetAddress neighborInetAddress) {
+		Vector<String> localAddresses = null;
+		try {
+			localAddresses = Dispatcher.getLocalNetworkAddresses();
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+		short neighborAddressNetworkPrefixLength = -1;
+		boolean found = false;
+		for (int i = 0; i < localAddresses.size() && found == false; i++) {
+			String localAddress = localAddresses.elementAt(i);
+			InetAddress localInetAddress = null;
+			try {
+				localInetAddress = InetAddress.getByName(localAddress);
+			} catch (UnknownHostException e1) {
+				e1.printStackTrace();
+			}
+			NetworkInterface networkInterface = null;
+			try {
+				networkInterface = NetworkInterface.getByInetAddress(localInetAddress);
+			} catch (SocketException e) {
+				e.printStackTrace();
+			}
+			InterfaceAddress localInterfaceAddress = null;
+			List<InterfaceAddress> interfaceAddresses = networkInterface.getInterfaceAddresses();
+			for (InterfaceAddress interfaceAddress : interfaceAddresses)
+				if (interfaceAddress.getAddress().equals(localInetAddress))
+					localInterfaceAddress = interfaceAddress;
+			short networkPrefixLength = localInterfaceAddress.getNetworkPrefixLength();
+			String completeLocalAddress = localAddress + "/" + networkPrefixLength;
+			SubnetUtils subnetUtils = new SubnetUtils(completeLocalAddress);
+			SubnetInfo subnetInfo = subnetUtils.getInfo();
+			if (subnetInfo.isInRange(neighborInetAddress.getHostAddress())) {
+				neighborAddressNetworkPrefixLength = networkPrefixLength;
+				found = true;
+			}
+		}
+		return neighborAddressNetworkPrefixLength;
+	}
+
 	protected void addNeighbor(InetAddress neighborInetAddress, int nodeId) {
 		if(!neighborsBlackList.contains(neighborInetAddress)){
+			short neighborAddressNetworkPrefixLength = getNeighborAddressNetworkPrefixLength(neighborInetAddress);
 			neighbors.put(
 					neighborInetAddress,
 					new NeighborData(
 							System.currentTimeMillis(),
-							nodeId
+							nodeId,
+							neighborAddressNetworkPrefixLength
 							)
 					);
 		}
@@ -477,16 +521,28 @@ public class Heartbeater extends Thread {
 		}
 		return res;
 	}
+	
+	// Alessandro Dolci
+	public short getNetworkPrefixLength(InetAddress address) {
+		short res = -1;
+		NeighborData data = this.neighbors.get(address);
+		if (data != null) {
+			res = data.getNetworkPrefixLength();
+		}
+		return res;
+	}
 
 	public static class NeighborData {
 
 		private long lastRefersh;
 		private int nodeId;
+		private short networkPrefixLength; // Alessandro Dolci
 
-		private NeighborData(long lastRefersh, int nodeId) {
+		private NeighborData(long lastRefersh, int nodeId, short networkPrefixLength) {
 			super();
 			this.lastRefersh = lastRefersh;
 			this.nodeId = nodeId;
+			this.networkPrefixLength = networkPrefixLength;
 		}
 
 		public long getLastRefersh() {
@@ -494,6 +550,9 @@ public class Heartbeater extends Thread {
 		}
 		public int getNodeId() {
 			return nodeId;
+		}
+		public short getNetworkPrefixLength() {
+			return networkPrefixLength;
 		}
 
 	}

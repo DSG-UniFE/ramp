@@ -33,6 +33,7 @@ public class UnicastHeader extends GenericPacket {
     private int timeWait; 			// millis (only for delay tolerant packets)	// 4 (bytes)
     private int expiry;				// seconds (-1 => no opportunistic networking)				//Stefano Lanzone
     private short connectTimeout; 	// millis (only for TCP)					// 2 (bytes)
+    private int flowId;				// (-1: field not used) Alessandro Dolci
     
     public UnicastHeader(
             String[] destString,
@@ -46,7 +47,8 @@ public class UnicastHeader extends GenericPacket {
             byte retry,
             int timewait,
             int expiry,
-            short connectTimeout
+            short connectTimeout,
+            int flowId
             ) {
     	this.id = RampEntryPoint.nextRandomInt(); //Stefano Lanzone
         this.setDest(destString);
@@ -62,6 +64,7 @@ public class UnicastHeader extends GenericPacket {
         this.expiry = expiry; //Stefano Lanzone
         this.connectTimeout = connectTimeout;
         this.source = new int[0];
+        this.flowId = flowId; // Alessandro Dolci
     }
     
     protected UnicastHeader(
@@ -77,7 +80,8 @@ public class UnicastHeader extends GenericPacket {
     	    byte retry,
     	    int timeWait,
     	    int expiry,
-    	    short connectTimeout
+    	    short connectTimeout,
+    	    int flowId
             ) {
     	this.id = RampEntryPoint.nextRandomInt(); //Stefano Lanzone
         this.dest = dest;
@@ -93,6 +97,7 @@ public class UnicastHeader extends GenericPacket {
         this.timeWait = timeWait;
         this.expiry = expiry; //Stefano Lanzone
         this.connectTimeout = connectTimeout;
+        this.flowId = flowId; // Alessandro Dolci
     }
     
     //Stefano Lanzone
@@ -235,6 +240,16 @@ public class UnicastHeader extends GenericPacket {
     protected void setSourceInt(int[] source){
     	this.source = source;
     }
+
+    // Alessandro Dolci
+	public int getFlowId() {
+		return flowId;
+	}
+
+	// Alessandro Dolci
+	public void setFlowId(int flowId) {
+		this.flowId = flowId;
+	}
     
     @Override
 	public String toString() {
@@ -366,6 +381,7 @@ public class UnicastHeader extends GenericPacket {
     	uhProtobufBuilder.setTimeWait(timeWait); //12
     	uhProtobufBuilder.setExpiry(expiry); //13 Stefano Lanzone 
     	uhProtobufBuilder.setConnectTimeout(connectTimeout); //14
+    	uhProtobufBuilder.setFlowId(flowId); // 15 Alessandro Dolci
     	
 		RampPacketsProtos.UnicastHeader uhProtobuf = uhProtobufBuilder.build();
 		return uhProtobuf;
@@ -403,6 +419,7 @@ public class UnicastHeader extends GenericPacket {
     	uh.timeWait = uhProtobuf.getTimeWait();
     	uh.expiry = uhProtobuf.getExpiry(); //Stefano Lanzone 
     	uh.connectTimeout = (short)uhProtobuf.getConnectTimeout();
+    	uh.flowId = uhProtobuf.getFlowId(); // Alessandro Dolci
     	
 		return uh;
 	}

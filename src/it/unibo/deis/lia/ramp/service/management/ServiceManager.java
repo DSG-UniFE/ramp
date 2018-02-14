@@ -101,17 +101,17 @@ public class ServiceManager extends Thread{
                 ServiceManager.SERVICEMANAGER_PROTOCOL
             );
             while(active){
-                //System.out.println("ServiceManager.run receive");
+                System.out.println("ServiceManager.run receive");
                 // timeout = 0 ==>> no timeout
                 GenericPacket recGP = E2EComm.receive(receiveServiceManagerSocket);
 
-                //System.out.println("ServiceManager.run received gp: "+recGP);
+                System.out.println("ServiceManager.run received gp: "+recGP);
                 new ServiceManagerHandler(recGP).start();
             }
         }
         catch(SocketException se){
         	//se.printStackTrace();
-        	//System.out.println("ServiceManager.run se = "+se);
+        	System.out.println("ServiceManager.run se = "+se);
         }
         catch(Exception e){
             e.printStackTrace();
@@ -128,7 +128,7 @@ public class ServiceManager extends Thread{
 
         @Override
 		public void run() {
-            //System.out.println("ServiceManagerHandler.run START");
+            System.out.println("ServiceManagerHandler.run START");
             try{
                 if( recGP instanceof BroadcastPacket ){
                     BroadcastPacket recBP = (BroadcastPacket)recGP;

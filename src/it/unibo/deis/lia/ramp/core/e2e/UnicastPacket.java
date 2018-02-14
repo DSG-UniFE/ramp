@@ -38,7 +38,8 @@ public class UnicastPacket extends GenericPacket {
             GenericPacket.UNUSED_FIELD,
             GenericPacket.UNUSED_FIELD,
             GenericPacket.UNUSED_FIELD, //expiry
-            GenericPacket.UNUSED_FIELD
+            GenericPacket.UNUSED_FIELD,
+            GenericPacket.UNUSED_FIELD // flowId Alessandro Dolci
         );
          this.bytePayload = payload;
     }
@@ -55,6 +56,7 @@ public class UnicastPacket extends GenericPacket {
 		        int timeWait,
 		        int expiry,
 	            short connectTimeout,
+	            int flowId, // Alessandro Dolci
 	            byte[] payload
         	) throws Exception {
     	
@@ -70,7 +72,8 @@ public class UnicastPacket extends GenericPacket {
             retry,
             timeWait,
             expiry,
-            connectTimeout
+            connectTimeout,
+            flowId // Alessandro Dolci
         );
         this.bytePayload = payload;
     }
@@ -168,6 +171,16 @@ public class UnicastPacket extends GenericPacket {
     }
     public void addSource(String aSource) {
         header.addSource(aSource);
+    }
+    
+    // Alessandro Dolci
+    public int getFlowId() {
+    	return header.getFlowId();
+    }
+    
+    // Alessandro Dolci
+    public void setFlowId(int flowId) {
+    	header.setFlowId(flowId);
     }
 
     public byte[] getBytePayload() {
@@ -352,11 +365,12 @@ public class UnicastPacket extends GenericPacket {
     	upProtobufBuilder.setTimeWait(header.getTimeWait()); //12
     	upProtobufBuilder.setExpiry(header.getExpiry()); //13 Stefano Lanzone 
     	upProtobufBuilder.setConnectTimeout(header.getConnectTimeout()); //14
+    	upProtobufBuilder.setFlowId(header.getFlowId()); // 15 Alessandro Dolci
 
     	if(bytePayload==null){
     		bytePayload = new byte[0];
     	}
-    	upProtobufBuilder.setPayload(com.google.protobuf.ByteString.copyFrom(bytePayload)); //15
+    	upProtobufBuilder.setPayload(com.google.protobuf.ByteString.copyFrom(bytePayload)); //16
     	
 		RampPacketsProtos.UnicastPacket uhProtobuf = upProtobufBuilder.build();
 		return uhProtobuf;
@@ -396,6 +410,7 @@ public class UnicastPacket extends GenericPacket {
     	uh.setTimeWait(upProtobuf.getTimeWait());
     	uh.setExpiry(upProtobuf.getExpiry()); //Stefano Lanzone
     	uh.setConnectTimeout((short)upProtobuf.getConnectTimeout());
+    	uh.setFlowId(upProtobuf.getFlowId()); // Alessandro Dolci
     	
     	UnicastPacket up = new UnicastPacket();
     	up.header = uh;
