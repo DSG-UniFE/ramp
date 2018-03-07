@@ -5,6 +5,8 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -75,8 +77,8 @@ public class ControllerClient extends Thread {
 		
 		this.active = true;
 		this.updateManager = new UpdateManager();
-		this.flowPolicy = FlowPolicy.MULTICASTING;
-		this.dataPlaneForwarder = MulticastingForwarder.getInstance();
+		this.flowPolicy = FlowPolicy.REROUTING;
+		this.dataPlaneForwarder = BestPathForwarder.getInstance();
 		
 		this.defaultFlowPaths = new ConcurrentHashMap<Integer, PathDescriptor>();
 		this.flowPaths = new ConcurrentHashMap<Integer, PathDescriptor>();
@@ -122,6 +124,22 @@ public class ControllerClient extends Thread {
 		this.updateManager.stopUpdateManager();
 	}
 	
+	public int getFlowId(ApplicationRequirements applicationRequirements, int destNodeId) {
+		int flowId;
+		if (applicationRequirements.getApplicationType() == ApplicationRequirements.ApplicationType.DEFAULT)
+			flowId = DEFAULT_FLOW_ID;
+		else {
+			flowId = ThreadLocalRandom.current().nextInt();
+			while (flowId == GenericPacket.UNUSED_FIELD || flowId == DEFAULT_FLOW_ID || this.flowStartTimes.containsKey(flowId))
+				flowId = ThreadLocalRandom.current().nextInt();
+			if (this.flowPolicy == FlowPolicy.REROUTING)
+				sendNewPathRequest(new int[] {destNodeId}, applicationRequirements, null, flowId);
+			else if (this.flowPolicy == FlowPolicy.SINGLE_FLOW || this.flowPolicy == FlowPolicy.QUEUES || this.flowPolicy == FlowPolicy.TRAFFIC_SHAPING)
+				sendNewPriorityValueRequest(applicationRequirements, flowId);
+		}
+		return flowId;
+	}
+	
 	public int getFlowId(ApplicationRequirements applicationRequirements, int[] destNodeIds, int[] destPorts) {
 		int flowId;
 		if (applicationRequirements.getApplicationType() == ApplicationRequirements.ApplicationType.DEFAULT)
@@ -131,11 +149,29 @@ public class ControllerClient extends Thread {
 			while (flowId == GenericPacket.UNUSED_FIELD || flowId == DEFAULT_FLOW_ID || this.flowStartTimes.containsKey(flowId))
 				flowId = ThreadLocalRandom.current().nextInt();
 			if (this.flowPolicy == FlowPolicy.REROUTING)
-				sendNewPathRequest(destNodeIds, applicationRequirements, flowId);
+				sendNewPathRequest(destNodeIds, applicationRequirements, null, flowId);
 			else if (this.flowPolicy == FlowPolicy.SINGLE_FLOW || this.flowPolicy == FlowPolicy.QUEUES || this.flowPolicy == FlowPolicy.TRAFFIC_SHAPING)
 				sendNewPriorityValueRequest(applicationRequirements, flowId);
 			else if (this.flowPolicy == FlowPolicy.MULTICASTING)
-				sendNewMulticastRequest(destNodeIds, destPorts, applicationRequirements, flowId);
+				sendNewMulticastRequest(destNodeIds, destPorts, applicationRequirements, null, flowId);
+		}
+		return flowId;
+	}
+	
+	public int getFlowId(ApplicationRequirements applicationRequirements, int[] destNodeIds, int[] destPorts, TopologyGraphSelector.PathSelectionMetric pathSelectionMetric) {
+		int flowId;
+		if (applicationRequirements.getApplicationType() == ApplicationRequirements.ApplicationType.DEFAULT)
+			flowId = DEFAULT_FLOW_ID;
+		else {
+			flowId = ThreadLocalRandom.current().nextInt();
+			while (flowId == GenericPacket.UNUSED_FIELD || flowId == DEFAULT_FLOW_ID || this.flowStartTimes.containsKey(flowId))
+				flowId = ThreadLocalRandom.current().nextInt();
+			if (this.flowPolicy == FlowPolicy.REROUTING)
+				sendNewPathRequest(destNodeIds, applicationRequirements, pathSelectionMetric, flowId);
+			else if (this.flowPolicy == FlowPolicy.SINGLE_FLOW || this.flowPolicy == FlowPolicy.QUEUES || this.flowPolicy == FlowPolicy.TRAFFIC_SHAPING)
+				sendNewPriorityValueRequest(applicationRequirements, flowId);
+			else if (this.flowPolicy == FlowPolicy.MULTICASTING)
+				sendNewMulticastRequest(destNodeIds, destPorts, applicationRequirements, pathSelectionMetric, flowId);
 		}
 		return flowId;
 	}
@@ -166,7 +202,7 @@ public class ControllerClient extends Thread {
 				if (flowId != DEFAULT_FLOW_ID) {
 					System.out.println("ControllerClient: entry found for flow " + flowId + ", but its validity has expired, sending request to the controller");
 					// The path request is not the first one for this application, so applicationRequirements is null
-					flowPath = sendNewPathRequest(new int[] {destNodeId}, null, flowId);
+					flowPath = sendNewPathRequest(new int[] {destNodeId}, null, null, flowId);
 				}
 				else
 					System.out.println("ControllerClient: entry found for default flow, but its validity has expired, returning null");
@@ -182,7 +218,7 @@ public class ControllerClient extends Thread {
 		return flowPath;
 	}
 	
-	private String[] sendNewPathRequest(int[] destNodeIds, ApplicationRequirements applicationRequirements, int flowId) {
+	private String[] sendNewPathRequest(int[] destNodeIds, ApplicationRequirements applicationRequirements, TopologyGraphSelector.PathSelectionMetric pathSelectionMetric, int flowId) {
 		PathDescriptor newPath = null;
 		BoundReceiveSocket responseSocket = null;
 		// Controller service has to be found before sending any message
@@ -194,7 +230,7 @@ public class ControllerClient extends Thread {
 				// Use the protocol specified by the controller
 				responseSocket = E2EComm.bindPreReceive(serviceResponse.getProtocol());
 				// Send a path request to the controller for a certain flowId, currentDest is also necessary for the search on the controller side (it can be chosen as the path to be used), as well as destNodeId
-				ControllerMessage requestMessage = new ControllerMessage(ControllerMessage.MessageType.PATH_REQUEST, responseSocket.getLocalPort(), destNodeIds, new int[0], applicationRequirements, flowId, null, null, null, null, null, null);
+				ControllerMessage requestMessage = new ControllerMessage(ControllerMessage.MessageType.PATH_REQUEST, responseSocket.getLocalPort(), destNodeIds, new int[0], applicationRequirements, pathSelectionMetric, flowId, null, null, null, null, null, null);
 				E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(requestMessage));
 				System.out.println("ControllerClient: request for a new path for flow " + flowId + " sent to the controller");
 			} catch (Exception e) {
@@ -267,7 +303,7 @@ public class ControllerClient extends Thread {
 				// Use the protocol specified by the controller
 				responseSocket = E2EComm.bindPreReceive(serviceResponse.getProtocol());
 				// Send a priority value request to the controller for a certain flowId
-				ControllerMessage requestMessage = new ControllerMessage(ControllerMessage.MessageType.PRIORITY_VALUE_REQUEST, responseSocket.getLocalPort(), new int[0], new int[0], applicationRequirements, flowId, null, null, null, null, null, null);
+				ControllerMessage requestMessage = new ControllerMessage(ControllerMessage.MessageType.PRIORITY_VALUE_REQUEST, responseSocket.getLocalPort(), new int[0], new int[0], applicationRequirements, null, flowId, null, null, null, null, null, null);
 				E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(requestMessage));
 				System.out.println("ControllerClient: request for a new priority value for flow " + flowId + " sent to the controller");
 			} catch (Exception e) {
@@ -313,7 +349,7 @@ public class ControllerClient extends Thread {
 		return this.flowMulticastNextHops.get(flowId);
 	}
 	
-	public List<PathDescriptor> sendNewMulticastRequest(int[] destNodeIds, int[] destPorts, ApplicationRequirements applicationRequirements, int flowId) {
+	public List<PathDescriptor> sendNewMulticastRequest(int[] destNodeIds, int[] destPorts, ApplicationRequirements applicationRequirements, TopologyGraphSelector.PathSelectionMetric pathSelectionMetric, int flowId) {
 		List<PathDescriptor> nextHops = new ArrayList<PathDescriptor>();
 		BoundReceiveSocket responseSocket = null;
 		Vector<ServiceResponse> serviceResponses = findControllerService(5, 5*1000, 1);
@@ -322,7 +358,7 @@ public class ControllerClient extends Thread {
 			serviceResponse = serviceResponses.get(0);
 			try {
 				responseSocket = E2EComm.bindPreReceive(serviceResponse.getProtocol());
-				ControllerMessage requestMessage = new ControllerMessage(ControllerMessage.MessageType.MULTICAST_REQUEST, responseSocket.getLocalPort(), destNodeIds, destPorts, applicationRequirements, flowId, null, null, null, null, null, null);
+				ControllerMessage requestMessage = new ControllerMessage(ControllerMessage.MessageType.MULTICAST_REQUEST, responseSocket.getLocalPort(), destNodeIds, destPorts, applicationRequirements, pathSelectionMetric, flowId, null, null, null, null, null, null);
 				E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(requestMessage));
 				System.out.println("ControllerClient: request for a new multicast communication for flow " + flowId + " sent to the controller");
 			} catch (Exception e) {
@@ -381,7 +417,7 @@ public class ControllerClient extends Thread {
 			e1.printStackTrace();
 		}
 		
-		ControllerMessage joinMessage = new ControllerMessage(ControllerMessage.MessageType.JOIN_SERVICE, this.clientSocket.getLocalPort(), new int[0], new int[0], null, ControllerMessage.UNUSED_FIELD, null, null, networkInterfaceStats, null, null, null);
+		ControllerMessage joinMessage = new ControllerMessage(ControllerMessage.MessageType.JOIN_SERVICE, this.clientSocket.getLocalPort(), new int[0], new int[0], null, null, ControllerMessage.UNUSED_FIELD, null, null, networkInterfaceStats, null, null, null);
 		// Controller service has to be found before sending any message
 		Vector<ServiceResponse> serviceResponses = findControllerService(5, 5*1000, 1);
 		ServiceResponse serviceResponse = null;
@@ -389,6 +425,9 @@ public class ControllerClient extends Thread {
 			serviceResponse = serviceResponses.get(0);
 			try {
 				E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(joinMessage));
+				// LocalDateTime localDateTime = LocalDateTime.now();
+				// String timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+				// System.out.println("ControllerClient: join request sent at " + timestamp);
 				System.out.println("ControllerClient: join request sent to the controller");
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -467,13 +506,13 @@ public class ControllerClient extends Thread {
 						flowPolicy = controllerMessage.getFlowPolicy();
 						dataPlaneForwarder.deactivate();
 						if (controllerMessage.getFlowPolicy() == FlowPolicy.REROUTING)
-							dataPlaneForwarder = FlowPathChanger.getInstance();
+							dataPlaneForwarder = BestPathForwarder.getInstance();
 						else if (controllerMessage.getFlowPolicy() == FlowPolicy.SINGLE_FLOW)
-							dataPlaneForwarder = SingleFlowForwarder.getInstance();
+							dataPlaneForwarder = SinglePriorityForwarder.getInstance();
 						else if (controllerMessage.getFlowPolicy() == FlowPolicy.QUEUES)
-							dataPlaneForwarder = QueuesForwarder.getInstance();
+							dataPlaneForwarder = MultipleFlowsSinglePriorityForwarder.getInstance();
 						else if (controllerMessage.getFlowPolicy() == FlowPolicy.TRAFFIC_SHAPING)
-							dataPlaneForwarder = TrafficShapingForwarder.getInstance();
+							dataPlaneForwarder = MultipleFlowsMultiplePrioritiesForwarder.getInstance();
 						System.out.println("ControllerClient: flow policy update received from the controller and successfully applied");
 						break;
 					case DEFAULT_FLOW_PATHS_UPDATE:
@@ -566,7 +605,7 @@ public class ControllerClient extends Thread {
 				this.networkInterfaceStats.get(address).updateStats();
 			
 			// Send the obtained informations about neighbor nodes to the controller
-			ControllerMessage updateMessage = new ControllerMessage(ControllerMessage.MessageType.TOPOLOGY_UPDATE, ControllerMessage.UNUSED_FIELD, new int[0], new int[0], null, ControllerMessage.UNUSED_FIELD, null, neighborNodes, this.networkInterfaceStats, null, null, null);
+			ControllerMessage updateMessage = new ControllerMessage(ControllerMessage.MessageType.TOPOLOGY_UPDATE, ControllerMessage.UNUSED_FIELD, new int[0], new int[0], null, null, ControllerMessage.UNUSED_FIELD, null, neighborNodes, this.networkInterfaceStats, null, null, null);
 			// Controller service has to be found before sending any message
 			Vector<ServiceResponse> serviceResponses = findControllerService(5, 5*1000, 1);
 			ServiceResponse serviceResponse = null;

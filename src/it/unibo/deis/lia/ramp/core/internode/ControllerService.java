@@ -1,6 +1,8 @@
 package it.unibo.deis.lia.ramp.core.internode;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -66,7 +68,7 @@ public class ControllerService extends Thread {
 		ServiceManager.getInstance(false).registerService("SDNController", this.serviceSocket.getLocalPort(), PROTOCOL);
 		this.active = true;
 		this.updateManager = new UpdateManager();
-		this.flowPolicy = FlowPolicy.MULTICASTING;
+		this.flowPolicy = FlowPolicy.REROUTING;
 		
 		this.activeClients = new HashSet<Integer>();
 		this.activeClients.add(Dispatcher.getLocalRampId());
@@ -106,10 +108,24 @@ public class ControllerService extends Thread {
 	}
 	
 	public void displayGraph() {
+		System.setProperty("org.graphstream.ui.renderer", "org.graphstream.ui.j2dviewer.J2DGraphRenderer");
+		this.topologyGraph.addAttribute("ui.quality");
+		this.topologyGraph.addAttribute("ui.antialias");
+		this.topologyGraph.addAttribute("ui.stylesheet", "node {fill-color: blue; size: 40px; }");
 		this.topologyGraph.display();
 	}
 	
 	public void takeGraphScreenshot(String screenshotFilePath) {
+//		this.topologyGraph.addNode("5").addAttribute("ui.label", "5");
+//		this.topologyGraph.addNode("6").addAttribute("ui.label", "6");
+//		this.topologyGraph.addNode("7").addAttribute("ui.label", "7");
+//		this.topologyGraph.addNode("8").addAttribute("ui.label", "8");
+//		this.topologyGraph.addEdge("15", "1", "5").addAttribute("ui.label", "10.2.2.1 - 10.2.2.2");
+//		this.topologyGraph.addEdge("25", "2", "5").addAttribute("ui.label", "169.254.1.1 - 169.254.1.2");
+//		this.topologyGraph.addEdge("16", "1", "6").addAttribute("ui.label", "192.168.1.1 - 192.168.1.2");
+//		this.topologyGraph.addEdge("47", "4", "7").addAttribute("ui.label", "192.168.1.1 - 192.168.1.2");
+//		this.topologyGraph.addEdge("58", "5", "8").addAttribute("ui.label", "192.168.2.1 - 192.168.2.2");
+//		this.topologyGraph.addEdge("68", "6", "8").addAttribute("ui.label", "172.16.0.1 - 172.16.0.2");
 		this.topologyGraph.addAttribute("ui.screenshot", screenshotFilePath);
 	}
 	
@@ -117,7 +133,7 @@ public class ControllerService extends Thread {
 		this.flowPolicy = flowPolicy;
 		for (Node clientNode : this.topologyGraph.getNodeSet()) {
 			int clientNodeId = Integer.parseInt(clientNode.getId());
-			ControllerMessage updateMessage = new ControllerMessage(ControllerMessage.MessageType.FLOW_POLICY_UPDATE, ControllerMessage.UNUSED_FIELD, new int[0], new int[0], null, ControllerMessage.UNUSED_FIELD, null, null, null, flowPolicy, null, null);
+			ControllerMessage updateMessage = new ControllerMessage(ControllerMessage.MessageType.FLOW_POLICY_UPDATE, ControllerMessage.UNUSED_FIELD, new int[0], new int[0], null, null, ControllerMessage.UNUSED_FIELD, null, null, null, flowPolicy, null, null);
 			String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5*1000).get(0).getPath();
 			int clientPort = clientNode.getAttribute("port");
 			try {
@@ -160,6 +176,10 @@ public class ControllerService extends Thread {
 		
 		@Override
 		public void run() {
+			// int packetSize = E2EComm.objectSizePacket(gp);
+			// LocalDateTime localDateTime = LocalDateTime.now();
+			// String timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+			
 			if (this.gp instanceof UnicastPacket) {
 				UnicastPacket up = (UnicastPacket) gp;
 				Object payload = null;
@@ -176,6 +196,8 @@ public class ControllerService extends Thread {
 					
 					switch (controllerMessage.getMessageType()) {
 					case JOIN_SERVICE:
+						// System.out.println("ControllerService: join request of size " +  packetSize + " received at " + timestamp);
+						
 						// Add the source node to the active clients and to the topology
 						activeClients.add(clientNodeId);
 						MultiNode clientNode = topologyGraph.addNode(Integer.toString(clientNodeId));
@@ -205,10 +227,20 @@ public class ControllerService extends Thread {
 						System.out.println("ControllerService: path request from client " + clientNodeId + " to node " + destNodeId + " for flow " + flowId);
 						
 						PathDescriptor newPath = null;
+						TopologyGraphSelector pathSelector = flowPathSelector;
+						TopologyGraphSelector.PathSelectionMetric pathSelectionMetric = controllerMessage.getPathSelectionMetric();
+						if (pathSelectionMetric != null) {
+							if (pathSelectionMetric == TopologyGraphSelector.PathSelectionMetric.BREADTH_FIRST)
+								pathSelector = new BreadthFirstFlowPathSelector(topologyGraph);
+							else if (pathSelectionMetric == TopologyGraphSelector.PathSelectionMetric.FEWEST_INTERSECTIONS)
+								pathSelector = new FewestIntersectionsFlowPathSelector(topologyGraph);
+							else if (pathSelectionMetric == TopologyGraphSelector.PathSelectionMetric.MINIMUM_LOAD)
+								pathSelector = new MinimumLoadFlowPathSelector(topologyGraph);
+						}
 						// If applicationRequirements is not null, this is the first path request for the flow, a path for the flow is selected
 						if (applicationRequirements != null) {
 							System.out.println("ControllerService: first path request for flow " + flowId + ", selecting a path");
-							newPath = flowPathSelector.selectPath(clientNodeId, destNodeId, applicationRequirements, flowPaths);
+							newPath = pathSelector.selectPath(clientNodeId, destNodeId, applicationRequirements, flowPaths);
 							flowStartTimes.put(flowId, System.currentTimeMillis());
 							flowApplicationRequirements.put(flowId, applicationRequirements);
 						}
@@ -216,7 +248,7 @@ public class ControllerService extends Thread {
 						else {
 							if (flowPaths.containsKey(flowId)) {
 								System.out.println("ControllerService: new path request for flow " + flowId + ", the flow is still valid, selecting a new path");
-								newPath = flowPathSelector.selectPath(clientNodeId, destNodeId, applicationRequirements, flowPaths);
+								newPath = pathSelector.selectPath(clientNodeId, destNodeId, applicationRequirements, flowPaths);
 							}
 							else
 								System.out.println("ControllerService: new path request for flow " + flowId + ", but the flow isn't valid anymore, sending null path");
@@ -231,7 +263,7 @@ public class ControllerService extends Thread {
 						
 						List<PathDescriptor> newPaths = new ArrayList<PathDescriptor>();
 						newPaths.add(newPath);
-						ControllerMessage responseMessage = new ControllerMessage(ControllerMessage.MessageType.PATH_RESPONSE, ControllerMessage.UNUSED_FIELD, new int[0], new int[0], null, ControllerMessage.UNUSED_FIELD, newPaths, null, null, null, null, null);
+						ControllerMessage responseMessage = new ControllerMessage(ControllerMessage.MessageType.PATH_RESPONSE, ControllerMessage.UNUSED_FIELD, new int[0], new int[0], null, null, ControllerMessage.UNUSED_FIELD, newPaths, null, null, null, null, null);
 						try {
 							// Send the response message using the inverted source path
 							E2EComm.sendUnicast(clientDest, controllerMessage.getClientPort(), PROTOCOL, E2EComm.serialize(responseMessage));
@@ -241,6 +273,8 @@ public class ControllerService extends Thread {
 						System.out.println("ControllerService: path request for flow " + flowId + " from client " + clientNodeId + ", response message successfully sent");
 						break;
 					case TOPOLOGY_UPDATE:
+						// System.out.println("ControllerService: topology update size: " + packetSize);
+						
 						// Add the received nodes to the reachable neighbors for the source node
 						Map<Integer, List<String>> neighborNodes = controllerMessage.getNeighborNodes();
 						// Data structure to hold IDs of nodes removed during the initial refresh and the respective node objects (nodeId, node)
@@ -463,7 +497,7 @@ public class ControllerService extends Thread {
 						flowPriorities = flowPrioritySelector.getFlowPriorities(flowPriorities, flowApplicationRequirements);
 						flowStartTimes.put(flowId, System.currentTimeMillis());
 						
-						responseMessage = new ControllerMessage(ControllerMessage.MessageType.FLOW_PRIORITIES_UPDATE, GenericPacket.UNUSED_FIELD, new int[0], new int[0], null, GenericPacket.UNUSED_FIELD, null, null, null, null, null, flowPriorities);
+						responseMessage = new ControllerMessage(ControllerMessage.MessageType.FLOW_PRIORITIES_UPDATE, GenericPacket.UNUSED_FIELD, new int[0], new int[0], null, null, GenericPacket.UNUSED_FIELD, null, null, null, null, null, flowPriorities);
 						// Send the new priority value to the client
 						try {
 							E2EComm.sendUnicast(clientDest, controllerMessage.getClientPort(), PROTOCOL, E2EComm.serialize(responseMessage));
@@ -493,9 +527,19 @@ public class ControllerService extends Thread {
 						flowApplicationRequirements.put(flowId, applicationRequirements);
 						
 						// Select the paths and collect the control informations to send
+						pathSelector = flowPathSelector;
+						pathSelectionMetric = controllerMessage.getPathSelectionMetric();
+						if (pathSelectionMetric != null) {
+							if (pathSelectionMetric == TopologyGraphSelector.PathSelectionMetric.BREADTH_FIRST)
+								pathSelector = new BreadthFirstFlowPathSelector(topologyGraph);
+							else if (pathSelectionMetric == TopologyGraphSelector.PathSelectionMetric.FEWEST_INTERSECTIONS)
+								pathSelector = new FewestIntersectionsFlowPathSelector(topologyGraph);
+							else if (pathSelectionMetric == TopologyGraphSelector.PathSelectionMetric.MINIMUM_LOAD)
+								pathSelector = new MinimumLoadFlowPathSelector(topologyGraph);
+						}
 						Map<Integer, List<PathDescriptor>> nodesNextHops = new HashMap<Integer, List<PathDescriptor>>();
 						for (int i = 0; i < destNodeIds.length; i++) {
-							PathDescriptor pathDescriptor = defaultPathSelector.selectPath(clientNodeId, destNodeIds[i], null, null);
+							PathDescriptor pathDescriptor = pathSelector.selectPath(clientNodeId, destNodeIds[i], null, null);
 							String[] firstHopAddress = new String[] {pathDescriptor.getPath()[0]};
 							List<Integer> firstHopId = new ArrayList<Integer>();
 							firstHopId.add(pathDescriptor.getPathNodeIds().get(0));
@@ -546,7 +590,7 @@ public class ControllerService extends Thread {
 						for (Integer nodeId : nodesNextHops.keySet()) {
 							if (nodeId != clientNodeId) {
 								List<PathDescriptor> nodeNextHops = nodesNextHops.get(nodeId);
-								responseMessage = new ControllerMessage(ControllerMessage.MessageType.MULTICAST_CONTROL, ControllerMessage.UNUSED_FIELD, new int[0], new int[0], null, flowId, nodeNextHops, null, null, null, null, null);
+								responseMessage = new ControllerMessage(ControllerMessage.MessageType.MULTICAST_CONTROL, ControllerMessage.UNUSED_FIELD, new int[0], new int[0], null, null, flowId, nodeNextHops, null, null, null, null, null);
 								String[] dest = Resolver.getInstance(false).resolveBlocking(nodeId).get(0).getPath();
 								try {
 									E2EComm.sendUnicast(dest, topologyGraph.getNode(Integer.toString(nodeId)).getAttribute("port"), PROTOCOL, E2EComm.serialize(responseMessage));
@@ -557,7 +601,7 @@ public class ControllerService extends Thread {
 						}
 						// Send response control message to the client after the other nodes, so that the path is ready when the message is sent
 						List<PathDescriptor> clientNodeNextHops = nodesNextHops.get(clientNodeId);
-						responseMessage = new ControllerMessage(ControllerMessage.MessageType.MULTICAST_CONTROL, ControllerMessage.UNUSED_FIELD, new int[0], new int[0], null, flowId, clientNodeNextHops, null, null, null, null, null);
+						responseMessage = new ControllerMessage(ControllerMessage.MessageType.MULTICAST_CONTROL, ControllerMessage.UNUSED_FIELD, new int[0], new int[0], null, null, flowId, clientNodeNextHops, null, null, null, null, null);
 						try {
 							E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(responseMessage));
 						} catch (Exception e) {
@@ -729,7 +773,7 @@ public class ControllerService extends Thread {
 			for (Node clientNode : topologyGraph.getNodeSet()) {
 				int clientNodeId = Integer.parseInt(clientNode.getId());
 				Map<Integer, PathDescriptor> defaultFlowPathMappings = defaultPathSelector.getAllPathsFromSource(clientNodeId);
-				ControllerMessage updateMessage = new ControllerMessage(ControllerMessage.MessageType.DEFAULT_FLOW_PATHS_UPDATE, ControllerMessage.UNUSED_FIELD, new int[0], new int[0], null, ControllerMessage.UNUSED_FIELD, null, null, null, null, defaultFlowPathMappings, null);
+				ControllerMessage updateMessage = new ControllerMessage(ControllerMessage.MessageType.DEFAULT_FLOW_PATHS_UPDATE, ControllerMessage.UNUSED_FIELD, new int[0], new int[0], null, null, ControllerMessage.UNUSED_FIELD, null, null, null, null, defaultFlowPathMappings, null);
 				String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5*1000).get(0).getPath();
 				int clientPort = clientNode.getAttribute("port");
 				try {
@@ -744,7 +788,7 @@ public class ControllerService extends Thread {
 			for (Node clientNode : topologyGraph.getNodeSet()) {
 				int clientNodeId = Integer.parseInt(clientNode.getId());
 				flowPriorities = flowPrioritySelector.getFlowPriorities(flowPriorities, flowApplicationRequirements);
-				ControllerMessage updateMessage = new ControllerMessage(ControllerMessage.MessageType.FLOW_PRIORITIES_UPDATE, ControllerMessage.UNUSED_FIELD, new int[0], new int[0], null, ControllerMessage.UNUSED_FIELD, null, null, null, null, null, flowPriorities);
+				ControllerMessage updateMessage = new ControllerMessage(ControllerMessage.MessageType.FLOW_PRIORITIES_UPDATE, ControllerMessage.UNUSED_FIELD, new int[0], new int[0], null, null, ControllerMessage.UNUSED_FIELD, null, null, null, null, null, flowPriorities);
 				String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5*1000).get(0).getPath();
 				int clientPort = clientNode.getAttribute("port");
 				try {

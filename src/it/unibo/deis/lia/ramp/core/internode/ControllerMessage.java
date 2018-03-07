@@ -21,6 +21,7 @@ public class ControllerMessage implements Serializable {
 	private int[] destNodeIds;
 	private int[] destPorts;
 	private ApplicationRequirements applicationRequirements;
+	private TopologyGraphSelector.PathSelectionMetric pathSelectionMetric;
 	private int flowId;
 	private List<PathDescriptor> newPaths;
 	// Data structure to hold neighbor nodes (nodeId, addresses)
@@ -35,22 +36,23 @@ public class ControllerMessage implements Serializable {
 	
 	// JOIN_SERVICE message: messageType, clientPort
 	// LEAVE_SERVICE message: messageType
-	// PATH_REQUEST message: messageType, destNodeIds, applicationRequirements, flowId, clientPort
+	// PATH_REQUEST message: messageType, destNodeIds, applicationRequirements, pathSelectionMetric, flowId, clientPort
 	// PATH_RESPONSE message: messageType, newPaths
 	// TOPOLOGY_UPDATE message: messageType, neighborNodes, nodeStats
 	// PRIORITY_VALUE_REQUEST message: messageType, clientPort, applicationRequirements, flowId
-	// MULTICAST_REQUEST message: messageType, clientPort, destNodeIds, applicationRequirements, flowId
+	// MULTICAST_REQUEST message: messageType, clientPort, destNodeIds, applicationRequirements, pathSelectionMetric, flowId
 	// MULTICAST_CONTROL message: messageType, flowId, newPaths
 	// FLOW_POLICY_UPDATE message: messageType, flowPolicy
 	// DEFAULT_FLOW_PATHS_UPDATE message: messageType, newPathMappings
 	// FLOW_PRIORITIES_UPDATE message: messageType, flowPriorities
-	protected ControllerMessage(MessageType messageType, int clientPort, int[] destNodeIds, int[] destPorts, ApplicationRequirements applicationRequirements, int flowId, List<PathDescriptor> newPaths,
+	protected ControllerMessage(MessageType messageType, int clientPort, int[] destNodeIds, int[] destPorts, ApplicationRequirements applicationRequirements, TopologyGraphSelector.PathSelectionMetric pathSelectionMetric, int flowId, List<PathDescriptor> newPaths,
 			Map<Integer, List<String>> neighborNodes, Map<String, NodeStats> nodeStats, FlowPolicy flowPolicy, Map<Integer, PathDescriptor> newPathMappings, Map<Integer, Integer> flowPriorities) {
 		this.messageType = messageType;
 		this.clientPort = clientPort;
 		this.destNodeIds = destNodeIds;
 		this.destPorts = destPorts;
 		this.applicationRequirements = applicationRequirements;
+		this.pathSelectionMetric = pathSelectionMetric;
 		this.flowId = flowId;
 		this.newPaths = newPaths;
 		this.neighborNodes = neighborNodes;
@@ -61,7 +63,7 @@ public class ControllerMessage implements Serializable {
 	}
 	
 	protected ControllerMessage(MessageType messageType) {
-		this(messageType, UNUSED_FIELD, new int[0], new int[0], null, UNUSED_FIELD, null, null, null, null, null, null);
+		this(messageType, UNUSED_FIELD, new int[0], new int[0], null, null, UNUSED_FIELD, null, null, null, null, null, null);
 	}
 
 	public MessageType getMessageType() {
@@ -102,6 +104,14 @@ public class ControllerMessage implements Serializable {
 
 	public void setApplicationRequirements(ApplicationRequirements applicationRequirements) {
 		this.applicationRequirements = applicationRequirements;
+	}
+
+	public TopologyGraphSelector.PathSelectionMetric getPathSelectionMetric() {
+		return pathSelectionMetric;
+	}
+
+	public void setPathSelectionMetric(TopologyGraphSelector.PathSelectionMetric pathSelectionMetric) {
+		this.pathSelectionMetric = pathSelectionMetric;
 	}
 
 	public int getFlowId() {

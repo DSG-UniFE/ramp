@@ -37,7 +37,7 @@ public class MulticastingForwarder implements DataPlaneForwarder {
 
 	@Override
 	public void receivedUdpUnicastPacket(UnicastPacket up) {
-		if (up.getFlowId() != GenericPacket.UNUSED_FIELD && up.getDestNodeId() == Dispatcher.getLocalRampId()) {
+		if (up.getFlowId() != GenericPacket.UNUSED_FIELD && up.getDestNodeId() == Dispatcher.getLocalRampId() && up.getDestPort() == 40000) {
 			ControllerClient controllerClient = ControllerClient.getInstance();
 			
 			List<PathDescriptor> nextHops = controllerClient.getFlowMulticastNextHops(up.getFlowId());
@@ -45,111 +45,40 @@ public class MulticastingForwarder implements DataPlaneForwarder {
 				String[] currentDest = new String[up.getDest().length];
 				for (int i = 0; i < up.getDest().length; i++)
 					currentDest[i] = up.getDest()[i];
-				
-				MulticastPathDescriptor localNodePathDescriptor = null;
+					
 				for (PathDescriptor pathDescriptor : nextHops) {
+					UnicastPacket duplicatePacket = null;
 					MulticastPathDescriptor multicastPathDescriptor = (MulticastPathDescriptor) pathDescriptor;
-					if (multicastPathDescriptor.getPathNodeIds().get(0).equals(Dispatcher.getLocalRampId()))
-						localNodePathDescriptor = multicastPathDescriptor;
-				}
-				
-				if (localNodePathDescriptor != null) {
-					System.out.println("MulticastingForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " is directed to this node, setting the destination port");
-					try {
-						up = new UnicastPacket(
-								up.getDest(),
-								localNodePathDescriptor.getDestPort(),
-								up.getDestNodeId(),
-								up.getSourceNodeId(),
-								up.isAck(),
-								up.getSourcePortAck(),
-								up.getCurrentHop(),
-								up.getBufferSize(),
-								up.getRetry(),
-								up.getTimeWait(),
-								up.getExpiry(),
-								up.getConnectTimeout(),
-								up.getFlowId(),
-								up.getBytePayload()
-								);
-					} catch (Exception e1) {
-						e1.printStackTrace();
-					}
-					for (PathDescriptor pathDescriptor : nextHops) {
-						MulticastPathDescriptor multicastPathDescriptor = (MulticastPathDescriptor) pathDescriptor;
-						if (multicastPathDescriptor != localNodePathDescriptor) {
-							String[] duplicatePacketDest = new String[currentDest.length+1];
-							for (int i = 0; i < currentDest.length; i++)
-								duplicatePacketDest[i] = currentDest[i];
-							duplicatePacketDest[currentDest.length] = multicastPathDescriptor.getPath()[0];
-							int duplicatePacketDestNodeId = multicastPathDescriptor.getPathNodeIds().get(0);
-							System.out.println("MulticastingForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " has to be forwarded to node " + duplicatePacketDestNodeId + ", duplicating and sending it");
-							UnicastPacket duplicatePacket = null;
-							try {
-								duplicatePacket = new UnicastPacket(
-										duplicatePacketDest,
-										up.getDestPort(),
-										duplicatePacketDestNodeId,
-										up.getSourceNodeId(),
-										up.isAck(),
-										up.getSourcePortAck(),
-										up.getCurrentHop(),
-										up.getBufferSize(),
-										up.getRetry(),
-										up.getTimeWait(),
-										up.getExpiry(),
-										up.getConnectTimeout(),
-										up.getFlowId(),
-										up.getBytePayload()
-										);
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-							try {
-								E2EComm.sendUnicast(E2EComm.UDP, duplicatePacket);
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
+					if (multicastPathDescriptor.getPathNodeIds().get(0) == Dispatcher.getLocalRampId()) {
+						System.out.println("MulticastingForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " is directed to this node, duplicating it and setting the destination port");
+						try {
+							duplicatePacket = new UnicastPacket(
+									up.getDest(),
+									multicastPathDescriptor.getDestPort(),
+									up.getDestNodeId(),
+									up.getSourceNodeId(),
+									up.isAck(),
+									up.getSourcePortAck(),
+									up.getCurrentHop(),
+									up.getBufferSize(),
+									up.getRetry(),
+									up.getTimeWait(),
+									up.getExpiry(),
+									up.getConnectTimeout(),
+									up.getFlowId(),
+									up.getBytePayload()
+									);
+						} catch (Exception e) {
+							e.printStackTrace();
 						}
 					}
-				}
-				else {
-					String[] newDest = new String[currentDest.length+1];
-					for (int i = 0; i < currentDest.length; i++)
-						newDest[i] = currentDest[i];
-					newDest[currentDest.length] = nextHops.get(0).getPath()[0];
-					int newDestNodeId = nextHops.get(0).getPathNodeIds().get(0);
-					System.out.println("MulticastingForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " is not directed to this node, adding next hop (node " + newDestNodeId + ") informations");
-					try {
-						up = new UnicastPacket(
-								newDest,
-								up.getDestPort(),
-								newDestNodeId,
-								up.getSourceNodeId(),
-								up.isAck(),
-								up.getSourcePortAck(),
-								up.getCurrentHop(),
-								up.getBufferSize(),
-								up.getRetry(),
-								up.getTimeWait(),
-								up.getExpiry(),
-								up.getConnectTimeout(),
-								up.getFlowId(),
-								up.getBytePayload()
-								);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					
-					for (PathDescriptor pathDescriptor : nextHops.subList(1, nextHops.size())) {
-						MulticastPathDescriptor multicastPathDescriptor = (MulticastPathDescriptor) pathDescriptor;
+					else {
 						String[] duplicatePacketDest = new String[currentDest.length+1];
 						for (int i = 0; i < currentDest.length; i++)
 							duplicatePacketDest[i] = currentDest[i];
 						duplicatePacketDest[currentDest.length] = multicastPathDescriptor.getPath()[0];
 						int duplicatePacketDestNodeId = multicastPathDescriptor.getPathNodeIds().get(0);
 						System.out.println("MulticastingForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " has to be forwarded to node " + duplicatePacketDestNodeId + ", duplicating and sending it");
-						UnicastPacket duplicatePacket = null;
 						try {
 							duplicatePacket = new UnicastPacket(
 									duplicatePacketDest,
@@ -170,13 +99,15 @@ public class MulticastingForwarder implements DataPlaneForwarder {
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
-						try {
-							E2EComm.sendUnicast(E2EComm.UDP, duplicatePacket);
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
+					}
+					try {
+						E2EComm.sendUnicast(E2EComm.UDP, duplicatePacket);
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
 				}
+				up.setDest(null);
+				up.setRetry((byte) 0);
 			}
 		}
 	}
@@ -189,7 +120,7 @@ public class MulticastingForwarder implements DataPlaneForwarder {
 
 	@Override
 	public void receivedTcpUnicastPacket(UnicastPacket up) {
-		if (up.getFlowId() != GenericPacket.UNUSED_FIELD && up.getDestNodeId() == Dispatcher.getLocalRampId()) {
+		if (up.getFlowId() != GenericPacket.UNUSED_FIELD && up.getDestNodeId() == Dispatcher.getLocalRampId() && up.getDestPort() == 40000) {
 			ControllerClient controllerClient = ControllerClient.getInstance();
 			
 			List<PathDescriptor> nextHops = controllerClient.getFlowMulticastNextHops(up.getFlowId());
@@ -197,113 +128,40 @@ public class MulticastingForwarder implements DataPlaneForwarder {
 				String[] currentDest = new String[up.getDest().length];
 				for (int i = 0; i < up.getDest().length; i++)
 					currentDest[i] = up.getDest()[i];
-				
-				MulticastPathDescriptor localNodePathDescriptor = null;
+					
 				for (PathDescriptor pathDescriptor : nextHops) {
+					UnicastPacket duplicatePacket = null;
 					MulticastPathDescriptor multicastPathDescriptor = (MulticastPathDescriptor) pathDescriptor;
-					if (multicastPathDescriptor.getPathNodeIds().get(0).equals(Dispatcher.getLocalRampId()))
-						localNodePathDescriptor = multicastPathDescriptor;
-				}
-				
-				if (localNodePathDescriptor != null) {
-					System.out.println("MulticastingForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " is directed to this node, setting the destination port");
-					try {
-						up = new UnicastPacket(
-								up.getDest(),
-								localNodePathDescriptor.getDestPort(),
-								up.getDestNodeId(),
-								up.getSourceNodeId(),
-								up.isAck(),
-								up.getSourcePortAck(),
-								up.getCurrentHop(),
-								up.getBufferSize(),
-								up.getRetry(),
-								up.getTimeWait(),
-								up.getExpiry(),
-								up.getConnectTimeout(),
-								up.getFlowId(),
-								up.getBytePayload()
-								);
-					} catch (Exception e1) {
-						e1.printStackTrace();
-					}
-					for (PathDescriptor pathDescriptor : nextHops) {
-						MulticastPathDescriptor multicastPathDescriptor = (MulticastPathDescriptor) pathDescriptor;
-						if (multicastPathDescriptor != localNodePathDescriptor) {
-							String[] duplicatePacketDest = new String[currentDest.length+1];
-							for (int i = 0; i < currentDest.length; i++)
-								duplicatePacketDest[i] = currentDest[i];
-							duplicatePacketDest[currentDest.length] = multicastPathDescriptor.getPath()[0];
-							int duplicatePacketDestNodeId = multicastPathDescriptor.getPathNodeIds().get(0);
-							System.out.println("MulticastingForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " has to be forwarded to node " + duplicatePacketDestNodeId + ", duplicating and sending it");
-							UnicastPacket duplicatePacket = null;
-							try {
-								duplicatePacket = new UnicastPacket(
-										duplicatePacketDest,
-										up.getDestPort(),
-										duplicatePacketDestNodeId,
-										up.getSourceNodeId(),
-										up.isAck(),
-										up.getSourcePortAck(),
-										up.getCurrentHop(),
-										up.getBufferSize(),
-										up.getRetry(),
-										up.getTimeWait(),
-										up.getExpiry(),
-										up.getConnectTimeout(),
-										up.getFlowId(),
-										up.getBytePayload()
-										);
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-							try {
-								E2EComm.sendUnicast(E2EComm.TCP, duplicatePacket);
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
+					if (multicastPathDescriptor.getPathNodeIds().get(0) == Dispatcher.getLocalRampId()) {
+						System.out.println("MulticastingForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " is directed to this node, duplicating it and setting the destination port");
+						try {
+							duplicatePacket = new UnicastPacket(
+									up.getDest(),
+									multicastPathDescriptor.getDestPort(),
+									up.getDestNodeId(),
+									up.getSourceNodeId(),
+									up.isAck(),
+									up.getSourcePortAck(),
+									up.getCurrentHop(),
+									up.getBufferSize(),
+									up.getRetry(),
+									up.getTimeWait(),
+									up.getExpiry(),
+									up.getConnectTimeout(),
+									up.getFlowId(),
+									up.getBytePayload()
+									);
+						} catch (Exception e) {
+							e.printStackTrace();
 						}
 					}
-				}
-				else {
-					String[] newDest = new String[currentDest.length+1];
-					for (int i = 0; i < currentDest.length; i++)
-						newDest[i] = currentDest[i];
-					newDest[currentDest.length] = nextHops.get(0).getPath()[0];
-					int newDestNodeId = nextHops.get(0).getPathNodeIds().get(0);
-					System.out.println("MulticastingForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " is not directed to this node, adding next hop (node " + newDestNodeId + ") informations");
-					System.out.println("dest: " + newDest[0] + ", " + newDest[1] + ", currentHop: " + up.getCurrentHop());
-					try {
-						up = new UnicastPacket(
-								newDest,
-								up.getDestPort(),
-								newDestNodeId,
-								up.getSourceNodeId(),
-								up.isAck(),
-								up.getSourcePortAck(),
-								up.getCurrentHop(),
-								up.getBufferSize(),
-								up.getRetry(),
-								up.getTimeWait(),
-								up.getExpiry(),
-								up.getConnectTimeout(),
-								up.getFlowId(),
-								up.getBytePayload()
-								);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					System.out.println("packet dest: " + up.getDest()[0] + ", " + up.getDest()[1] + ", packet destNodeId: " + up.getDestNodeId() + ", packet currentHop: " + up.getCurrentHop());
-					
-					for (PathDescriptor pathDescriptor : nextHops.subList(1, nextHops.size())) {
-						MulticastPathDescriptor multicastPathDescriptor = (MulticastPathDescriptor) pathDescriptor;
+					else {
 						String[] duplicatePacketDest = new String[currentDest.length+1];
 						for (int i = 0; i < currentDest.length; i++)
 							duplicatePacketDest[i] = currentDest[i];
 						duplicatePacketDest[currentDest.length] = multicastPathDescriptor.getPath()[0];
 						int duplicatePacketDestNodeId = multicastPathDescriptor.getPathNodeIds().get(0);
 						System.out.println("MulticastingForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " has to be forwarded to node " + duplicatePacketDestNodeId + ", duplicating and sending it");
-						UnicastPacket duplicatePacket = null;
 						try {
 							duplicatePacket = new UnicastPacket(
 									duplicatePacketDest,
@@ -324,13 +182,15 @@ public class MulticastingForwarder implements DataPlaneForwarder {
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
-						try {
-							E2EComm.sendUnicast(E2EComm.TCP, duplicatePacket);
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
+					}
+					try {
+						E2EComm.sendUnicast(E2EComm.TCP, duplicatePacket);
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
 				}
+				up.setDest(null);
+				up.setRetry((byte) 0);
 			}
 		}
 	}

@@ -86,6 +86,87 @@ public class ControllerClientTestReceiver {
 		ServiceManager.getInstance(false).removeService("SDNControllerTestSend");
 	}
 	
+	private static void receiveFile() {
+		BoundReceiveSocket serviceSocket = null;
+		try {
+			serviceSocket = E2EComm.bindPreReceive(PROTOCOL);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		ServiceManager.getInstance(false).registerService("SDNControllerTestSend", serviceSocket.getLocalPort(), PROTOCOL);
+		
+		System.out.println("ControllerClientTestReceiver: receiving the file name from the sender (port: " + serviceSocket.getLocalPort() + ")");
+		String message = null;
+		String fileName = null;
+		String[] senderDest = null;
+		int senderPort = -1;
+		GenericPacket gp = null;
+		try {
+			gp = E2EComm.receive(serviceSocket);
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+			senderDest = E2EComm.ipReverse(up.getSource());
+			Object payload = null;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (payload instanceof String) {
+				message = (String) payload;
+			}
+		}
+		fileName = message.substring(0, message.indexOf(";"));
+		senderPort = Integer.parseInt(message.substring(message.indexOf(";")+1, message.length()));
+		System.out.println("ControllerClientTestReceiver: file name received from the sender, message: " + message + ", port: " + senderPort);
+		
+		String response = "ok";
+		try {
+			E2EComm.sendUnicast(senderDest, senderPort, PROTOCOL, E2EComm.serialize(response));
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+		
+		System.out.println("ControllerClientTestReceiver: receiving the file from the sender (port: " + serviceSocket.getLocalPort() + ")");
+		// File file = new File("./ramp_controllerclienttest.jar");
+		File file = new File(fileName);
+		FileOutputStream fileOutputStream = null;
+		long totalTime = 0;
+		try {
+			fileOutputStream = new FileOutputStream(file);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		totalTime = System.currentTimeMillis();
+		try {
+			E2EComm.receive(serviceSocket, fileOutputStream);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		totalTime = (System.currentTimeMillis() - totalTime) / 1000;
+		System.out.println("ControllerClientTestReceiver: file received from the sender, name " + fileName + ", size " + file.length() / 1000 + ", total time " + totalTime);
+		try {
+			fileOutputStream.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			serviceSocket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		String finalMessage = "file_received";
+		try {
+			E2EComm.sendUnicast(senderDest, senderPort, PROTOCOL, E2EComm.serialize(finalMessage));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 	private static void receiveTwoFilesInDifferentThreads() {
 		Thread firstThread = new Thread() {
 			public void run() {
@@ -158,6 +239,13 @@ public class ControllerClientTestReceiver {
 				try {
 					firstServiceSocket.close();
 				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				
+				String finalMessage = "file_received";
+				try {
+					E2EComm.sendUnicast(senderDest, senderPort, PROTOCOL, E2EComm.serialize(finalMessage));
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
@@ -236,6 +324,13 @@ public class ControllerClientTestReceiver {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				
+				String finalMessage = "file_received";
+				try {
+					E2EComm.sendUnicast(senderDest, senderPort, PROTOCOL, E2EComm.serialize(finalMessage));
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 		};
 		
@@ -250,6 +345,272 @@ public class ControllerClientTestReceiver {
 
 		ServiceManager.getInstance(false).removeService("SDNControllerTestSendFirst");
 		ServiceManager.getInstance(false).removeService("SDNControllerTestSendSecond");
+	}
+	
+	private static void receiveThreeFilesInDifferentThreads() {
+		Thread firstThread = new Thread() {
+			public void run() {
+				BoundReceiveSocket firstServiceSocket = null;
+				try {
+					firstServiceSocket = E2EComm.bindPreReceive(PROTOCOL);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				ServiceManager.getInstance(false).registerService("SDNControllerTestSendFirst", firstServiceSocket.getLocalPort(), PROTOCOL);
+				
+				System.out.println("ControllerClientTestReceiver: receiving the first file name from the sender (port: " + firstServiceSocket.getLocalPort() + ")");
+				String message = null;
+				String fileName = null;
+				String[] senderDest = null;
+				int senderPort = -1;
+				GenericPacket gp = null;
+				try {
+					gp = E2EComm.receive(firstServiceSocket);
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+				if (gp instanceof UnicastPacket) {
+					UnicastPacket up = (UnicastPacket) gp;
+					senderDest = E2EComm.ipReverse(up.getSource());
+					Object payload = null;
+					try {
+						payload = E2EComm.deserialize(up.getBytePayload());
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					if (payload instanceof String) {
+						message = (String) payload;
+					}
+				}
+				fileName = message.substring(0, message.indexOf(";"));
+				senderPort = Integer.parseInt(message.substring(message.indexOf(";")+1, message.length()));
+				System.out.println("ControllerClientTestReceiver: first file name received from the sender, message: " + message + ", port: " + senderPort);
+				
+				String response = "ok";
+				try {
+					E2EComm.sendUnicast(senderDest, senderPort, PROTOCOL, E2EComm.serialize(response));
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+				
+				System.out.println("ControllerClientTestReceiver: receiving the first file from the sender (port: " + firstServiceSocket.getLocalPort() + ")");
+				// File file = new File("./ramp_controllerclienttest.jar");
+				File file = new File(fileName);
+				FileOutputStream fileOutputStream = null;
+				long totalTime = 0;
+				try {
+					fileOutputStream = new FileOutputStream(file);
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
+				totalTime = System.currentTimeMillis();
+				try {
+					E2EComm.receive(firstServiceSocket, fileOutputStream);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				totalTime = (System.currentTimeMillis() - totalTime) / 1000;
+				System.out.println("ControllerClientTestReceiver: first file received from the sender, name " + fileName + ", size " + file.length() / 1000 + ", total time " + totalTime);
+				try {
+					fileOutputStream.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				try {
+					firstServiceSocket.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				
+				String finalMessage = "file_received";
+				try {
+					E2EComm.sendUnicast(senderDest, senderPort, PROTOCOL, E2EComm.serialize(finalMessage));
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		};
+		
+		Thread secondThread = new Thread() {
+			public void run() {
+				BoundReceiveSocket secondServiceSocket = null;
+				try {
+					secondServiceSocket = E2EComm.bindPreReceive(PROTOCOL);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				ServiceManager.getInstance(false).registerService("SDNControllerTestSendSecond", secondServiceSocket.getLocalPort(), PROTOCOL);
+				
+				System.out.println("ControllerClientTestReceiver: receiving the second file name from the sender (port: " + secondServiceSocket.getLocalPort() + ")");
+				String message = null;
+				String fileName = null;
+				String[] senderDest = null;
+				int senderPort = -1;
+				GenericPacket gp = null;
+				try {
+					gp = E2EComm.receive(secondServiceSocket);
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+				if (gp instanceof UnicastPacket) {
+					UnicastPacket up = (UnicastPacket) gp;
+					senderDest = E2EComm.ipReverse(up.getSource());
+					Object payload = null;
+					try {
+						payload = E2EComm.deserialize(up.getBytePayload());
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					if (payload instanceof String) {
+						message = (String) payload;
+					}
+				}
+				fileName = message.substring(0, message.indexOf(";"));
+				senderPort = Integer.parseInt(message.substring(message.indexOf(";")+1, message.length()));
+				System.out.println("ControllerClientTestReceiver: second file name received from the sender");
+				
+				String response = "ok";
+				try {
+					E2EComm.sendUnicast(senderDest, senderPort, PROTOCOL, E2EComm.serialize(response));
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+				
+				System.out.println("ControllerClientTestReceiver: receiving the second file from the sender (port: " + secondServiceSocket.getLocalPort() + ")");
+				// File file = new File("./ramp_controllerclienttestsender.jar");
+				File file = new File(fileName);
+				FileOutputStream fileOutputStream = null;
+				long totalTime = 0;
+				try {
+					fileOutputStream = new FileOutputStream(file);
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
+				totalTime = System.currentTimeMillis();
+				try {
+					E2EComm.receive(secondServiceSocket, fileOutputStream);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				totalTime = (System.currentTimeMillis() - totalTime) / 1000;
+				System.out.println("ControllerClientTestReceiver: second file received from the sender, name " + fileName + ", size " + file.length() / 1000 + ", total time " + totalTime);
+				try {
+					fileOutputStream.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				try {
+					secondServiceSocket.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				
+				String finalMessage = "file_received";
+				try {
+					E2EComm.sendUnicast(senderDest, senderPort, PROTOCOL, E2EComm.serialize(finalMessage));
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		};
+		
+		Thread thirdThread = new Thread() {
+			public void run() {
+				BoundReceiveSocket thirdServiceSocket = null;
+				try {
+					thirdServiceSocket = E2EComm.bindPreReceive(PROTOCOL);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				ServiceManager.getInstance(false).registerService("SDNControllerTestSendThird", thirdServiceSocket.getLocalPort(), PROTOCOL);
+				
+				System.out.println("ControllerClientTestReceiver: receiving the third file name from the sender (port: " + thirdServiceSocket.getLocalPort() + ")");
+				String message = null;
+				String fileName = null;
+				String[] senderDest = null;
+				int senderPort = -1;
+				GenericPacket gp = null;
+				try {
+					gp = E2EComm.receive(thirdServiceSocket);
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+				if (gp instanceof UnicastPacket) {
+					UnicastPacket up = (UnicastPacket) gp;
+					senderDest = E2EComm.ipReverse(up.getSource());
+					Object payload = null;
+					try {
+						payload = E2EComm.deserialize(up.getBytePayload());
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					if (payload instanceof String) {
+						message = (String) payload;
+					}
+				}
+				fileName = message.substring(0, message.indexOf(";"));
+				senderPort = Integer.parseInt(message.substring(message.indexOf(";")+1, message.length()));
+				System.out.println("ControllerClientTestReceiver: third file name received from the sender");
+				
+				String response = "ok";
+				try {
+					E2EComm.sendUnicast(senderDest, senderPort, PROTOCOL, E2EComm.serialize(response));
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+				
+				System.out.println("ControllerClientTestReceiver: receiving the third file from the sender (port: " + thirdServiceSocket.getLocalPort() + ")");
+				// File file = new File("./ramp_controllerclienttestsender.jar");
+				File file = new File(fileName);
+				FileOutputStream fileOutputStream = null;
+				long totalTime = 0;
+				try {
+					fileOutputStream = new FileOutputStream(file);
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
+				totalTime = System.currentTimeMillis();
+				try {
+					E2EComm.receive(thirdServiceSocket, fileOutputStream);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				totalTime = (System.currentTimeMillis() - totalTime) / 1000;
+				System.out.println("ControllerClientTestReceiver: third file received from the sender, name " + fileName + ", size " + file.length() / 1000 + ", total time " + totalTime);
+				try {
+					fileOutputStream.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				try {
+					thirdServiceSocket.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				
+				String finalMessage = "file_received";
+				try {
+					E2EComm.sendUnicast(senderDest, senderPort, PROTOCOL, E2EComm.serialize(finalMessage));
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		};
+		
+		firstThread.start();
+		secondThread.start();
+		thirdThread.start();
+		try {
+			firstThread.join();
+			secondThread.join();
+			thirdThread.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		ServiceManager.getInstance(false).removeService("SDNControllerTestSendFirst");
+		ServiceManager.getInstance(false).removeService("SDNControllerTestSendSecond");
+		ServiceManager.getInstance(false).removeService("SDNControllerTestSendThird");
 	}
 	
 	private static void receiveMessage() {
@@ -325,7 +686,7 @@ public class ControllerClientTestReceiver {
 		
 		controllerClient = ControllerClient.getInstance();
 		
-		receiveMessage();
+		receiveThreeFilesInDifferentThreads();
 		
 		controllerClient.stopClient();
 		ramp.stopRamp();
