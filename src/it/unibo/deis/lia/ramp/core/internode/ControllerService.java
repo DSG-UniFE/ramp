@@ -68,7 +68,7 @@ public class ControllerService extends Thread {
 		ServiceManager.getInstance(false).registerService("SDNController", this.serviceSocket.getLocalPort(), PROTOCOL);
 		this.active = true;
 		this.updateManager = new UpdateManager();
-		this.flowPolicy = FlowPolicy.REROUTING;
+		this.flowPolicy = FlowPolicy.SINGLE_FLOW;
 		
 		this.activeClients = new HashSet<Integer>();
 		this.activeClients.add(Dispatcher.getLocalRampId());
@@ -527,7 +527,7 @@ public class ControllerService extends Thread {
 						flowApplicationRequirements.put(flowId, applicationRequirements);
 						
 						// Select the paths and collect the control informations to send
-						pathSelector = flowPathSelector;
+						pathSelector = defaultPathSelector;
 						pathSelectionMetric = controllerMessage.getPathSelectionMetric();
 						if (pathSelectionMetric != null) {
 							if (pathSelectionMetric == TopologyGraphSelector.PathSelectionMetric.BREADTH_FIRST)

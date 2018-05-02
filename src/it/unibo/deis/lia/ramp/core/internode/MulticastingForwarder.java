@@ -1,6 +1,15 @@
 package it.unibo.deis.lia.ramp.core.internode;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import it.unibo.deis.lia.ramp.core.e2e.BroadcastPacket;
 import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
@@ -17,9 +26,14 @@ public class MulticastingForwarder implements DataPlaneForwarder {
 	
 	private static MulticastingForwarder multicastingForwarder = null;
 	
+	// Data structure for throughput file building
+	private Map<Integer, Integer> highestPriorityFlowNumbers;
+	
 	public synchronized static MulticastingForwarder getInstance() {
 		if (multicastingForwarder == null) {
 			multicastingForwarder = new MulticastingForwarder();
+			
+			multicastingForwarder.highestPriorityFlowNumbers = new ConcurrentHashMap<Integer, Integer>();
 			Dispatcher.getInstance(false).addPacketForwardingListener(multicastingForwarder);
 			System.out.println("MulticastingForwarder ENABLED");
 		}
@@ -132,6 +146,7 @@ public class MulticastingForwarder implements DataPlaneForwarder {
 				for (PathDescriptor pathDescriptor : nextHops) {
 					UnicastPacket duplicatePacket = null;
 					MulticastPathDescriptor multicastPathDescriptor = (MulticastPathDescriptor) pathDescriptor;
+					System.out.println(multicastPathDescriptor.getPath()[0] + " " + multicastPathDescriptor.getPathNodeIds().get(0));
 					if (multicastPathDescriptor.getPathNodeIds().get(0) == Dispatcher.getLocalRampId()) {
 						System.out.println("MulticastingForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " is directed to this node, duplicating it and setting the destination port");
 						try {
@@ -192,6 +207,44 @@ public class MulticastingForwarder implements DataPlaneForwarder {
 				up.setDest(null);
 				up.setRetry((byte) 0);
 			}
+		}
+		if (up.getFlowId() != GenericPacket.UNUSED_FIELD && up.getDestNodeId() != Dispatcher.getLocalRampId()) {
+			File outputFile = new File("output_internal.csv");
+			// if (flowPriority == 0)
+			// 	outputFile = new File("output_internal_maxpriority.csv");
+			// else
+			// 	outputFile = new File("output_internal_lowpriority.csv");
+			PrintWriter printWriter = null;
+			if (!outputFile.exists()) {
+				try {
+					printWriter = new PrintWriter(outputFile);
+					printWriter.println("timestamp,firstflow_sentbytes,secondflow_sentbytes,thirdflow_sentbytes");
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
+			}
+			else {
+				try {
+					printWriter = new PrintWriter(new FileWriter(outputFile, true));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			LocalDateTime localDateTime = LocalDateTime.now();
+			String timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+			int packetLength = E2EComm.objectSizePacket(up);
+			Integer flowNumber = this.highestPriorityFlowNumbers.get(up.getFlowId());
+			if (flowNumber == null) {
+				flowNumber = this.highestPriorityFlowNumbers.size() + 1;
+				this.highestPriorityFlowNumbers.put(up.getFlowId(), flowNumber);
+			}
+			if (flowNumber == 1)
+				printWriter.println(timestamp + "," + packetLength + ",,");
+			else if (flowNumber == 2)
+				printWriter.println(timestamp + ",," + packetLength + ",");
+			else if (flowNumber == 3)
+				printWriter.println(timestamp + ",,," + packetLength);
+			printWriter.close();
 		}
 	}
 

@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Vector;
 
 import it.unibo.deis.lia.ramp.RampEntryPoint;
@@ -521,7 +522,7 @@ public class ControllerClientTestSender {
 		}
 		
 		if (response.equals("ok")) {
-			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.AUDIO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {serviceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
 			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -606,7 +607,7 @@ public class ControllerClientTestSender {
 		}
 		
 		if (response.equals("ok")) {
-			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.AUDIO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {secondServiceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
 			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -788,6 +789,566 @@ public class ControllerClientTestSender {
 			System.out.println("ControllerClientTestSender: wrong final messages received from the receivers");
 	}
 	
+	private static void sendTwoSeriesOfPacketsToDifferentReceivers() {
+		System.out.println("ControllerClientTestSender: waiting 10 seconds");
+		try {
+			Thread.sleep(10*1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		Vector<ServiceResponse> serviceResponses = null;
+		try {
+			serviceResponses = ServiceDiscovery.findServices(5, "SDNControllerTestSendFirst", 5*1000, 1, null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		final ServiceResponse serviceResponse = serviceResponses.get(0);
+
+		BoundReceiveSocket responseSocket = null;
+		try {
+			responseSocket = E2EComm.bindPreReceive(serviceResponse.getProtocol());
+		} catch (Exception e3) {
+			e3.printStackTrace();
+		}
+		
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
+		}
+		
+		Vector<ServiceResponse> secondServiceResponses = null;
+		try {
+			secondServiceResponses = ServiceDiscovery.findServices(5, "SDNControllerTestSendSecond", 5*1000, 1, null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		final ServiceResponse secondServiceResponse = secondServiceResponses.get(0);
+		
+		BoundReceiveSocket secondResponseSocket = null;
+		try {
+			secondResponseSocket = E2EComm.bindPreReceive(secondServiceResponse.getProtocol());
+		} catch (Exception e3) {
+			e3.printStackTrace();
+		}
+		System.out.println("" + secondServiceResponse.getServerPort() + secondResponseSocket.getLocalPort());
+		
+		String fileName = "first_series";
+		String message = fileName + ";" + responseSocket.getLocalPort();
+		
+		System.out.println("ControllerClientTestSender: sending first series of packets name to the receiver (nodeId: " + serviceResponse.getServerNodeId() + ")");
+		try {
+			E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(message));
+		} catch (Exception e3) {
+			e3.printStackTrace();
+		}
+		System.out.println("ControllerClientTestSender: first series of packets name sent to the receiver");
+		
+		String response = null;
+		GenericPacket gp = null;
+		try {
+			gp = E2EComm.receive(responseSocket);
+		} catch (Exception e3) {
+			e3.printStackTrace();
+		}
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+			Object payload = null;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (payload instanceof String) {
+				response = (String) payload;
+			}
+		}
+		
+		Thread firstThread = null;
+		if (response.equals("ok")) {
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			int[] destNodeIds = new int[] {serviceResponse.getServerNodeId()};
+			int[] destPorts = new int[0];
+			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
+			// int flowId = GenericPacket.UNUSED_FIELD;
+			
+			System.out.println("ControllerClientTestSender: sending the first series of packets to the receiver (nodeId: "
+				+ serviceResponse.getServerNodeId() + "), flowId: " + flowId);
+			byte[] payload = new byte[60000];
+			firstThread = new Thread() {
+				public void run() {
+					long now = System.currentTimeMillis();
+					for (int i = 0; i < 1000; i++) {
+						try {
+							LocalDateTime localDateTime = LocalDateTime.now();
+							String timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+							System.out.println("First thread " + timestamp);
+							E2EComm.sendUnicast(
+									serviceResponse.getServerDest(),
+									serviceResponse.getServerNodeId(),
+									serviceResponse.getServerPort(),
+									E2EComm.UDP,
+									false,
+									GenericPacket.UNUSED_FIELD,
+									E2EComm.DEFAULT_BUFFERSIZE,
+									GenericPacket.UNUSED_FIELD,
+									GenericPacket.UNUSED_FIELD,
+									GenericPacket.UNUSED_FIELD,
+									flowId,
+									payload);
+							long sleep = 20 - (System.currentTimeMillis()-now);
+							if (sleep > 0)
+								Thread.sleep(sleep);
+							now = System.currentTimeMillis();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			};
+			firstThread.start();
+			System.out.println("ControllerClientTestSender: first series of packets sent to the receiver");
+		}
+		
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e2) {
+			e2.printStackTrace();
+		}
+		
+		fileName = "second_series";
+		message = fileName + ";" + secondResponseSocket.getLocalPort();
+		
+		System.out.println("ControllerClientTestSender: sending second series of packets name to the receiver (nodeId: " + secondServiceResponse.getServerNodeId() + ")");
+		try {
+			E2EComm.sendUnicast(secondServiceResponse.getServerDest(), secondServiceResponse.getServerPort(), secondServiceResponse.getProtocol(), E2EComm.serialize(message));
+		} catch (Exception e3) {
+			e3.printStackTrace();
+		}
+		System.out.println("ControllerClientTestSender: second series of packets name sent to the receiver");
+		
+		response = null;
+		gp = null;
+		try {
+			gp = E2EComm.receive(secondResponseSocket);
+		} catch (Exception e3) {
+			e3.printStackTrace();
+		}
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+			Object payload = null;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (payload instanceof String) {
+				response = (String) payload;
+			}
+		}
+		
+		Thread secondThread = null;
+		if (response.equals("ok")) {
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			int[] destNodeIds = new int[] {secondServiceResponse.getServerNodeId()};
+			int[] destPorts = new int[0];
+			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
+			// int flowId = GenericPacket.UNUSED_FIELD;
+			
+			System.out.println("ControllerClientTestSender: sending the second series of packets to the receiver (nodeId: "
+				+ secondServiceResponse.getServerNodeId() + "), flowId: " + flowId);
+			byte[] payload = new byte[60000];
+			secondThread = new Thread() {
+				public void run() {
+					long now = System.currentTimeMillis();
+					for (int i = 0; i < 1000; i++) {
+						try {
+							LocalDateTime localDateTime = LocalDateTime.now();
+							String timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+							System.out.println("Second thread " + timestamp);
+							E2EComm.sendUnicast(
+									secondServiceResponse.getServerDest(),
+									secondServiceResponse.getServerNodeId(),
+									secondServiceResponse.getServerPort(),
+									E2EComm.UDP,
+									false,
+									GenericPacket.UNUSED_FIELD,
+									E2EComm.DEFAULT_BUFFERSIZE,
+									GenericPacket.UNUSED_FIELD,
+									GenericPacket.UNUSED_FIELD,
+									GenericPacket.UNUSED_FIELD,
+									flowId,
+									payload);
+							long sleep = 20 - (System.currentTimeMillis()-now);
+							Thread.sleep(sleep);
+							now = System.currentTimeMillis();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			};
+			secondThread.start();
+			System.out.println("ControllerClientTestSender: second series of packets sent to the receiver");
+		}
+		
+		String firstFinalMessage = null;
+		gp = null;
+		try {
+			gp = E2EComm.receive(responseSocket);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+			Object payload = null;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (payload instanceof String)
+				firstFinalMessage = (String) payload;
+		}
+		String secondFinalMessage = null;
+		gp = null;
+		try {
+			gp = E2EComm.receive(secondResponseSocket);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+			Object payload = null;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (payload instanceof String)
+				secondFinalMessage = (String) payload;
+		}
+		if (firstFinalMessage.equals("series_received") && secondFinalMessage.equals("series_received")) {
+			firstThread.interrupt();
+			secondThread.interrupt();
+			System.out.println("ControllerClientTestSender: final messages received from the receivers, series transfer completed");
+		}
+		else
+			System.out.println("ControllerClientTestSender: wrong final messages received from the receivers");
+	}
+	
+	private static void sendThreeSeriesOfPacketsToDifferentReceivers() {
+		System.out.println("ControllerClientTestSender: waiting 10 seconds");
+		try {
+			Thread.sleep(10*1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		Vector<ServiceResponse> serviceResponses = null;
+		try {
+			serviceResponses = ServiceDiscovery.findServices(5, "SDNControllerTestSendFirst", 5*1000, 1, null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		ServiceResponse serviceResponse = serviceResponses.get(0);
+
+		BoundReceiveSocket responseSocket = null;
+		try {
+			responseSocket = E2EComm.bindPreReceive(serviceResponse.getProtocol());
+		} catch (Exception e3) {
+			e3.printStackTrace();
+		}
+		
+		String fileName = "first_series";
+		String message = fileName + ";" + responseSocket.getLocalPort();
+		
+		System.out.println("ControllerClientTestSender: sending first series of packets name to the receiver (nodeId: " + serviceResponse.getServerNodeId() + ")");
+		try {
+			E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(message));
+		} catch (Exception e3) {
+			e3.printStackTrace();
+		}
+		System.out.println("ControllerClientTestSender: first series of packets name sent to the receiver");
+		
+		String response = null;
+		GenericPacket gp = null;
+		try {
+			gp = E2EComm.receive(responseSocket);
+		} catch (Exception e3) {
+			e3.printStackTrace();
+		}
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+			Object payload = null;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (payload instanceof String) {
+				response = (String) payload;
+			}
+		}
+		
+		if (response.equals("ok")) {
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.AUDIO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			int[] destNodeIds = new int[] {serviceResponse.getServerNodeId()};
+			int[] destPorts = new int[0];
+			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
+			// int flowId = GenericPacket.UNUSED_FIELD;
+			
+			System.out.println("ControllerClientTestSender: sending the first series of packets to the receiver (nodeId: "
+				+ serviceResponse.getServerNodeId() + "), flowId: " + flowId);
+			byte[] payload = new byte[10000];
+			new Thread() {
+				public void run() {
+					try {
+						for (int i = 0; i < 5000; i++) {
+							E2EComm.sendUnicast(
+									serviceResponse.getServerDest(),
+									serviceResponse.getServerNodeId(),
+									serviceResponse.getServerPort(),
+									serviceResponse.getProtocol(),
+									false,
+									GenericPacket.UNUSED_FIELD,
+									E2EComm.DEFAULT_BUFFERSIZE,
+									GenericPacket.UNUSED_FIELD,
+									GenericPacket.UNUSED_FIELD,
+									GenericPacket.UNUSED_FIELD,
+									flowId,
+									payload);
+							Thread.sleep(1, 600000);
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}.start();
+			System.out.println("ControllerClientTestSender: first series of packets sent to the receiver");
+		}
+		
+		try {
+			Thread.sleep(3000);
+		} catch (InterruptedException e2) {
+			e2.printStackTrace();
+		}
+		
+		Vector<ServiceResponse> secondServiceResponses = null;
+		try {
+			secondServiceResponses = ServiceDiscovery.findServices(5, "SDNControllerTestSendSecond", 5*1000, 1, null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		ServiceResponse secondServiceResponse = secondServiceResponses.get(0);
+		
+		fileName = "second_series";
+		message = fileName + ";" + responseSocket.getLocalPort();
+		
+		System.out.println("ControllerClientTestSender: sending second series of packets name to the receiver (nodeId: " + secondServiceResponse.getServerNodeId() + ")");
+		try {
+			E2EComm.sendUnicast(secondServiceResponse.getServerDest(), secondServiceResponse.getServerPort(), secondServiceResponse.getProtocol(), E2EComm.serialize(message));
+		} catch (Exception e3) {
+			e3.printStackTrace();
+		}
+		System.out.println("ControllerClientTestSender: second series of packets name sent to the receiver");
+		
+		response = null;
+		gp = null;
+		try {
+			gp = E2EComm.receive(responseSocket);
+		} catch (Exception e3) {
+			e3.printStackTrace();
+		}
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+			Object payload = null;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (payload instanceof String) {
+				response = (String) payload;
+			}
+		}
+		
+		if (response.equals("ok")) {
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.AUDIO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			int[] destNodeIds = new int[] {secondServiceResponse.getServerNodeId()};
+			int[] destPorts = new int[0];
+			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
+			// int flowId = GenericPacket.UNUSED_FIELD;
+			
+			System.out.println("ControllerClientTestSender: sending the second series of packets to the receiver (nodeId: "
+				+ secondServiceResponse.getServerNodeId() + "), flowId: " + flowId);
+			byte[] payload = new byte[10000];
+			new Thread() {
+				public void run() {
+					try {
+						E2EComm.sendUnicast(
+								secondServiceResponse.getServerDest(),
+								secondServiceResponse.getServerNodeId(),
+								secondServiceResponse.getServerPort(),
+								secondServiceResponse.getProtocol(),
+								false,
+								GenericPacket.UNUSED_FIELD,
+								E2EComm.DEFAULT_BUFFERSIZE,
+								GenericPacket.UNUSED_FIELD,
+								GenericPacket.UNUSED_FIELD,
+								GenericPacket.UNUSED_FIELD,
+								flowId,
+								payload);
+						Thread.sleep(1, 600000);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}.start();
+			System.out.println("ControllerClientTestSender: second file sent to the receiver");
+		}
+		
+		try {
+			Thread.sleep(3000);
+		} catch (InterruptedException e2) {
+			e2.printStackTrace();
+		}
+		
+		Vector<ServiceResponse> thirdServiceResponses = null;
+		try {
+			thirdServiceResponses = ServiceDiscovery.findServices(5, "SDNControllerTestSendThird", 5*1000, 1, null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		ServiceResponse thirdServiceResponse = thirdServiceResponses.get(0);
+		
+		fileName = "third_series";
+		message = fileName + ";" + responseSocket.getLocalPort();
+		
+		System.out.println("ControllerClientTestSender: sending third series of packets name to the receiver (nodeId: " + thirdServiceResponse.getServerNodeId() + ")");
+		try {
+			E2EComm.sendUnicast(thirdServiceResponse.getServerDest(), thirdServiceResponse.getServerPort(), thirdServiceResponse.getProtocol(), E2EComm.serialize(message));
+		} catch (Exception e3) {
+			e3.printStackTrace();
+		}
+		System.out.println("ControllerClientTestSender: third series of packets name sent to the receiver");
+		
+		response = null;
+		gp = null;
+		try {
+			gp = E2EComm.receive(responseSocket);
+		} catch (Exception e3) {
+			e3.printStackTrace();
+		}
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+			Object payload = null;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (payload instanceof String) {
+				response = (String) payload;
+			}
+		}
+		
+		if (response.equals("ok")) {
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			int[] destNodeIds = new int[] {thirdServiceResponse.getServerNodeId()};
+			int[] destPorts = new int[0];
+			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
+			// int flowId = GenericPacket.UNUSED_FIELD;
+			
+			System.out.println("ControllerClientTestSender: sending the third series of packets to the receiver (nodeId: "
+				+ thirdServiceResponse.getServerNodeId() + "), flowId: " + flowId);
+			byte[] payload = new byte[10000];
+			new Thread() {
+				public void run() {
+					try {
+						E2EComm.sendUnicast(
+								thirdServiceResponse.getServerDest(),
+								thirdServiceResponse.getServerNodeId(),
+								thirdServiceResponse.getServerPort(),
+								thirdServiceResponse.getProtocol(),
+								false,
+								GenericPacket.UNUSED_FIELD,
+								E2EComm.DEFAULT_BUFFERSIZE,
+								GenericPacket.UNUSED_FIELD,
+								GenericPacket.UNUSED_FIELD,
+								GenericPacket.UNUSED_FIELD,
+								flowId,
+								payload);
+						Thread.sleep(1, 600000);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}.start();
+			System.out.println("ControllerClientTestSender: third series of packets sent to the receiver");
+		}
+		
+		String firstFinalMessage = null;
+		gp = null;
+		try {
+			gp = E2EComm.receive(responseSocket);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+			Object payload = null;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (payload instanceof String)
+				firstFinalMessage = (String) payload;
+		}
+		String secondFinalMessage = null;
+		gp = null;
+		try {
+			gp = E2EComm.receive(responseSocket);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+			Object payload = null;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (payload instanceof String)
+				secondFinalMessage = (String) payload;
+		}
+		String thirdFinalMessage = null;
+		gp = null;
+		try {
+			gp = E2EComm.receive(responseSocket);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+			Object payload = null;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (payload instanceof String)
+				thirdFinalMessage = (String) payload;
+		}
+		if (firstFinalMessage.equals("series_received") && secondFinalMessage.equals("series_received") && thirdFinalMessage.equals("series_received"))
+			System.out.println("ControllerClientTestSender: final messages received from the receivers, file transfer completed");
+		else
+			System.out.println("ControllerClientTestSender: wrong final messages received from the receivers");
+	}
+	
 	private static void sendMessageToMultipleReceivers() {
 		String message = "Hello, world!";
 		
@@ -846,6 +1407,268 @@ public class ControllerClientTestSender {
 		}
 	}
 	
+	private static void sendMultipleMessagesToMultipleReceivers() throws Exception {
+		System.out.println("ControllerClientTestSender: waiting 10 seconds");
+		try {
+			Thread.sleep(10*1000);
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
+		}
+		
+		Vector<ServiceResponse> serviceResponses = null;
+		try {
+			serviceResponses = ServiceDiscovery.findServices(5, "SDNControllerTestSend", 5*1000, 2, null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		final ServiceResponse firstServiceResponse = serviceResponses.get(0);
+		final ServiceResponse secondServiceResponse = serviceResponses.get(1);
+		
+		final BoundReceiveSocket firstResponseSocket = E2EComm.bindPreReceive(firstServiceResponse.getProtocol());
+		final BoundReceiveSocket secondResponseSocket = E2EComm.bindPreReceive(secondServiceResponse.getProtocol());
+		
+		new Thread() {
+			public void run() {
+				String message = Integer.toString(firstResponseSocket.getLocalPort());
+				
+				System.out.println("ControllerClientTestSender: sending first message port to the first receiver (nodeId: " + firstServiceResponse.getServerNodeId() + ")");
+				try {
+					E2EComm.sendUnicast(firstServiceResponse.getServerDest(), firstServiceResponse.getServerPort(), firstServiceResponse.getProtocol(), E2EComm.serialize(message));
+				} catch (Exception e3) {
+					e3.printStackTrace();
+				}
+				System.out.println("ControllerClientTestSender: first message port sent to the first receiver");
+				
+				String response = null;
+				GenericPacket gp = null;
+				try {
+					gp = E2EComm.receive(firstResponseSocket);
+				} catch (Exception e3) {
+					e3.printStackTrace();
+				}
+				if (gp instanceof UnicastPacket) {
+					UnicastPacket up = (UnicastPacket) gp;
+					Object payload = null;
+					try {
+						payload = E2EComm.deserialize(up.getBytePayload());
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					if (payload instanceof String) {
+						response = (String) payload;
+					}
+				}
+				
+				if (response.equals("ok")) {
+					ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 200);
+					int[] destNodeIds = new int[] {firstServiceResponse.getServerNodeId()};
+					int[] destPorts = new int[] {firstServiceResponse.getServerPort()};
+					int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
+					
+					byte[] messagePayload = new byte[20000000];
+					System.out.println("ControllerClientTestSender: sending the first message to the first receiver (nodeId: "
+						+ firstServiceResponse.getServerNodeId() + "), flowId: " + flowId);
+					try {
+						E2EComm.sendUnicast(
+								firstServiceResponse.getServerDest(),
+								firstServiceResponse.getServerNodeId(),
+								firstServiceResponse.getServerPort(),
+								firstServiceResponse.getProtocol(),
+								false,
+								GenericPacket.UNUSED_FIELD,
+								E2EComm.DEFAULT_BUFFERSIZE,
+								GenericPacket.UNUSED_FIELD,
+								GenericPacket.UNUSED_FIELD,
+								GenericPacket.UNUSED_FIELD,
+								flowId,
+								messagePayload);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					System.out.println("ControllerClientTestSender: first message sent to the first receiver");
+				}
+			}
+		}.start();
+		
+		new Thread() {
+			public void run() {
+				String message = Integer.toString(secondResponseSocket.getLocalPort());
+				
+				System.out.println("ControllerClientTestSender: sending first message port to the second receiver (nodeId: " + secondServiceResponse.getServerNodeId() + ")");
+				try {
+					E2EComm.sendUnicast(secondServiceResponse.getServerDest(), secondServiceResponse.getServerPort(), secondServiceResponse.getProtocol(), E2EComm.serialize(message));
+				} catch (Exception e3) {
+					e3.printStackTrace();
+				}
+				System.out.println("ControllerClientTestSender: first message port sent to the second receiver");
+				
+				String response = null;
+				GenericPacket gp = null;
+				try {
+					gp = E2EComm.receive(secondResponseSocket);
+				} catch (Exception e3) {
+					e3.printStackTrace();
+				}
+				if (gp instanceof UnicastPacket) {
+					UnicastPacket up = (UnicastPacket) gp;
+					Object payload = null;
+					try {
+						payload = E2EComm.deserialize(up.getBytePayload());
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					if (payload instanceof String) {
+						response = (String) payload;
+					}
+				}
+				
+				if (response.equals("ok")) {
+					ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 200);
+					int[] destNodeIds = new int[] {secondServiceResponse.getServerNodeId()};
+					int[] destPorts = new int[] {secondServiceResponse.getServerPort()};
+					int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
+					
+					byte[] messagePayload = new byte[20000000];
+					System.out.println("ControllerClientTestSender: sending the first message to the second receiver (nodeId: "
+						+ secondServiceResponse.getServerNodeId() + "), flowId: " + flowId);
+					try {
+						E2EComm.sendUnicast(
+								secondServiceResponse.getServerDest(),
+								secondServiceResponse.getServerNodeId(),
+								secondServiceResponse.getServerPort(),
+								secondServiceResponse.getProtocol(),
+								false,
+								GenericPacket.UNUSED_FIELD,
+								E2EComm.DEFAULT_BUFFERSIZE,
+								GenericPacket.UNUSED_FIELD,
+								GenericPacket.UNUSED_FIELD,
+								GenericPacket.UNUSED_FIELD,
+								flowId,
+								messagePayload);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					System.out.println("ControllerClientTestSender: first message sent to the second receiver");
+				}
+			}
+		}.start();
+		
+//		String firstFinalMessage = null;
+//		GenericPacket gp = null;
+//		try {
+//			gp = E2EComm.receive(firstResponseSocket);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//		if (gp instanceof UnicastPacket) {
+//			UnicastPacket up = (UnicastPacket) gp;
+//			Object payload = null;
+//			try {
+//				payload = E2EComm.deserialize(up.getBytePayload());
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//			if (payload instanceof String)
+//				firstFinalMessage = (String) payload;
+//		}
+//		String secondFinalMessage = null;
+//		gp = null;
+//		try {
+//			gp = E2EComm.receive(secondResponseSocket);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//		if (gp instanceof UnicastPacket) {
+//			UnicastPacket up = (UnicastPacket) gp;
+//			Object payload = null;
+//			try {
+//				payload = E2EComm.deserialize(up.getBytePayload());
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//			if (payload instanceof String)
+//				secondFinalMessage = (String) payload;
+//		}
+//		if (firstFinalMessage.equals("message_received") && secondFinalMessage.equals("message_received"))
+//			System.out.println("ControllerClientTestSender: first two messages sent, waiting 5 seconds and sending the third message");
+		
+		System.out.println("ControllerClientTestSender: waiting 20 seconds and sending the third message");
+		try {
+			Thread.sleep(20*1000);
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
+		}
+		
+		ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 20);
+		int[] destNodeIds = new int[] {firstServiceResponse.getServerNodeId(), secondServiceResponse.getServerNodeId()};
+		int[] destPorts = new int[] {firstServiceResponse.getServerPort(), secondServiceResponse.getServerPort()};
+		int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
+		
+		byte[] messagePayload = new byte[20000000];
+		System.out.println("ControllerClientTestSender: sending the third message to the receivers (first nodeId: "
+				+ firstServiceResponse.getServerNodeId() + ", second nodeId: " + secondServiceResponse.getServerNodeId() + "), flowId: " + flowId);
+		try {
+			E2EComm.sendUnicast(
+					new String[] {GeneralUtils.getLocalHost()},
+					Dispatcher.getLocalRampId(),
+					40000,
+					firstServiceResponse.getProtocol(),
+					false,
+					GenericPacket.UNUSED_FIELD,
+					E2EComm.DEFAULT_BUFFERSIZE,
+					GenericPacket.UNUSED_FIELD,
+					GenericPacket.UNUSED_FIELD,
+					GenericPacket.UNUSED_FIELD,
+					flowId,
+					messagePayload
+			);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		System.out.println("ControllerClientTestSender: message sent to the receiver");
+		
+		String firstFinalMessage = null;
+		GenericPacket gp = null;
+		try {
+			gp = E2EComm.receive(firstResponseSocket);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+			Object payload = null;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (payload instanceof String)
+				firstFinalMessage = (String) payload;
+		}
+		String secondFinalMessage = null;
+		gp = null;
+		try {
+			gp = E2EComm.receive(secondResponseSocket);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+			Object payload = null;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (payload instanceof String)
+				secondFinalMessage = (String) payload;
+		}
+		if (firstFinalMessage.equals("message_received") && secondFinalMessage.equals("message_received"))
+			System.out.println("ControllerClientTestSender: final messages received from the receivers, message transfer completed");
+		else
+			System.out.println("ControllerClientTestSender: wrong final messages received from the receivers");
+	}
+	
 	public static void main(String[] args) {
 		
 		ramp = RampEntryPoint.getInstance(true, null);
@@ -896,7 +1719,11 @@ public class ControllerClientTestSender {
 		
 		StatsPrinter statsPrinter = new StatsPrinter("output_external.csv");
 		statsPrinter.start();
-		sendThreeFilesToDifferentReceivers();
+		try {
+			sendTwoSeriesOfPacketsToDifferentReceivers();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		statsPrinter.stopStatsPrinter();
 		
 		controllerClient.stopClient();
@@ -934,7 +1761,7 @@ public class ControllerClientTestSender {
 			NetworkIF[] networkIFs = hardwareAbstractionLayer.getNetworkIFs();
 			NetworkIF transmissionInterface = null;
 			for (int i = 0; i < networkIFs.length; i++)
-				if (networkIFs[i].getName().equals("wlan2"))
+				if (networkIFs[i].getName().equals("eth0"))
 					transmissionInterface = networkIFs[i];
 			long startTransmittedBytes = 0;
 			transmissionInterface.updateNetworkStats();

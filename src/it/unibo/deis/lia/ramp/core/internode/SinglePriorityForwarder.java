@@ -220,6 +220,34 @@ public class SinglePriorityForwarder implements DataPlaneForwarder {
 					System.out.println("SingleFlowForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " found the transmission channel free, no changes made to the packet");
 				}
 			}
+			File outputFile = new File("output_internal.csv");
+			// if (flowPriority == 0)
+			// 	outputFile = new File("output_internal_maxpriority.csv");
+			// else
+			// 	outputFile = new File("output_internal_lowpriority.csv");
+			PrintWriter printWriter = null;
+			if (!outputFile.exists()) {
+				try {
+					printWriter = new PrintWriter(outputFile);
+					printWriter.println("timestamp,maxpriority_sentbytes,lowpriority_sentbytes");
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
+			}
+			else {
+				try {
+					printWriter = new PrintWriter(new FileWriter(outputFile, true));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			LocalDateTime localDateTime = LocalDateTime.now();
+			String timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+			if (flowPriority == 0)
+				printWriter.println(timestamp + "," + up.getBytePayload().length + ",");
+			else
+				printWriter.println(timestamp + ",," + up.getBytePayload().length);
+			printWriter.close();
 		}
 	}
 

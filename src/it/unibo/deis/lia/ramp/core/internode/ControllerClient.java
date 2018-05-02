@@ -77,8 +77,8 @@ public class ControllerClient extends Thread {
 		
 		this.active = true;
 		this.updateManager = new UpdateManager();
-		this.flowPolicy = FlowPolicy.REROUTING;
-		this.dataPlaneForwarder = BestPathForwarder.getInstance();
+		this.flowPolicy = FlowPolicy.SINGLE_FLOW;
+		this.dataPlaneForwarder = SinglePriorityForwarder.getInstance();
 		
 		this.defaultFlowPaths = new ConcurrentHashMap<Integer, PathDescriptor>();
 		this.flowPaths = new ConcurrentHashMap<Integer, PathDescriptor>();
