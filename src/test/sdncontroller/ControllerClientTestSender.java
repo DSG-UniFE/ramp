@@ -789,7 +789,7 @@ public class ControllerClientTestSender {
 			System.out.println("ControllerClientTestSender: wrong final messages received from the receivers");
 	}
 	
-	private static void sendTwoSeriesOfPacketsToDifferentReceivers() {
+	static void sendTwoSeriesOfPacketsToDifferentReceivers(ControllerClient controllerClient) {
 		System.out.println("ControllerClientTestSender: waiting 10 seconds");
 		try {
 			Thread.sleep(10*1000);
@@ -1720,7 +1720,7 @@ public class ControllerClientTestSender {
 		StatsPrinter statsPrinter = new StatsPrinter("output_external.csv");
 		statsPrinter.start();
 		try {
-			sendTwoSeriesOfPacketsToDifferentReceivers();
+			sendTwoSeriesOfPacketsToDifferentReceivers(controllerClient);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -1730,7 +1730,7 @@ public class ControllerClientTestSender {
 		ramp.stopRamp();
 	}
 	
-	private static class StatsPrinter extends Thread {
+	static class StatsPrinter extends Thread {
 		
 		private static final int TIME_INTERVAL = 500;
 

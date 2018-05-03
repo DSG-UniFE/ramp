@@ -613,7 +613,7 @@ public class ControllerClientTestReceiver {
 		ServiceManager.getInstance(false).removeService("SDNControllerTestSendThird");
 	}
 	
-	private static void receiveTwoSeriesOfPacketsInDifferentThreads() {
+	static void receiveTwoSeriesOfPacketsInDifferentThreads() {
 		Thread firstThread = new Thread() {
 			public void run() {
 				BoundReceiveSocket firstServiceSocket = null;
