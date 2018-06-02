@@ -522,6 +522,8 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
 					System.out.println("QueuesForwarder: packet " + uh.getPacketId() + " with flowId " + uh.getFlowId() + " found the transmission channel free, no changes made to the packet");
 				}
 			}
+			
+			// Log all network traffic handled with this method
 			File outputFile = new File("output_internal.csv");
 			// if (flowPriority == 0)
 			// 	outputFile = new File("output_internal_maxpriority.csv");

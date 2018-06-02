@@ -20,6 +20,7 @@ public class ControllerClientTestReceiver {
 	private static ControllerClient controllerClient;
 	private static RampEntryPoint ramp;
 	
+	// Test method for Best Path policy (receive two consecutive strings)
 	private static void receiveTwoMessages() {
 		BoundReceiveSocket serviceSocket = null;
 		try {
@@ -86,6 +87,7 @@ public class ControllerClientTestReceiver {
 		ServiceManager.getInstance(false).removeService("SDNControllerTestSend");
 	}
 	
+	// Test method for no SDN policy (send a single file, selected through the fileName variable)
 	private static void receiveFile() {
 		BoundReceiveSocket serviceSocket = null;
 		try {
@@ -167,6 +169,7 @@ public class ControllerClientTestReceiver {
 		}
 	}
 	
+	// Test method for traffic engineering policies (send two files addressing different RAMP services)
 	private static void receiveTwoFilesInDifferentThreads() {
 		Thread firstThread = new Thread() {
 			public void run() {
@@ -347,6 +350,7 @@ public class ControllerClientTestReceiver {
 		ServiceManager.getInstance(false).removeService("SDNControllerTestSendSecond");
 	}
 	
+	// Test method for traffic engineering policies (send three files addressing different RAMP services)
 	private static void receiveThreeFilesInDifferentThreads() {
 		Thread firstThread = new Thread() {
 			public void run() {
@@ -613,6 +617,7 @@ public class ControllerClientTestReceiver {
 		ServiceManager.getInstance(false).removeService("SDNControllerTestSendThird");
 	}
 	
+	// Test method for traffic engineering policies using UDP protocol (receive two series of consecutive packets addressing different RAMP services)
 	private static void receiveTwoSeriesOfPacketsInDifferentThreads() {
 		Thread firstThread = new Thread() {
 			public void run() {
@@ -783,6 +788,7 @@ public class ControllerClientTestReceiver {
 		ServiceManager.getInstance(false).removeService("SDNControllerTestSendSecond");
 	}
 	
+	// Test method for traffic engineering policies using UDP protocol (receive three series of consecutive packets addressing different RAMP services)
 	private static void receiveThreeSeriesOfFilesInDifferentThreads() {
 		Thread firstThread = new Thread() {
 			public void run() {
@@ -1008,6 +1014,7 @@ public class ControllerClientTestReceiver {
 		ServiceManager.getInstance(false).removeService("SDNControllerTestSendThird");
 	}
 	
+	// Test method for Tree-based Multicast policy (receive a string; to be run on all the receivers)
 	private static void receiveMessage() {
 		BoundReceiveSocket serviceSocket = null;
 		try {
@@ -1047,6 +1054,7 @@ public class ControllerClientTestReceiver {
 		ServiceManager.getInstance(false).removeService("SDNControllerTestSend");
 	}
 	
+	// Test method for Tree-based Multicast policy (receive two payloads, the second one is sent using the Tree-based Multicast policy)
 	private static void receiveMultipleMessages() {		
 		BoundReceiveSocket serviceSocket = null;
 		try {
@@ -1165,6 +1173,7 @@ public class ControllerClientTestReceiver {
 		
 		controllerClient = ControllerClient.getInstance();
 		
+		// Test method to run, match it with the one in ControllerClientTestSender
 		receiveTwoSeriesOfPacketsInDifferentThreads();
 		
 		controllerClient.stopClient();

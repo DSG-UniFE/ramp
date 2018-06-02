@@ -396,6 +396,8 @@ public class MultipleFlowsMultiplePrioritiesForwarder implements DataPlaneForwar
 				}
 				System.out.println("TrafficShapingForwarder: packet " + uh.getPacketId() + " with flowId " + uh.getFlowId() + " and priority value " + flowPriority + ", no changes made to it");
 			}
+			
+			// Log all network traffic handled with this method
 			File outputFile = new File("output_internal.csv");
 			// if (flowPriority == 0)
 			// 	outputFile = new File("output_internal_maxpriority.csv");

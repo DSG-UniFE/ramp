@@ -37,6 +37,7 @@ public class ControllerClientTestSender {
 	private static ControllerClient controllerClient;
 	private static RampEntryPoint ramp;
 	
+	// Test method for Best Path policy (send two consecutive strings)
 	private static void sendTwoMessages() {
 		String message = "Hello, world!";
 		
@@ -57,6 +58,7 @@ public class ControllerClientTestSender {
 		if (serviceResponses.size() > 0)
 			serviceResponse = serviceResponses.get(0);
 		
+		// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 		ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 20);
 		int[] destNodeIds = new int[] {serviceResponse.getServerNodeId()};
 		int[] destPorts = new int[0];
@@ -126,6 +128,7 @@ public class ControllerClientTestSender {
 		}
 	}
 	
+	// Test method for no SDN policy (send a single file, selected through the fileName variable)
 	private static void sendAFile() {
 		System.out.println("ControllerClientTestSender: waiting 10 seconds");
 		try {
@@ -183,6 +186,7 @@ public class ControllerClientTestSender {
 		}
 		
 		if (response.equals("ok")) {
+			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 			// ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			// int[] destNodeIds = new int[] {serviceResponse.getServerNodeId()};
 			// int[] destPorts = new int[0];
@@ -244,6 +248,7 @@ public class ControllerClientTestSender {
 		}
 	}
 	
+	// Test method for traffic engineering policies (send two files addressing different RAMP services)
 	private static void sendTwoFilesToDifferentReceivers() {
 		System.out.println("ControllerClientTestSender: waiting 10 seconds");
 		try {
@@ -301,6 +306,7 @@ public class ControllerClientTestSender {
 		}
 		
 		if (response.equals("ok")) {
+			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {serviceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
@@ -386,6 +392,7 @@ public class ControllerClientTestSender {
 		}
 		
 		if (response.equals("ok")) {
+			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {secondServiceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
@@ -465,6 +472,7 @@ public class ControllerClientTestSender {
 			System.out.println("ControllerClientTestSender: wrong final messages received from the receivers");
 	}
 	
+	// Test method for traffic engineering policies (send three files addressing different RAMP services)
 	private static void sendThreeFilesToDifferentReceivers() {
 		System.out.println("ControllerClientTestSender: waiting 10 seconds");
 		try {
@@ -522,6 +530,7 @@ public class ControllerClientTestSender {
 		}
 		
 		if (response.equals("ok")) {
+			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {serviceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
@@ -607,6 +616,7 @@ public class ControllerClientTestSender {
 		}
 		
 		if (response.equals("ok")) {
+			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {secondServiceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
@@ -692,6 +702,7 @@ public class ControllerClientTestSender {
 		}
 		
 		if (response.equals("ok")) {
+			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {thirdServiceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
@@ -789,6 +800,7 @@ public class ControllerClientTestSender {
 			System.out.println("ControllerClientTestSender: wrong final messages received from the receivers");
 	}
 	
+	// Test method for traffic engineering policies with UDP protocol (send two series of consecutive packets addressing different RAMP services)
 	private static void sendTwoSeriesOfPacketsToDifferentReceivers() {
 		System.out.println("ControllerClientTestSender: waiting 10 seconds");
 		try {
@@ -867,6 +879,7 @@ public class ControllerClientTestSender {
 		
 		Thread firstThread = null;
 		if (response.equals("ok")) {
+			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {serviceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
@@ -950,6 +963,7 @@ public class ControllerClientTestSender {
 		
 		Thread secondThread = null;
 		if (response.equals("ok")) {
+			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {secondServiceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
@@ -1038,6 +1052,7 @@ public class ControllerClientTestSender {
 			System.out.println("ControllerClientTestSender: wrong final messages received from the receivers");
 	}
 	
+	// Test method for traffic engineering policies using UDP protocol (send three series of consecutive packets addressing different RAMP services)
 	private static void sendThreeSeriesOfPacketsToDifferentReceivers() {
 		System.out.println("ControllerClientTestSender: waiting 10 seconds");
 		try {
@@ -1093,6 +1108,7 @@ public class ControllerClientTestSender {
 		}
 		
 		if (response.equals("ok")) {
+			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.AUDIO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {serviceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
@@ -1175,6 +1191,7 @@ public class ControllerClientTestSender {
 		}
 		
 		if (response.equals("ok")) {
+			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.AUDIO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {secondServiceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
@@ -1255,6 +1272,7 @@ public class ControllerClientTestSender {
 		}
 		
 		if (response.equals("ok")) {
+			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {thirdServiceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
@@ -1349,6 +1367,7 @@ public class ControllerClientTestSender {
 			System.out.println("ControllerClientTestSender: wrong final messages received from the receivers");
 	}
 	
+	// Test method for Tree-based Multicast policy (send a string to multiple receivers)
 	private static void sendMessageToMultipleReceivers() {
 		String message = "Hello, world!";
 		
@@ -1372,6 +1391,7 @@ public class ControllerClientTestSender {
 			secondServiceResponse = serviceResponses.get(1);
 		}
 		
+		// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 		ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 20);
 		int[] destNodeIds = new int[] {firstServiceResponse.getServerNodeId(), secondServiceResponse.getServerNodeId()};
 		int[] destPorts = new int[] {firstServiceResponse.getServerPort(), secondServiceResponse.getServerPort()};
@@ -1407,6 +1427,7 @@ public class ControllerClientTestSender {
 		}
 	}
 	
+	// Test method for Tree-based Multicast policy (send two payloads to multiple receivers using separate communication and then repeat adopting the Tree-based Multicast policy)
 	private static void sendMultipleMessagesToMultipleReceivers() throws Exception {
 		System.out.println("ControllerClientTestSender: waiting 10 seconds");
 		try {
@@ -1460,6 +1481,7 @@ public class ControllerClientTestSender {
 				}
 				
 				if (response.equals("ok")) {
+					// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 					ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 200);
 					int[] destNodeIds = new int[] {firstServiceResponse.getServerNodeId()};
 					int[] destPorts = new int[] {firstServiceResponse.getServerPort()};
@@ -1523,6 +1545,7 @@ public class ControllerClientTestSender {
 				}
 				
 				if (response.equals("ok")) {
+					// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 					ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 200);
 					int[] destNodeIds = new int[] {secondServiceResponse.getServerNodeId()};
 					int[] destPorts = new int[] {secondServiceResponse.getServerPort()};
@@ -1599,6 +1622,7 @@ public class ControllerClientTestSender {
 			e1.printStackTrace();
 		}
 		
+		// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
 		ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 20);
 		int[] destNodeIds = new int[] {firstServiceResponse.getServerNodeId(), secondServiceResponse.getServerNodeId()};
 		int[] destPorts = new int[] {firstServiceResponse.getServerPort(), secondServiceResponse.getServerPort()};
@@ -1720,6 +1744,7 @@ public class ControllerClientTestSender {
 		StatsPrinter statsPrinter = new StatsPrinter("output_external.csv");
 		statsPrinter.start();
 		try {
+			// Test method to run, match it with the one in ControllerClientTestReceiver
 			sendTwoSeriesOfPacketsToDifferentReceivers();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -1730,6 +1755,7 @@ public class ControllerClientTestSender {
 		ramp.stopRamp();
 	}
 	
+	// Utility to log all network traffic on a specific network interface
 	private static class StatsPrinter extends Thread {
 		
 		private static final int TIME_INTERVAL = 500;
@@ -1761,6 +1787,7 @@ public class ControllerClientTestSender {
 			NetworkIF[] networkIFs = hardwareAbstractionLayer.getNetworkIFs();
 			NetworkIF transmissionInterface = null;
 			for (int i = 0; i < networkIFs.length; i++)
+				// Select the network interface to monitor
 				if (networkIFs[i].getName().equals("eth0"))
 					transmissionInterface = networkIFs[i];
 			long startTransmittedBytes = 0;
