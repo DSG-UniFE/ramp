@@ -23,12 +23,11 @@ import it.unibo.deis.lia.ramp.service.management.ServiceManager;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 
 /**
- *
  * @author useruser
  */
-public class FileSharingServiceNoGUI extends Thread{
+public class FileSharingServiceNoGUI extends Thread {
 
-    private boolean open=true;
+    private boolean open = true;
 
     private String sharedDirectory = "./temp/fsService";
     private int bufferSize = 0;
@@ -37,56 +36,54 @@ public class FileSharingServiceNoGUI extends Thread{
     private int protocol = E2EComm.TCP;
 
     private static BoundReceiveSocket serviceSocket;
-    private static FileSharingServiceNoGUI fileSharing=null;
+    private static FileSharingServiceNoGUI fileSharing = null;
 
 
-	public static boolean isActive(){
+    public static boolean isActive() {
         return FileSharingServiceNoGUI.fileSharing != null;
     }
 
-    public static synchronized FileSharingServiceNoGUI getInstance(){
-		try {
+    public static synchronized FileSharingServiceNoGUI getInstance() {
+        try {
 
-			if (FileSharingServiceNoGUI.fileSharing == null) {
-				// FileSharingService senza GUI
-				FileSharingServiceNoGUI.fileSharing = new FileSharingServiceNoGUI(false);
+            if (FileSharingServiceNoGUI.fileSharing == null) {
+                // FileSharingService senza GUI
+                FileSharingServiceNoGUI.fileSharing = new FileSharingServiceNoGUI(false);
                 FileSharingServiceNoGUI.fileSharing.start();
 
             }
-        }
-		catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return FileSharingServiceNoGUI.fileSharing;
     }
 
-    public static synchronized FileSharingServiceNoGUI getInstanceNoShow(){
-        try{
-            if(FileSharingServiceNoGUI.fileSharing==null){
+    public static synchronized FileSharingServiceNoGUI getInstanceNoShow() {
+        try {
+            if (FileSharingServiceNoGUI.fileSharing == null) {
                 FileSharingServiceNoGUI.fileSharing = new FileSharingServiceNoGUI(false);
                 FileSharingServiceNoGUI.fileSharing.start();
             }
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return FileSharingServiceNoGUI.fileSharing;
     }
 
-	protected FileSharingServiceNoGUI(boolean gui) throws Exception {
+    protected FileSharingServiceNoGUI(boolean gui) throws Exception {
         serviceSocket = E2EComm.bindPreReceive(protocol);
 
         ServiceManager.getInstance(false).registerService("" +
-        		"FileSharing",
-        		serviceSocket.getLocalPort(),
-        		protocol
-    		);
+                        "FileSharing",
+                serviceSocket.getLocalPort(),
+                protocol
+        );
 
-        if(RampEntryPoint.getAndroidContext() != null){
-        	sharedDirectory = RampEntryPoint.getAndroidSharedDirectory().getAbsolutePath() + "/fsService";
-        	File dir = new File(sharedDirectory);
-        	if(!dir.exists())
-        		dir.mkdir();
+        if (RampEntryPoint.getAndroidContext() != null) {
+            sharedDirectory = RampEntryPoint.getAndroidSharedDirectory().getAbsolutePath() + "/fsService";
+            File dir = new File(sharedDirectory);
+            if (!dir.exists())
+                dir.mkdir();
         }
     }
 
@@ -102,103 +99,101 @@ public class FileSharingServiceNoGUI extends Thread{
         this.bufferSize = bufferSize;
     }
 
-    public String getSharedDirectory(){
+    public String getSharedDirectory() {
         return sharedDirectory;
     }
 
-    public void setSharedDirectory(String sharedDirectory){
-        this.sharedDirectory=sharedDirectory;
+    public void setSharedDirectory(String sharedDirectory) {
+        this.sharedDirectory = sharedDirectory;
     }
 
-	public String[] getFileList() {
-    	String[] res = new String[0];
-    	try{
-	        File dir = new File(sharedDirectory);
-	        res = dir.list();
-	        // filter the list of returned files
-	        // to not return any files that start with '.'.
-	        FilenameFilter filter = new FilenameFilter() {
-	            @Override
-	            public boolean accept(File dir, String name) {
-	                return !name.startsWith(".");
-	            }
-	        };
-	        res = dir.list(filter);
-        }
-        catch(Exception e){
-        	e.printStackTrace();
+    public String[] getFileList() {
+        String[] res = new String[0];
+        try {
+            File dir = new File(sharedDirectory);
+            res = dir.list();
+            // filter the list of returned files
+            // to not return any files that start with '.'.
+            FilenameFilter filter = new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    return !name.startsWith(".");
+                }
+            };
+            res = dir.list(filter);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return res;
     }
 
-    public void stopService(){
-        System.out.println("FileSharingService close");
+    public void stopService() {
+        System.out.println("FileSharingService FINISHED");
         ServiceManager.getInstance(false).removeService("FileSharing");
-        open=false;
+        open = false;
         try {
             serviceSocket.close();
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+        fileSharing = null; //Dmitrij
     }
 
     @Override
-    public void run(){
-        try{
+    public void run() {
+        try {
             System.out.println("FileSharingService START");
-            System.out.println("FileSharingService START "+serviceSocket.getLocalPort()+" "+protocol);
-            while(open){
-                try{
+            System.out.println("FileSharingService START " + serviceSocket.getLocalPort() + " " + protocol);
+            while (open) {
+                try {
                     // receive
-                    GenericPacket gp = E2EComm.receive(serviceSocket, 5*1000);
+                    GenericPacket gp = E2EComm.receive(serviceSocket, 5 * 1000);
                     //System.out.println("FileSharingService new request");
                     new FileSharingHandler(gp).start();
-                }
-                catch(SocketTimeoutException ste){
+                } catch (SocketTimeoutException ste) {
                     //System.out.println("FileSharingService SocketTimeoutException");
                 }
             }
             serviceSocket.close();
-        }
-        catch(SocketException se){
+        } catch (SocketException se) {
 
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         FileSharingServiceNoGUI.fileSharing = null;
         System.out.println("FileSharingService FINISHED");
     }
 
-	private class FileSharingHandler extends Thread {
+    private class FileSharingHandler extends Thread {
         private GenericPacket gp;
 
-        private FileSharingHandler(GenericPacket gp){
-            this.gp=gp;
+        private FileSharingHandler(GenericPacket gp) {
+            this.gp = gp;
         }
+
         @Override
-        public void run(){
-            try{
-                if( gp instanceof UnicastPacket){
+        public void run() {
+            try {
+                if (gp instanceof UnicastPacket) {
                     // 1) payload
-                    UnicastPacket up = (UnicastPacket)gp;
+                    UnicastPacket up = (UnicastPacket) gp;
                     Object payload = E2EComm.deserialize(up.getBytePayload());
-					if (payload instanceof FileSharingRequest) {
+                    if (payload instanceof FileSharingRequest) {
                         System.out.println("FileSharingService FileSharingRequest");
-						FileSharingRequest request = (FileSharingRequest) payload;
+                        FileSharingRequest request = (FileSharingRequest) payload;
                         String fileName = request.getFileName();
                         int expiry = request.getExpiry();
-						long startReceiving = System.currentTimeMillis();
-						if (!request.isGet()) {
+                        long startReceiving = System.currentTimeMillis();
+                        if (!request.isGet()) {
                             // receiving a file
-							System.out.println("FileSharingService: receiving " + fileName + "...");
+                            System.out.println("FileSharingService: receiving " + fileName + "...");
 
                             BoundReceiveSocket receiveFileSocket = E2EComm.bindPreReceive(
-                            		E2EComm.TCP //protocol
-                            		);
+                                    E2EComm.TCP //protocol
+                            );
 
                             // sending local port
-                            String[] newDest=E2EComm.ipReverse(up.getSource());
+                            String[] newDest = E2EComm.ipReverse(up.getSource());
                             E2EComm.sendUnicast(
                                     newDest,
                                     request.getClientPort(),
@@ -221,31 +216,31 @@ public class FileSharingServiceNoGUI extends Thread{
 //                                    E2EComm.serialize(receiveFileSocket.getLocalPort())
 //                            );
 
-							File f = new File(sharedDirectory + "/" + fileName);
+                            File f = new File(sharedDirectory + "/" + fileName);
                             FileOutputStream fos = new FileOutputStream(f);
 
-                            int timeout = 10*1000;
-                            if(expiry != GenericPacket.UNUSED_FIELD)
-                            	timeout = expiry * 1000;
+                            int timeout = 10 * 1000;
+                            if (expiry != GenericPacket.UNUSED_FIELD)
+                                timeout = expiry * 1000;
                             // waiting for file
                             E2EComm.receive(
-                            		receiveFileSocket,
-                            		timeout,
-                            		fos
-                        		);
-							long endReceiving = System.currentTimeMillis();
+                                    receiveFileSocket,
+                                    timeout,
+                                    fos
+                            );
+                            long endReceiving = System.currentTimeMillis();
                             fos.close();
-                            float receivingTime = (endReceiving-startReceiving) / 1000.0F;
+                            float receivingTime = (endReceiving - startReceiving) / 1000.0F;
 
-                            String notifyText =  "Received file "+fileName +" from "+up.getSourceNodeId();
+                            String notifyText = "Received file " + fileName + " from " + up.getSourceNodeId();
                             notify(notifyText);
-                            System.out.println("FileSharingService: "+fileName+" received in "+receivingTime+"s" );
-                            GeneralUtils.appendLog("FileSharingService: "+fileName+" received in "+receivingTime+"s" +" from "+newDest);
-						} else {
-							String[] newDest = E2EComm.ipReverse(up.getSource());
-                            FileSharingList res=null;
+                            System.out.println("FileSharingService: " + fileName + " received in " + receivingTime + "s");
+                            GeneralUtils.appendLog("FileSharingService: " + fileName + " received in " + receivingTime + "s" + " from " + newDest);
+                        } else {
+                            String[] newDest = E2EComm.ipReverse(up.getSource());
+                            FileSharingList res = null;
                             int sendingBufferSize = bufferSize;
-                            if(fileName.equals("")){
+                            if (fileName.equals("")) {
                                 System.out.println("FileSharingService list");
                                 // 2a) send file list
                                 res = new FileSharingList(getFileList());
@@ -280,13 +275,12 @@ public class FileSharingServiceNoGUI extends Thread{
 //                                        GenericPacket.UNUSED_FIELD, // packetTimeoutConnect
 //                                        E2EComm.serialize(res)
 //                                );
-                            }
-                            else{
+                            } else {
                                 // 2b) send a specific file
-                                System.out.println("FileSharingService fileName: "+fileName);
-                                File f = new File(sharedDirectory+"/"+fileName);
+                                System.out.println("FileSharingService fileName: " + fileName);
+                                File f = new File(sharedDirectory + "/" + fileName);
                                 FileInputStream fis = new FileInputStream(f);
-                                if(bestBufferSize==true){
+                                if (bestBufferSize == true) {
                                     sendingBufferSize = E2EComm.bestBufferSize(newDest.length, f.length());
                                 }
 
@@ -319,55 +313,52 @@ public class FileSharingServiceNoGUI extends Thread{
                                         fis
                                 );
 
-                                String notifyText =  "Sent file "+fileName +" to "+up.getSourceNodeId();
+                                String notifyText = "Sent file " + fileName + " to " + up.getSourceNodeId();
                                 notify(notifyText);
-                                GeneralUtils.appendLog("FileSharingService: "+fileName+" sent to "+up.getSourceNodeId());
+                                GeneralUtils.appendLog("FileSharingService: " + fileName + " sent to " + up.getSourceNodeId());
                                 //fis.close();
                             }
                         }
-                    }
-                    else{
+                    } else {
                         // received payload is not FileSharingRequest: do nothing...
-                        System.out.println("FileSharingService wrong payload: "+payload);
+                        System.out.println("FileSharingService wrong payload: " + payload);
                     }
-                }
-                else{
+                } else {
                     // received packet is not UnicastPacket: do nothing...
-                    System.out.println("FileSharingService wrong packet: "+gp.getClass().getName());
+                    System.out.println("FileSharingService wrong packet: " + gp.getClass().getName());
                 }
 
-            }
-            catch(Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-		private void notify(String text) {
-			if (RampEntryPoint.getAndroidContext() != null){
-				try {
-			         Class<?> activityFS = Class.forName("it.unife.dsg.ramp_android.service.application.FileSharingServiceActivity");
+        private void notify(String text) {
+            if (RampEntryPoint.getAndroidContext() != null) {
+                try {
+                    Class<?> activityFS = Class.forName("it.unife.dsg.ramp_android.service.application.FileSharingServiceActivity");
 
-			         Method mI=activityFS.getMethod("createNotification", String.class);
-			         Method aMI = activityFS.getMethod("getInstance");
-			         if(mI!=null){
+                    Method mI = activityFS.getMethod("createNotification", String.class);
+                    Method aMI = activityFS.getMethod("getInstance");
+                    if (mI != null) {
 
-			          	mI.invoke(aMI.invoke(null, new Object[]{}), text);
-			          }
+                        mI.invoke(aMI.invoke(null, new Object[]{}), text);
+                    }
 
-			     } catch (IllegalAccessException ex) {
-			         Logger.getLogger(ChatCommunicationSupport.class.getName()).log(Level.SEVERE, null, ex);
-			     } catch (IllegalArgumentException ex) {
-			         Logger.getLogger(ChatCommunicationSupport.class.getName()).log(Level.SEVERE, null, ex);
-			     } catch (InvocationTargetException ex) {
-			         Logger.getLogger(ChatCommunicationSupport.class.getName()).log(Level.SEVERE, null, ex);
-			     } catch (NoSuchMethodException ex) {
-			         Logger.getLogger(ChatCommunicationSupport.class.getName()).log(Level.SEVERE, null, ex);
-			     } catch (SecurityException ex) {
-			         Logger.getLogger(ChatCommunicationSupport.class.getName()).log(Level.SEVERE, null, ex);
-			     } catch (ClassNotFoundException ex) {
-			         Logger.getLogger(ChatCommunicationSupport.class.getName()).log(Level.SEVERE, null, ex);
-			     }
-			}
-		}
+                } catch (IllegalAccessException ex) {
+                    Logger.getLogger(ChatCommunicationSupport.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IllegalArgumentException ex) {
+                    Logger.getLogger(ChatCommunicationSupport.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (InvocationTargetException ex) {
+                    Logger.getLogger(ChatCommunicationSupport.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (NoSuchMethodException ex) {
+                    Logger.getLogger(ChatCommunicationSupport.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (SecurityException ex) {
+                    Logger.getLogger(ChatCommunicationSupport.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (ClassNotFoundException ex) {
+                    Logger.getLogger(ChatCommunicationSupport.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
     }
 }

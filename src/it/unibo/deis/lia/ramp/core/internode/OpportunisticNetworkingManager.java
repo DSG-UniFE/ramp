@@ -170,11 +170,15 @@ public class OpportunisticNetworkingManager extends Thread {
 		// get packet information from persistent storage and restore in
 		// savedPackets table
 		String[] savedPacketsFileList = getSavedPacketsFileList();
-		for (String fileName : savedPacketsFileList) {
-			System.out.println("OpportunisticNetworkingManager: restored " + fileName);
-			SavedPacket savedPacket = restoreSavedPacket(savedPacketDirectory + "/" + fileName);
-			savedPackets.put(savedPacket, null);
-    	}
+		try {
+			for (String fileName : savedPacketsFileList) {
+				System.out.println("OpportunisticNetworkingManager: restored " + fileName);
+				SavedPacket savedPacket = restoreSavedPacket(savedPacketDirectory + "/" + fileName);
+				savedPackets.put(savedPacket, null);
+			}
+		} catch(Exception e) {
+			System.out.println("OpportunisticNetworkingManager: there is no file to restore");
+		}
 	}
 
 	private OpportunisticNetworkingSettings deserializeSettings() {

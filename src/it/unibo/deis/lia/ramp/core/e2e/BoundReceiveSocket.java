@@ -6,7 +6,6 @@ import java.net.ServerSocket;
 
 
 /**
- *
  * @author Carlo Giannelli
  */
 public class BoundReceiveSocket {
@@ -31,29 +30,26 @@ public class BoundReceiveSocket {
         return ss;
     }
 
-    public int getLocalPort(){
+    public int getLocalPort() {
         int localPort;
-        if(ds!=null){
+        if (ds != null) {
             localPort = ds.getLocalPort();
-        }
-        else{
+        } else {
             localPort = ss.getLocalPort();
         }
         return localPort;
     }
 
-    public void close() throws java.io.IOException{
-        if(ds!=null){
+    public void close() throws java.io.IOException {
+        if (ds != null) {
             ds.close();
-        }
-        else{
+        } else {
             ss.close();
         }
     }
 
-	@Override
-	public String toString() {
-		return "BoundReceiveSocket [ds=" + ds + ", ss=" + ss + ", getLocalPort()=" + getLocalPort() + "]";
-	}
-            
+    @Override
+    public String toString() {
+        return "BoundReceiveSocket [ds=" + ds + ", ss=" + ss + ", getLocalPort()=" + getLocalPort() + "]";
+    }
 }

@@ -21,12 +21,12 @@ import it.unibo.deis.lia.ramp.util.NetworkInterfaceStats;
  * @author Alessandro Dolci
  *
  */
-public class MinimumLoadFlowPathSelector implements TopologyGraphSelector {
+public class MinimumNetworkLoadFlowPathSelector implements TopologyGraphSelector {
 	
 	private Graph topologyGraph;
 	private Dijkstra dijkstra;
 	
-	public MinimumLoadFlowPathSelector(Graph topologyGraph) {
+	public MinimumNetworkLoadFlowPathSelector(Graph topologyGraph) {
 		this.topologyGraph = topologyGraph;
 		this.dijkstra = new Dijkstra(Dijkstra.Element.EDGE, null, null);
 	}
@@ -65,11 +65,11 @@ public class MinimumLoadFlowPathSelector implements TopologyGraphSelector {
 				}
 				addresses.add(edge.getAttribute("address_" + nextNode.getId()));
 				nodeIds.add(Integer.parseInt(currentNode.getId()));
-				System.out.println("MinimumLoadFlowPathSelector: next node address " + edge.getAttribute("address_" + nextNode.getId()));
-				System.out.println("MinimumLoadFlowPathSelector: current node nodeId " + currentNode.getId());
+				System.out.println("MinimumNetworkLoadFlowPathSelector: next node address " + edge.getAttribute("address_" + nextNode.getId()));
+				System.out.println("MinimumNetworkLoadFlowPathSelector: current node nodeId " + currentNode.getId());
 			}
 			nodeIds.add(Integer.parseInt(path.getNodePath().get(path.getNodePath().size()-1).getId()));
-			System.out.println("MinimumLoadFlowPathSelector: current node nodeId " + Integer.parseInt(path.getNodePath().get(path.getNodePath().size()-1).getId()));
+			System.out.println("MinimumNetworkLoadFlowPathSelector: current node nodeId " + Integer.parseInt(path.getNodePath().get(path.getNodePath().size()-1).getId()));
 			PathDescriptor pathDescriptor = new PathDescriptor(addresses.toArray(new String[0]), nodeIds);
 			availablePathDescriptors.add(pathDescriptor);
 		}
@@ -84,8 +84,8 @@ public class MinimumLoadFlowPathSelector implements TopologyGraphSelector {
 				bytesReceived = bytesReceived + nodeNetworkInterfaceStats.getReceivedBytes();
 			}
 			for (String address : pathDescriptor.getPath())
-				System.out.println("MinimumLoadFlowPathSelector: path " + address);
-			System.out.println("MinimumLoadFlowPathSelector: bytes received " + bytesReceived);
+				System.out.println("MinimumNetworkLoadFlowPathSelector: path " + address);
+			System.out.println("MinimumNetworkLoadFlowPathSelector: bytes received " + bytesReceived);
 			if (bytesReceived < bestBytesReceived) {
 				bestPath = pathDescriptor;
 				bestBytesReceived = bytesReceived;

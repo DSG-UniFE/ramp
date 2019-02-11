@@ -7,9 +7,7 @@ import java.util.Map;
 import it.unibo.deis.lia.ramp.util.NodeStats;
 
 /**
- * 
  * @author Alessandro Dolci
- *
  */
 public class ControllerMessage implements Serializable {
 
@@ -29,6 +27,7 @@ public class ControllerMessage implements Serializable {
 	// Data structure to hold node stats (address, nodeStats)
 	private Map<String, NodeStats> nodeStats;
 	private FlowPolicy flowPolicy;
+	private RoutingPolicy routingPolicy; //TODO Complete this
 	// Data structure to hold default flow paths (destNodeId, path)
 	private Map<Integer, PathDescriptor> newPathMappings;
 	// Data structure to hold flow priorities (flowId, priority)
@@ -180,8 +179,11 @@ public class ControllerMessage implements Serializable {
 		MULTICAST_REQUEST,
 		MULTICAST_CONTROL,
 		FLOW_POLICY_UPDATE,
+		ROUTING_POLICY_UPDATE,
 		DEFAULT_FLOW_PATHS_UPDATE,
-		FLOW_PRIORITIES_UPDATE
+		FLOW_PRIORITIES_UPDATE,
+		OS_ROUTING_REQUEST,
+		OS_ROUTING_CONTROL
 	}
 
 }

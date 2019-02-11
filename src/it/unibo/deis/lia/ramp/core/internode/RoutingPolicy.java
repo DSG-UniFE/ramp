@@ -1,10 +1,7 @@
 package it.unibo.deis.lia.ramp.core.internode;
 
-public enum FlowPolicy {
+public enum RoutingPolicy {
     REROUTING,
-    SINGLE_FLOW,
-    QUEUES,
-    TRAFFIC_SHAPING,
     MULTICASTING,
     OS_ROUTING
 }

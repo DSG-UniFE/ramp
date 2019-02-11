@@ -16,6 +16,6 @@ public interface TopologyGraphSelector {
 	public enum PathSelectionMetric {
 		BREADTH_FIRST,
 		FEWEST_INTERSECTIONS,
-		MINIMUM_LOAD
+		MINIMUM_NETWORK_LOAD
 	}
 }

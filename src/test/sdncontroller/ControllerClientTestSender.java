@@ -800,8 +800,8 @@ public class ControllerClientTestSender {
 			System.out.println("ControllerClientTestSender: wrong final messages received from the receivers");
 	}
 	
-	// Test method for traffic engineering policies with UDP protocol (send two series of consecutive packets addressing different RAMP services)
-	private static void sendTwoSeriesOfPacketsToDifferentReceivers() {
+	// Test method for traffic engineering policies with UDP protocol (send two series of consecutive packets addressing different RAMP services) TODO InitChanges Dmitrij restore method to private
+	public static void sendTwoSeriesOfPacketsToDifferentReceivers() {
 		System.out.println("ControllerClientTestSender: waiting 10 seconds");
 		try {
 			Thread.sleep(10*1000);
@@ -1755,8 +1755,8 @@ public class ControllerClientTestSender {
 		ramp.stopRamp();
 	}
 	
-	// Utility to log all network traffic on a specific network interface
-	private static class StatsPrinter extends Thread {
+	// Utility to log all network traffic on a specific network interface TODO InitChanges Dmitrij restore method to private
+	public static class StatsPrinter extends Thread {
 		
 		private static final int TIME_INTERVAL = 500;
 

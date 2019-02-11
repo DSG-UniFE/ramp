@@ -70,9 +70,9 @@ public class RampEntryPoint {
 		// Set logs with timestamp
 		try {
 			PrintStream logWithTimestamp = new LogWithTimestamp(defaultOutPrintStream, "out");
-			System.setOut(logWithTimestamp);
+			//System.setOut(logWithTimestamp); TODO Dmitrij Remove Comment
 			PrintStream logErrWithTimestamp = new LogWithTimestamp(defaultErrPrintStream, "err");
-			System.setErr(logErrWithTimestamp);
+			//System.setErr(logErrWithTimestamp); TODO Dmitrij Remove Comment
 		} catch (Exception e1) {
 			e1.printStackTrace();
 			System.setOut(defaultOutPrintStream);

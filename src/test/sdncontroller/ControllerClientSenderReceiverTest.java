@@ -74,7 +74,8 @@ public class ControllerClientSenderReceiverTest {
 		ControllerClientTestSender.StatsPrinter statsPrinter = new StatsPrinter("output_external.csv");
 		statsPrinter.start();
 		try {
-			ControllerClientTestSender.sendTwoSeriesOfPacketsToDifferentReceivers(controllerClient);
+			// TODO RemoveComment Dmitrij
+			//ControllerClientTestSender.sendTwoSeriesOfPacketsToDifferentReceivers(controllerClient);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

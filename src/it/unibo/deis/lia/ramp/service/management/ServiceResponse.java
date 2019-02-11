@@ -3,18 +3,17 @@ package it.unibo.deis.lia.ramp.service.management;
 
 
 /**
- *
  * @author Carlo Giannelli
  */
-public class ServiceResponse implements java.io.Serializable{
-	
+public class ServiceResponse implements java.io.Serializable {
+
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 5994054093761340049L;
-	
-	private String serviceName;
-	transient private String[] serverDest;
+     *
+     */
+    private static final long serialVersionUID = 5994054093761340049L;
+
+    private String serviceName;
+    transient private String[] serverDest;
     private int serverPort;
     private int protocol;
     transient private int serverNodeId;
@@ -24,7 +23,7 @@ public class ServiceResponse implements java.io.Serializable{
         this.serviceName = serviceName;
         this.serverPort = sd.getServerPort();
         this.protocol = sd.getProtocol();
-        this.qos  = sd.getQos();
+        this.qos = sd.getQos();
     }
 
     public ServiceResponse(String serviceName, int serverPort, int protocol) {
@@ -39,7 +38,7 @@ public class ServiceResponse implements java.io.Serializable{
         this.protocol = protocol;
         this.qos = qos;
     }
-    
+
     public int getProtocol() {
         return protocol;
     }
@@ -51,17 +50,19 @@ public class ServiceResponse implements java.io.Serializable{
     public int getServerPort() {
         return serverPort;
     }
-    
-    public int getServerNodeId() {
-		return serverNodeId;
-	}
-	public void setServerNodeId(int serverNodeId) {
-		this.serverNodeId = serverNodeId;
-	}
 
-	public String[] getServerDest() {
+    public int getServerNodeId() {
+        return serverNodeId;
+    }
+
+    public void setServerNodeId(int serverNodeId) {
+        this.serverNodeId = serverNodeId;
+    }
+
+    public String[] getServerDest() {
         return serverDest;
     }
+
     public void setServerDest(String[] serverDest) {
         this.serverDest = serverDest;
     }
@@ -70,17 +71,16 @@ public class ServiceResponse implements java.io.Serializable{
     public String toString() {
         String res = serviceName + " @ ";
         res += "[";
-        if(serverDest!=null){
-            for(int i=0; i<serverDest.length-1; i++){
-                res += serverDest[i]+", ";
+        if (serverDest != null) {
+            for (int i = 0; i < serverDest.length - 1; i++) {
+                res += serverDest[i] + ", ";
             }
-            res += serverDest[serverDest.length-1];
-        }
-        else{
+            res += serverDest[serverDest.length - 1];
+        } else {
             res += "null";
         }
-        res += "]:"+serverPort;
-        res += " nodeId:"+serverNodeId;
+        res += "]:" + serverPort;
+        res += " nodeId:" + serverNodeId;
         return res;
     }
 
@@ -97,20 +97,20 @@ public class ServiceResponse implements java.io.Serializable{
 
         final ServiceResponse other = (ServiceResponse) obj;
 
-        if(this.serverDest==null || other.getServerDest()==null){
+        if (this.serverDest == null || other.getServerDest() == null) {
             return false;
         }
 
-        if( this.serverDest.length != other.getServerDest().length ){
+        if (this.serverDest.length != other.getServerDest().length) {
             return false;
         }
 
-        for(int i=0; i< this.serverDest.length; i++){
-            if( ! this.serverDest[i].equals(other.getServerDest()[i])){
+        for (int i = 0; i < this.serverDest.length; i++) {
+            if (!this.serverDest[i].equals(other.getServerDest()[i])) {
                 return false;
             }
         }
-        
+
         return true;
     }
 

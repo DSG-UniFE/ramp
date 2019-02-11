@@ -72,8 +72,19 @@ public class StreamClient{
         return vlcDirectory;
     }
     public void setVlcDirectory(String vlcDirectory) {
-        System.out.println("StreamClient setVlcDirectory "+vlcDirectory);
-        this.vlcDirectory = vlcDirectory+"/";
+        System.out.println("StreamClient setVlcDirectory "+ vlcDirectory);
+        if(RampEntryPoint.os.startsWith("windows")) {
+            String charToReplace = "";
+            if(vlcDirectory.contains("\\")) {
+                charToReplace = "\\";
+            } else if (vlcDirectory.contains("/")) {
+                charToReplace = "/";
+            }
+            vlcDirectory = (vlcDirectory.replace(charToReplace,"\\\\"));
+            this.vlcDirectory = vlcDirectory + "\\\\";
+        } else {
+            this.vlcDirectory = vlcDirectory + "/";
+        }
     }
     
     public Vector<ServiceResponse> findStreamService(int ttl, int timeout, int serviceAmount) throws Exception{

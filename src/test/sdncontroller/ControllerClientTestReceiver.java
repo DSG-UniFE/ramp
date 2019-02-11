@@ -617,8 +617,8 @@ public class ControllerClientTestReceiver {
 		ServiceManager.getInstance(false).removeService("SDNControllerTestSendThird");
 	}
 	
-	// Test method for traffic engineering policies using UDP protocol (receive two series of consecutive packets addressing different RAMP services)
-	private static void receiveTwoSeriesOfPacketsInDifferentThreads() {
+	// Test method for traffic engineering policies using UDP protocol (receive two series of consecutive packets addressing different RAMP services) TODO InitChanges Dmitrij restore method to private
+	public static void receiveTwoSeriesOfPacketsInDifferentThreads() {
 		Thread firstThread = new Thread() {
 			public void run() {
 				BoundReceiveSocket firstServiceSocket = null;

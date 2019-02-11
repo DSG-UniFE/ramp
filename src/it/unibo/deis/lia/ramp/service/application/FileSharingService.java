@@ -16,6 +16,7 @@ public class FileSharingService extends FileSharingServiceNoGUI {
     	try{
             if(FileSharingService.fileSharing==null){
                 FileSharingService.fileSharing = new FileSharingService(gui);
+                fileSharing.start(); // Added by Dmitrij
                 //FileSharingServiceNoGUI.getInstance();
             }
             if(fssjf!=null){
@@ -29,7 +30,7 @@ public class FileSharingService extends FileSharingServiceNoGUI {
     }
 	
     public static synchronized FileSharingService getInstance(){
-        return FileSharingService.getInstance(false); // FileSharingService senza GUI
+        return FileSharingService.getInstance(true); // FileSharingService senza GUI Dmitrij
         
     }
     /*public static synchronized FileSharingService getInstanceNoShow(){
@@ -54,5 +55,11 @@ public class FileSharingService extends FileSharingServiceNoGUI {
         if(gui && RampEntryPoint.getAndroidContext() == null){
         	fssjf = new FileSharingServiceJFrame(this);
         }
+    }
+
+    @Override
+    public void stopService() {
+        super.stopService();
+        fileSharing = null;
     }
 }

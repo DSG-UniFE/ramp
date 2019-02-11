@@ -8,30 +8,32 @@ package it.unibo.deis.lia.ramp.service.application;
 import it.unibo.deis.lia.ramp.core.e2e.*;
 
 /**
- *
  * @author Carlo Giannelli
  */
-public class MessageClient{
+public class MessageClient {
 
-    private static MessageClient messageClient=null;
+    private static MessageClient messageClient = null;
     private static MessageClientJFrame mcj;
-    private MessageClient(){
+
+    private MessageClient() {
         mcj = new MessageClientJFrame(this);
     }
-    public static synchronized MessageClient getInstance(){
-        if(messageClient==null){
-            messageClient=new MessageClient();
+
+    public static synchronized MessageClient getInstance() {
+        if (messageClient == null) {
+            messageClient = new MessageClient();
         }
         mcj.setVisible(true);
         return messageClient;
     }
-    public void stopClient(){
-        messageClient=null;
+
+    public void stopClient() {
+        messageClient = null;
     }
 
-    public void sendMessage(int destNodeId, String message, int packetDeliveryTimeout){
+    public void sendMessage(int destNodeId, String message, int packetDeliveryTimeout) {
         Message messageObject = new Message(message);
-        try{
+        try {
             E2EComm.sendUnicast(
                     null,
                     destNodeId,
@@ -44,8 +46,7 @@ public class MessageClient{
                     GenericPacket.UNUSED_FIELD, // connectTimeout
                     E2EComm.serialize(messageObject)
             );
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

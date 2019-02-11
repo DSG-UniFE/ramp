@@ -25,9 +25,7 @@ import it.unibo.deis.lia.ramp.util.NetworkInterfaceStats;
 import it.unibo.deis.lia.ramp.util.NodeStats;
 
 /**
- * 
  * @author Alessandro Dolci
- *
  */
 public class ControllerClient extends Thread {
 	
@@ -217,7 +215,23 @@ public class ControllerClient extends Thread {
 		}
 		return flowPath;
 	}
-	
+
+	public FlowPolicy getFlowPolicy() {
+		return this.flowPolicy;
+	}
+
+	public ConcurrentHashMap<Integer, PathDescriptor> getDefaultFlowPath() {
+	    return (ConcurrentHashMap<Integer, PathDescriptor>) this.defaultFlowPaths;
+    }
+
+	public ConcurrentHashMap<Integer, PathDescriptor> getFlowPath() {
+		return (ConcurrentHashMap<Integer, PathDescriptor>) this.flowPaths;
+	}
+
+	public ConcurrentHashMap<Integer, Integer> getFlowPriorities() {
+		return (ConcurrentHashMap<Integer, Integer>) this.flowPriorities;
+	}
+
 	private String[] sendNewPathRequest(int[] destNodeIds, ApplicationRequirements applicationRequirements, TopologyGraphSelector.PathSelectionMetric pathSelectionMetric, int flowId) {
 		PathDescriptor newPath = null;
 		BoundReceiveSocket responseSocket = null;
@@ -399,6 +413,55 @@ public class ControllerClient extends Thread {
 		}
 		return nextHops;
 	}
+
+	public List<PathDescriptor> sendOSLevelRoutingRequest(int[] destNodeIds, int[] destPorts, TopologyGraphSelector.PathSelectionMetric pathSelectionMetric) {
+		List<PathDescriptor> nextHops = new ArrayList<PathDescriptor>();
+		BoundReceiveSocket responseSocket = null;
+		Vector<ServiceResponse> serviceResponses = findControllerService(5, 5*1000, 1);
+		ServiceResponse serviceResponse = null;
+		if (serviceResponses.size() > 0) {
+			serviceResponse = serviceResponses.get(0);
+			try {
+				responseSocket = E2EComm.bindPreReceive(serviceResponse.getProtocol());
+				ControllerMessage requestMessage = new ControllerMessage(ControllerMessage.MessageType.OS_ROUTING_REQUEST, responseSocket.getLocalPort(), destNodeIds, destPorts, null, pathSelectionMetric, -1, null, null, null, null, null, null);
+				E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(requestMessage));
+				System.out.println("ControllerClient: request for a new os level communication sent to the controller");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		else
+			System.out.println("ControllerClient: controller service not found, cannot send os level routing request");
+
+		GenericPacket gp = null;
+		try {
+			gp = E2EComm.receive(responseSocket);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if (gp instanceof UnicastPacket) {
+			UnicastPacket up = (UnicastPacket) gp;
+			Object payload = null;
+			try {
+				payload = E2EComm.deserialize(up.getBytePayload());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (payload instanceof ControllerMessage) {
+				ControllerMessage responseMessage = (ControllerMessage) payload;
+				switch (responseMessage.getMessageType()) {
+					case OS_ROUTING_CONTROL:
+						nextHops = responseMessage.getNewPaths();
+						// TODO Controlla se è necessario aggiungere informazioni aggiuntive
+						System.out.println("ControllerClient: response with a list of the next hops for os level communication received and successfully applied");
+						break;
+					default:
+						break;
+				}
+			}
+		}
+		return nextHops;
+	}
 	
 	private void joinService() {
 		// Get network stats for the interfaces associated to the addresses of the node
@@ -513,6 +576,8 @@ public class ControllerClient extends Thread {
 							dataPlaneForwarder = MultipleFlowsSinglePriorityForwarder.getInstance();
 						else if (controllerMessage.getFlowPolicy() == FlowPolicy.TRAFFIC_SHAPING)
 							dataPlaneForwarder = MultipleFlowsMultiplePrioritiesForwarder.getInstance();
+						else if (controllerMessage.getFlowPolicy() == FlowPolicy.MULTICASTING)
+							dataPlaneForwarder = MulticastingForwarder.getInstance();
 						System.out.println("ControllerClient: flow policy update received from the controller and successfully applied");
 						break;
 					case DEFAULT_FLOW_PATHS_UPDATE:
@@ -624,6 +689,12 @@ public class ControllerClient extends Thread {
 		
 		@Override
 		public void run() {
+			// Sleep two seconds in order to avoid that the updateManager sendTopologyUpdate is sent before the join message.
+			try {
+				Thread.sleep(2*1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			System.out.println("ControllerClient UpdateManager START");
 			while (this.active == true) {
 				// Send invoked before sleep method to allow the controller to receive informations at components startup

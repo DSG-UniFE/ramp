@@ -377,7 +377,6 @@ public class Heartbeater extends Thread {
 				} else {	// NOT Android
 					for (InterfaceAddress address : netA.getInterfaceAddresses()) {
 						InetAddress inetAddress = address.getAddress();
-
 						DatagramSocket ds = new DatagramSocket(0, inetAddress);
 
 						String ip = inetAddress.toString().replaceAll("/", "").split(":")[0];
