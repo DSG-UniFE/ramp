@@ -895,9 +895,13 @@ public class ControllerService extends Thread {
                     int intermediateNodeId = newOSRoutingPath.getPathNodeIds().get(j);
 
                     if ((intermediateNodeId != destNodeId)) {
+                        MultiNode intermediateNode = topologyGraph.getNode(Integer.toString(intermediateNodeId));
+                        String[] intermediateDest = Resolver.getInstance(false).resolveBlocking(intermediateNodeId, 5 * 1000).get(0).getPath();
+                        int intermediatePort = intermediateNode.getAttribute("port");
+
                         responseMessage = new ControllerMessageResponse(MessageType.OS_ROUTING_DELETE_ROUTE, ControllerMessage.UNUSED_FIELD, null, null, null, routeId);
                         try {
-                            E2EComm.sendUnicast(new String[]{Integer.toString(intermediateNodeId)}, topologyGraph.getNode(Integer.toString(intermediateNodeId)).getAttribute("port"), PROTOCOL, E2EComm.serialize(responseMessage));
+                            E2EComm.sendUnicast(intermediateDest, intermediatePort, PROTOCOL, E2EComm.serialize(responseMessage));
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
