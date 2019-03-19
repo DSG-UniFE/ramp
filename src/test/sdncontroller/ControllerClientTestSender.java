@@ -16,8 +16,9 @@ import it.unibo.deis.lia.ramp.core.e2e.BroadcastPacket;
 import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
-import it.unibo.deis.lia.ramp.core.internode.ApplicationRequirements;
-import it.unibo.deis.lia.ramp.core.internode.ControllerClient;
+import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.ApplicationRequirements;
+import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.ApplicationType;
+import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClient;
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
 import it.unibo.deis.lia.ramp.service.management.ServiceDiscovery;
 import it.unibo.deis.lia.ramp.service.management.ServiceRequest;
@@ -59,7 +60,7 @@ public class ControllerClientTestSender {
 			serviceResponse = serviceResponses.get(0);
 		
 		// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-		ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 20);
+		ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.VIDEO_STREAM, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 20);
 		int[] destNodeIds = new int[] {serviceResponse.getServerNodeId()};
 		int[] destPorts = new int[0];
 		int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -95,7 +96,7 @@ public class ControllerClientTestSender {
 		
 		message = "Second message.";
 		
-		applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 20);
+		applicationRequirements = new ApplicationRequirements(ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 20);
 		flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
 		
 		System.out.println("ControllerClientTestSender: sending message \""
@@ -307,7 +308,7 @@ public class ControllerClientTestSender {
 		
 		if (response.equals("ok")) {
 			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.FILE_TRANSFER, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {serviceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
 			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -393,7 +394,7 @@ public class ControllerClientTestSender {
 		
 		if (response.equals("ok")) {
 			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {secondServiceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
 			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -531,7 +532,7 @@ public class ControllerClientTestSender {
 		
 		if (response.equals("ok")) {
 			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.FILE_TRANSFER, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {serviceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
 			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -617,7 +618,7 @@ public class ControllerClientTestSender {
 		
 		if (response.equals("ok")) {
 			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {secondServiceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
 			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -703,7 +704,7 @@ public class ControllerClientTestSender {
 		
 		if (response.equals("ok")) {
 			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {thirdServiceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
 			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -880,7 +881,7 @@ public class ControllerClientTestSender {
 		Thread firstThread = null;
 		if (response.equals("ok")) {
 			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.FILE_TRANSFER, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {serviceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
 			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -964,7 +965,7 @@ public class ControllerClientTestSender {
 		Thread secondThread = null;
 		if (response.equals("ok")) {
 			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {secondServiceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
 			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -1109,7 +1110,7 @@ public class ControllerClientTestSender {
 		
 		if (response.equals("ok")) {
 			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.AUDIO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.AUDIO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {serviceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
 			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -1192,7 +1193,7 @@ public class ControllerClientTestSender {
 		
 		if (response.equals("ok")) {
 			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.AUDIO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.AUDIO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {secondServiceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
 			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -1273,7 +1274,7 @@ public class ControllerClientTestSender {
 		
 		if (response.equals("ok")) {
 			// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
+			ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.VIDEO_STREAM, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 400);
 			int[] destNodeIds = new int[] {thirdServiceResponse.getServerNodeId()};
 			int[] destPorts = new int[0];
 			int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -1392,7 +1393,7 @@ public class ControllerClientTestSender {
 		}
 		
 		// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-		ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 20);
+		ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 20);
 		int[] destNodeIds = new int[] {firstServiceResponse.getServerNodeId(), secondServiceResponse.getServerNodeId()};
 		int[] destPorts = new int[] {firstServiceResponse.getServerPort(), secondServiceResponse.getServerPort()};
 		int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -1482,7 +1483,7 @@ public class ControllerClientTestSender {
 				
 				if (response.equals("ok")) {
 					// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-					ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 200);
+					ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 200);
 					int[] destNodeIds = new int[] {firstServiceResponse.getServerNodeId()};
 					int[] destPorts = new int[] {firstServiceResponse.getServerPort()};
 					int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -1546,7 +1547,7 @@ public class ControllerClientTestSender {
 				
 				if (response.equals("ok")) {
 					// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-					ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 200);
+					ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 200);
 					int[] destNodeIds = new int[] {secondServiceResponse.getServerNodeId()};
 					int[] destPorts = new int[] {secondServiceResponse.getServerPort()};
 					int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);
@@ -1623,7 +1624,7 @@ public class ControllerClientTestSender {
 		}
 		
 		// Set a new flowId, or use the GenericPacket.UNUSED_FIELD value to avoid RAMP-SDN features
-		ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 20);
+		ApplicationRequirements applicationRequirements = new ApplicationRequirements(ApplicationType.FILE_TRANSFER, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 20);
 		int[] destNodeIds = new int[] {firstServiceResponse.getServerNodeId(), secondServiceResponse.getServerNodeId()};
 		int[] destPorts = new int[] {firstServiceResponse.getServerPort(), secondServiceResponse.getServerPort()};
 		int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts);

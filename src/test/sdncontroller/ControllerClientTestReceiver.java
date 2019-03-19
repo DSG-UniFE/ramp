@@ -10,7 +10,7 @@ import it.unibo.deis.lia.ramp.core.e2e.BoundReceiveSocket;
 import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
-import it.unibo.deis.lia.ramp.core.internode.ControllerClient;
+import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClient;
 import it.unibo.deis.lia.ramp.service.management.ServiceManager;
 
 public class ControllerClientTestReceiver {

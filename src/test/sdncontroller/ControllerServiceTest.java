@@ -3,8 +3,8 @@ package test.sdncontroller;
 import java.io.File;
 
 import it.unibo.deis.lia.ramp.RampEntryPoint;
-import it.unibo.deis.lia.ramp.core.internode.ControllerClient;
-import it.unibo.deis.lia.ramp.core.internode.ControllerService;
+import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClient;
+import it.unibo.deis.lia.ramp.core.internode.sdn.controllerService.ControllerService;
 
 public class ControllerServiceTest {
 	

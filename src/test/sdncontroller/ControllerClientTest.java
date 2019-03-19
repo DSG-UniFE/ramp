@@ -1,7 +1,7 @@
 package test.sdncontroller;
 
 import it.unibo.deis.lia.ramp.RampEntryPoint;
-import it.unibo.deis.lia.ramp.core.internode.ControllerClient;
+import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClient;
 
 public class ControllerClientTest {
 	

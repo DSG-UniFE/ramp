@@ -364,10 +364,10 @@ public class SDNControllerClientJFrame extends JFrame {
         pathSelectionMetricPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Path Selection Metric"));
 
         availablePathSelectionMetricComboBox = new JComboBox();
-        int count = TopologyGraphSelector.PathSelectionMetric.values().length;
+        int count = PathSelectionMetric.values().length;
         String[] pathSelectionMetricItems = new String[count];
         count = 0;
-        for (TopologyGraphSelector.PathSelectionMetric p : TopologyGraphSelector.PathSelectionMetric.values()) {
+        for (PathSelectionMetric p : PathSelectionMetric.values()) {
             pathSelectionMetricItems[count] = p.toString();
             count++;
         }

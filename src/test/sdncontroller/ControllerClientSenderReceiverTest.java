@@ -1,8 +1,8 @@
 package test.sdncontroller;
 
 import it.unibo.deis.lia.ramp.RampEntryPoint;
-import it.unibo.deis.lia.ramp.core.internode.ControllerClient;
-import it.unibo.deis.lia.ramp.core.internode.ControllerService;
+import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClient;
+import it.unibo.deis.lia.ramp.core.internode.sdn.controllerService.ControllerService;
 import it.unibo.deis.lia.ramp.service.management.ServiceManager;
 import test.sdncontroller.ControllerClientTestSender.StatsPrinter;
 
