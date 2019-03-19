@@ -490,7 +490,7 @@ public class OsRoutingManager {
              * Flush the table related to the above rule.
              */
             String localTableName = currentTable.getTableName();
-            String flushTableCommand = "ip route flush table + " + localTableName;
+            String flushTableCommand = "ip route flush table " + localTableName;
             System.out.println("OSRoutingManager " + flushTableCommand);
             try {
                 sudoCommand(flushTableCommand);
@@ -514,8 +514,7 @@ public class OsRoutingManager {
                 System.out.println("OSRoutingManager: removing table " + localTableName);
                 String sedCommand = "sed -i~ -e s/\"" + localTableIndex + "\".*$// /etc/iproute2/rt_tables";
                 try {
-                    commandResult = sudoCommand(sedCommand);
-                    System.out.println("OSRoutingManager " + commandResult);
+                    sudoCommand(sedCommand);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -525,12 +524,12 @@ public class OsRoutingManager {
                     e.printStackTrace();
                 }
                 if (commandResult.equals("")) {
-                    System.out.println("OSRoutingManager: table " + localTableName + "removed.");
+                    System.out.println("OSRoutingManager: table " + localTableName + " removed.");
                 } else {
-                    System.out.println("OSRoutingManager: table " + localTableName + "not removed.");
+                    System.out.println("OSRoutingManager: table " + localTableName + " not removed.");
                 }
             } else {
-                System.out.println("OSRoutingManager: table " + localTableName + "not found.");
+                System.out.println("OSRoutingManager: table " + localTableName + " not found.");
             }
         }
 
