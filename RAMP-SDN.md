@@ -11,8 +11,8 @@ Successivamente, ottenere il flowId relativo al nuovo flow attraverso l’invoca
 Al momento dell’invio di ciascun messaggio, specificare il **flowId** come argomento del metodo `sendUnicast()`.
 
 # Selezione della politica
-In `ControllerClient` assegnare al campo `flowPolicy` il valore di `FlowPolicy` (enumerativo) corrispondente alla **politica** da attivare e al campo `dataPlaneForwarder` l’istanza del **forwarder** relativo.
-In `ControllerService` assegnare al campo `flowPolicy` il valore di `FlowPolicy` (enumerativo) corrispondente alla **politica** da attivare.
+In `ControllerClient` assegnare al campo `trafficEngineeringPolicy` il valore di `FlowPolicy` (enumerativo) corrispondente alla **politica** da attivare e al campo `dataPlaneForwarder` l’istanza del **forwarder** relativo.
+In `ControllerService` assegnare al campo `trafficEngineeringPolicy` il valore di `FlowPolicy` (enumerativo) corrispondente alla **politica** da attivare.
 
 In alternativa: metodo `updateFlowPolicy()` di `ControllerService`, per modificare la politica a tempo di esecuzione.
 
