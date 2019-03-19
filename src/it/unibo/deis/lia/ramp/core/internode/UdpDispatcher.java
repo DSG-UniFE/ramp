@@ -271,7 +271,10 @@ public class UdpDispatcher extends Thread {
 		int currentHop = up.getCurrentHop();
 		String[] dest = up.getDest();
 
-		if (dest != null) {
+		/*
+		 * TODO Check with Giannelli about dest.length > 0
+		 */
+		if (dest != null && dest.length > 0) {
 			String ipDest = null;
 			int portDest;
 			if (currentHop == dest.length) {

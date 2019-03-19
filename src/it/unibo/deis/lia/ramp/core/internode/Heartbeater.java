@@ -9,13 +9,7 @@ import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
@@ -35,6 +29,10 @@ import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 public class Heartbeater extends Thread {
 
 	private Hashtable<InetAddress, NeighborData> neighbors = new Hashtable<InetAddress, NeighborData>();
+	private Hashtable<Integer, List<InetAddress>> neighborsAvailableAddresses = new Hashtable<>();
+	/*
+	 * Added by Dmitrij for testing purposes.
+	 */
 	private HashSet<InetAddress> neighborsBlackList = new HashSet<InetAddress>();
 
 	private int heartbeatPeriod = 60 * 1000; // millis
@@ -481,6 +479,18 @@ public class Heartbeater extends Thread {
 							neighborAddressNetworkPrefixLength
 							)
 					);
+			/*
+			 * Added by Dmitrij for testing purposes.
+			 */
+			if(!neighborsAvailableAddresses.containsKey(nodeId)) {
+				List<InetAddress> inetAddressesList = new ArrayList<>();
+				inetAddressesList.add(neighborInetAddress);
+				neighborsAvailableAddresses.put(nodeId, inetAddressesList);
+			} else {
+				if(!neighborsAvailableAddresses.get(nodeId).contains(neighborInetAddress)) {
+					neighborsAvailableAddresses.get(nodeId).add(neighborInetAddress);
+				}
+			}
 		}
 	}
 
@@ -502,6 +512,11 @@ public class Heartbeater extends Thread {
 				if (lastUpdate != null) {
 					if (System.currentTimeMillis() - lastUpdate > heartbeatPeriod + (heartbeatPeriod / 2)) {
 						neighbors.remove(address);
+						int nodeId = getNodeId(address);
+						/*
+						 * Added by Dmitrij for testing purposes.
+						 */
+						neighborsAvailableAddresses.get(nodeId).remove(address);
 					}
 					else {
 						res.addElement(address);
@@ -519,6 +534,15 @@ public class Heartbeater extends Thread {
 			res = data.getNodeId();
 		}
 		return res;
+	}
+
+	public List<InetAddress> getNeighborAvailableAddressesById(int nodeId) {
+		return neighborsAvailableAddresses.get(nodeId);
+	}
+
+	public List<InetAddress> getNeighborAvailableAddressesByInetAddress(InetAddress address) {
+		int nodeId = getNodeId(address);
+		return getNeighborAvailableAddressesById(nodeId);
 	}
 	
 	// Alessandro Dolci

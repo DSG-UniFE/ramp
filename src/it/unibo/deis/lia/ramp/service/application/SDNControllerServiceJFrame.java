@@ -1,6 +1,6 @@
 package it.unibo.deis.lia.ramp.service.application;
 
-import it.unibo.deis.lia.ramp.core.internode.FlowPolicy;
+import it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy.TrafficEngineeringPolicy;
 import org.graphstream.ui.swingViewer.DefaultView;
 
 import javax.swing.*;
@@ -15,14 +15,13 @@ import java.util.Iterator;
 public class SDNControllerServiceJFrame extends JFrame {
     private SDNControllerService SDNControllerService;
 
-    private JPanel flowPolicyPanel;
-    private JLabel currentPolicyLabel;
+    private JPanel trafficEngineeringPolicyPanel;
     private JTextField currentPolicyTextField;
     private JComboBox availableFlowPoliciesComboBox;
     private JButton updateFlowPolicyButton;
 
     private JPanel activeClientsPanel;
-    private JTextArea activeCleintsTextArea;
+    private JTextArea activeClientsTextArea;
     private JButton getActiveClientsButton;
 
     private JPanel displayGraphPanel;
@@ -36,25 +35,24 @@ public class SDNControllerServiceJFrame extends JFrame {
 
     private void initComponents() {
         /* Flow Policy Panel */
-        flowPolicyPanel = new JPanel();
-        flowPolicyPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Flow Policy"));
+        trafficEngineeringPolicyPanel = new JPanel();
+        trafficEngineeringPolicyPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Traffic Engineering Policy"));
 
-        currentPolicyLabel = new JLabel("Current Flow Policy");
         currentPolicyTextField = new JTextField(SDNControllerService.getFlowPolicy().toString());
         currentPolicyTextField.setEditable(false);
 
         availableFlowPoliciesComboBox = new JComboBox();
-        int count = FlowPolicy.values().length;
+        int count = TrafficEngineeringPolicy.values().length;
         String[] flowPolicyItems = new String[count];
         count = 0;
-        for (FlowPolicy f : FlowPolicy.values()) {
+        for (TrafficEngineeringPolicy f : TrafficEngineeringPolicy.values()) {
             flowPolicyItems[count] = f.toString();
             count++;
         }
         DefaultComboBoxModel dcm = new DefaultComboBoxModel(flowPolicyItems);
         availableFlowPoliciesComboBox.setModel(dcm);
 
-        updateFlowPolicyButton = new JButton("Update Flow Policy");
+        updateFlowPolicyButton = new JButton("Update Policy");
         updateFlowPolicyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
@@ -62,17 +60,14 @@ public class SDNControllerServiceJFrame extends JFrame {
             }
         });
 
-        GroupLayout flowPoliciesLayout = new GroupLayout(flowPolicyPanel);
-        flowPolicyPanel.setLayout(flowPoliciesLayout);
+        GroupLayout flowPoliciesLayout = new GroupLayout(trafficEngineeringPolicyPanel);
+        trafficEngineeringPolicyPanel.setLayout(flowPoliciesLayout);
         flowPoliciesLayout.setHorizontalGroup(flowPoliciesLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                .addComponent(currentPolicyLabel, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
                 .addComponent(currentPolicyTextField, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
                 .addComponent(availableFlowPoliciesComboBox, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
                 .addComponent(updateFlowPolicyButton, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
         );
         flowPoliciesLayout.setVerticalGroup(flowPoliciesLayout.createSequentialGroup()
-                .addComponent(currentPolicyLabel)
-                .addGap(5)
                 .addComponent(currentPolicyTextField)
                 .addGap(5)
                 .addComponent(availableFlowPoliciesComboBox)
@@ -80,7 +75,9 @@ public class SDNControllerServiceJFrame extends JFrame {
                 .addComponent(updateFlowPolicyButton)
         );
 
-        /* Active Clients Panel */
+        /*
+         * Active Clients Panel
+         */
         activeClientsPanel = new JPanel();
         activeClientsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Active Clients"));
 
@@ -92,24 +89,26 @@ public class SDNControllerServiceJFrame extends JFrame {
             }
         });
 
-        activeCleintsTextArea = new JTextArea();
-        activeCleintsTextArea.setColumns(20);
-        activeCleintsTextArea.setEditable(false);
-        activeCleintsTextArea.setRows(5);
+        activeClientsTextArea = new JTextArea();
+        activeClientsTextArea.setColumns(20);
+        activeClientsTextArea.setEditable(false);
+        activeClientsTextArea.setRows(5);
 
         GroupLayout activeClientsLayout = new GroupLayout(activeClientsPanel);
         activeClientsPanel.setLayout(activeClientsLayout);
         activeClientsLayout.setHorizontalGroup(activeClientsLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
                 .addComponent(getActiveClientsButton, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
-                .addComponent(activeCleintsTextArea, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                .addComponent(activeClientsTextArea, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
         );
         activeClientsLayout.setVerticalGroup(activeClientsLayout.createSequentialGroup()
                 .addComponent(getActiveClientsButton)
                 .addGap(5)
-                .addComponent(activeCleintsTextArea)
+                .addComponent(activeClientsTextArea)
         );
 
-        /* Display Graph Panel */
+        /*
+         * Display Graph Panel
+         */
         displayGraphPanel = new JPanel();
         displayGraphPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Topology Graph"));
 
@@ -130,7 +129,9 @@ public class SDNControllerServiceJFrame extends JFrame {
                 .addComponent(displayGraphButton)
         );
 
-        /* Main Panel Layout */
+        /*
+         * Main Panel Layout
+         */
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosed(java.awt.event.WindowEvent evt) {
                 formWindowClosed(evt);
@@ -150,7 +151,7 @@ public class SDNControllerServiceJFrame extends JFrame {
         layout.setHorizontalGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup()
-                        .addComponent(flowPolicyPanel, GroupLayout.PREFERRED_SIZE, 238, GroupLayout.PREFERRED_SIZE)
+                        .addComponent(trafficEngineeringPolicyPanel, GroupLayout.PREFERRED_SIZE, 238, GroupLayout.PREFERRED_SIZE)
                         .addComponent(activeClientsPanel, GroupLayout.PREFERRED_SIZE, 238, GroupLayout.PREFERRED_SIZE)
                         .addComponent(displayGraphPanel, GroupLayout.PREFERRED_SIZE, 238, GroupLayout.PREFERRED_SIZE)
                 )
@@ -159,7 +160,7 @@ public class SDNControllerServiceJFrame extends JFrame {
 
         layout.setVerticalGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(flowPolicyPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addComponent(trafficEngineeringPolicyPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                 .addGap(15)
                 .addComponent(activeClientsPanel, GroupLayout.PREFERRED_SIZE, 264, GroupLayout.PREFERRED_SIZE)
                 .addGap(15)
@@ -180,17 +181,17 @@ public class SDNControllerServiceJFrame extends JFrame {
                 text = text + i + " " + activeClients.next() + "\n";
                 i++;
             }
-            activeCleintsTextArea.setText(text);
+            activeClientsTextArea.setText(text);
         } catch (Exception e) {
-            activeCleintsTextArea.setText(e.toString());
+            activeClientsTextArea.setText(e.toString());
         }
     }
 
     private void jButtonUpdateFlowPolicyActionPerformed(ActionEvent evt) {
         try {
             String selectedFlowPolicy = availableFlowPoliciesComboBox.getSelectedItem().toString();
-            FlowPolicy flowPolicy = FlowPolicy.valueOf(selectedFlowPolicy);
-            SDNControllerService.updateFlowPolicy(flowPolicy);
+            TrafficEngineeringPolicy trafficEngineeringPolicy = TrafficEngineeringPolicy.valueOf(selectedFlowPolicy);
+            SDNControllerService.updateFlowPolicy(trafficEngineeringPolicy);
             currentPolicyTextField.setText(SDNControllerService.getFlowPolicy().toString());
         } catch (Exception e) {
             e.printStackTrace();

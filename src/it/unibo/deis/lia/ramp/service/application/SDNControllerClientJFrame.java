@@ -2,6 +2,11 @@ package it.unibo.deis.lia.ramp.service.application;
 
 import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 import it.unibo.deis.lia.ramp.core.internode.*;
+import it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy.TrafficEngineeringPolicy;
+import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.ApplicationRequirements;
+import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.ApplicationType;
+import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.PathSelectionMetric;
+import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.PathDescriptor;
 import it.unibo.deis.lia.ramp.service.management.ServiceResponse;
 
 import javax.swing.*;
@@ -16,18 +21,33 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SDNControllerClientJFrame extends JFrame {
     private SDNControllerClient SDNcontrollerClient;
-    private Vector<ServiceResponse> availableServices;
-    private int localNodeID;
-    // this map keeps track of all flowIds (List<Integer>) obtained for a given destination (Integer) for unicast communications
-    private Map<Integer, List<Integer>> unicastFlowIDs;
-    // this map keeps track for of all flowIds (Integer)the correspondent destinations (List<Integer>) for multicast communications
-    private Map<Integer, List<Integer>> multicastFlowIDs;
-    // this map keep tracks for each available destination the correspondent service response
-    private Map<Integer, ServiceResponse> availableClients;
 
-    private JPanel flowPolicyPanel;
-    private JLabel currentPolicyLabel;
-    private JTextField currentPolicyTextField;
+    private int localNodeID;
+    /**
+     * This map keeps track of all flowIds (List<Integer>) obtained
+     * for a given destination (Integer) for unicast communications.
+     */
+    private Map<Integer, List<Integer>> unicastFlowIDs;
+    /**
+     * This map keeps track for of all flowIds (Integer) to the correspondent
+     * destinations (List<Integer>) for multicast communications.
+     */
+    private Map<Integer, List<Integer>> multicastFlowIDs;
+
+    /**
+     * This map keeps track of all routeIds (Integer) obtained
+     * for a given destination (Integer) for os level routing communications.
+     */
+    private Map<String, List<Integer>> routeIDs;
+
+    /**
+     * This map keep tracks for each available destination
+     * the correspondent service response.
+     */
+    private Map<String, ServiceResponse> availableClients;
+
+    private JPanel trafficEngineeringPolicyPanel;
+    private JTextField currentTrafficEngineeringPolicyTextField;
 
     private JPanel refreshInfoPanel;
     private JButton refreshInfoButton;
@@ -71,6 +91,11 @@ public class SDNControllerClientJFrame extends JFrame {
     private JButton resetDestinationButton;
     private JButton getFlowIdButton;
 
+    private JPanel getOSLevelRoutePanel;
+    private JLabel getOSLevelRouteLabel;
+    private JComboBox getOSLevelRouteDestinationNodeComboBox;
+    private JButton getOSLevelRouteButton;
+
     private JPanel defaultFlowPathPanel;
     private JScrollPane defaultFlowPathScrollPane;
     private JTable defaultFlowPathTable;
@@ -88,9 +113,11 @@ public class SDNControllerClientJFrame extends JFrame {
     private JButton sendPacketButton;
     private JLabel sendPacketDestinationIDLabel;
     private JComboBox sendMessageDestinationIDComboBox;
-    private ActionListener destionationIDComboBoxActionListener;
+    private ActionListener destinationIDComboBoxActionListener;
     private JLabel sendPacketFlowIDLabel;
     private JComboBox sendPacketFlowIDComboBox;
+    private JLabel sendPacketRouteIDLabel;
+    private JComboBox sendPacketRouteIDComboBox;
     private JPanel multicastDestinationsPanel;
     private JLabel multicastDestinationsLabel;
     private JScrollPane multicastDestinationsScrollPane;
@@ -111,25 +138,28 @@ public class SDNControllerClientJFrame extends JFrame {
         this.SDNcontrollerClient = SDNcontrollerClient;
         this.localNodeID = Dispatcher.getLocalRampId();
         this.allAdditionalDestinationNodeComboBox = new Vector<JComboBox>(0);
-        destionationIDComboBoxActionListener = null;
+        destinationIDComboBoxActionListener = null;
         flowIDComboBoxActionListener = null;
 
         initComponents();
     }
 
     private void initComponents() {
-        initFlowPolicyPanel();
+        initTrafficEngineeringPolicyPanel();
         initApplicationRequirementsPanel();
         initPathSelectionMetricPanel();
         initFindControllerPanel();
         initGetFlowIDPanel();
+        initGetOSLevelRoutePanel();
         initDefaultPathTablePanel();
         initFlowPrioritiesTablePanel();
         initSendPacketPanel();
         initReceivePacketPanel();
         initRefreshInfoPanel();
 
-        /* Main Panel Layout */
+        /*
+         * Main Panel Layout
+         */
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosed(java.awt.event.WindowEvent evt) {
                 formWindowClosed(evt);
@@ -151,18 +181,19 @@ public class SDNControllerClientJFrame extends JFrame {
                 .addGroup(layout.createParallelGroup()
                         .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup()
-                                        .addComponent(flowPolicyPanel, GroupLayout.PREFERRED_SIZE, 300, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(trafficEngineeringPolicyPanel, GroupLayout.PREFERRED_SIZE, 300, GroupLayout.PREFERRED_SIZE)
                                         .addComponent(applicationRequirementsPanel, GroupLayout.PREFERRED_SIZE, 300, GroupLayout.PREFERRED_SIZE)
                                         .addComponent(pathSelectionMetricPanel, GroupLayout.PREFERRED_SIZE, 300, GroupLayout.PREFERRED_SIZE)
                                 )
                                 .addGap(20)
                                 .addGroup(layout.createParallelGroup()
-                                        .addComponent(findControllerClientReceiverPanel, GroupLayout.PREFERRED_SIZE, 500, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(findControllerClientReceiverPanel, GroupLayout.PREFERRED_SIZE, 550, GroupLayout.PREFERRED_SIZE)
                                         .addGroup(layout.createSequentialGroup()
-                                                .addComponent(getFlowIDPanel, GroupLayout.PREFERRED_SIZE, 220, GroupLayout.PREFERRED_SIZE)
+                                                .addComponent(getFlowIDPanel, GroupLayout.PREFERRED_SIZE, 245, GroupLayout.PREFERRED_SIZE)
+                                                .addComponent(getOSLevelRoutePanel, GroupLayout.PREFERRED_SIZE, 245, GroupLayout.PREFERRED_SIZE)
                                                 .addGap(10)
-                                                .addComponent(defaultFlowPathPanel, GroupLayout.PREFERRED_SIZE, 270, GroupLayout.PREFERRED_SIZE)
-                                                .addComponent(flowPrioritiesPanel, GroupLayout.PREFERRED_SIZE, 270, GroupLayout.PREFERRED_SIZE)
+                                                .addComponent(defaultFlowPathPanel, GroupLayout.PREFERRED_SIZE, 295, GroupLayout.PREFERRED_SIZE)
+                                                .addComponent(flowPrioritiesPanel, GroupLayout.PREFERRED_SIZE, 295, GroupLayout.PREFERRED_SIZE)
                                         )
                                 )
                                 .addGap(20)
@@ -180,7 +211,7 @@ public class SDNControllerClientJFrame extends JFrame {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup()
                         .addGroup(layout.createSequentialGroup()
-                                .addComponent(flowPolicyPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                                .addComponent(trafficEngineeringPolicyPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                                 .addGap(15)
                                 .addComponent(applicationRequirementsPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                                 .addGap(15)
@@ -191,6 +222,7 @@ public class SDNControllerClientJFrame extends JFrame {
                                 .addGap(15)
                                 .addGroup(layout.createParallelGroup()
                                         .addComponent(getFlowIDPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(getOSLevelRoutePanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                                         .addComponent(defaultFlowPathPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                                         .addComponent(flowPrioritiesPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                                 )
@@ -212,39 +244,35 @@ public class SDNControllerClientJFrame extends JFrame {
         showAndUpdateTablesPolicy();
     }
 
-    private void initFlowPolicyPanel() {
-        flowPolicyPanel = new JPanel();
-        flowPolicyPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Flow Policy"));
+    private void initTrafficEngineeringPolicyPanel() {
+        trafficEngineeringPolicyPanel = new JPanel();
+        trafficEngineeringPolicyPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Traffic Engineering Policy"));
 
-        currentPolicyLabel = new JLabel("Current Flow Policy");
-        currentPolicyTextField = new JTextField(SDNcontrollerClient.getFlowPolicy().toString());
-        currentPolicyTextField.setEditable(false);
+        currentTrafficEngineeringPolicyTextField = new JTextField(SDNcontrollerClient.getTrafficEngineeringPolicy().toString());
+        currentTrafficEngineeringPolicyTextField.setEditable(false);
 
-        GroupLayout flowPoliciesLayout = new GroupLayout(flowPolicyPanel);
-        flowPolicyPanel.setLayout(flowPoliciesLayout);
-        flowPoliciesLayout.setHorizontalGroup(flowPoliciesLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                .addComponent(currentPolicyLabel, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
-                .addComponent(currentPolicyTextField, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+        GroupLayout trafficEngineeringPolicyLayout = new GroupLayout(trafficEngineeringPolicyPanel);
+        trafficEngineeringPolicyPanel.setLayout(trafficEngineeringPolicyLayout);
+        trafficEngineeringPolicyLayout.setHorizontalGroup(trafficEngineeringPolicyLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addComponent(currentTrafficEngineeringPolicyTextField, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
         );
-        flowPoliciesLayout.setVerticalGroup(flowPoliciesLayout.createSequentialGroup()
-                .addComponent(currentPolicyLabel)
-                .addGap(5)
-                .addComponent(currentPolicyTextField)
+        trafficEngineeringPolicyLayout.setVerticalGroup(trafficEngineeringPolicyLayout.createSequentialGroup()
+                .addComponent(currentTrafficEngineeringPolicyTextField)
         );
     }
 
     private void initApplicationRequirementsPanel() {
-        applicationRequirements = new ApplicationRequirements(ApplicationRequirements.ApplicationType.DEFAULT, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 300);
+        applicationRequirements = new ApplicationRequirements(ApplicationType.DEFAULT, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 300);
 
         applicationRequirementsPanel = new JPanel();
         applicationRequirementsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Application Requirements"));
 
         applicationTypeLabel = new JLabel("Application Type");
         applicationTypeComboBox = new JComboBox();
-        int count = ApplicationRequirements.ApplicationType.values().length;
+        int count = ApplicationType.values().length;
         String[] applicationTypeItems = new String[count];
         count = 0;
-        for (ApplicationRequirements.ApplicationType a : ApplicationRequirements.ApplicationType.values()) {
+        for (ApplicationType a : ApplicationType.values()) {
             applicationTypeItems[count] = a.toString();
             count++;
         }
@@ -253,7 +281,7 @@ public class SDNControllerClientJFrame extends JFrame {
         applicationTypeComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                jComboBoxApplicationTypeActionPerfomed(evt);
+                jComboBoxApplicationTypeActionPerformed(evt);
             }
         });
 
@@ -273,7 +301,7 @@ public class SDNControllerClientJFrame extends JFrame {
         setApplicationRequirementsButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                jButtonSetApplicationRequirementsActionPerfomed(evt);
+                jButtonSetApplicationRequirementsActionPerformed(evt);
             }
         });
 
@@ -321,7 +349,7 @@ public class SDNControllerClientJFrame extends JFrame {
 
     private void showApplicationRequirementsFieldsPolicy() {
         boolean show = true;
-        if (ApplicationRequirements.ApplicationType.valueOf(applicationTypeComboBox.getSelectedItem().toString()) == ApplicationRequirements.ApplicationType.DEFAULT) {
+        if (ApplicationType.valueOf(applicationTypeComboBox.getSelectedItem().toString()) == ApplicationType.DEFAULT) {
             show = false;
         }
 
@@ -364,7 +392,7 @@ public class SDNControllerClientJFrame extends JFrame {
         findControllerClientReceiverButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                jButtonFindControllerClientReceiverActionPerfomed(evt);
+                jButtonFindControllerClientReceiverActionPerformed(evt);
             }
         });
 
@@ -380,7 +408,7 @@ public class SDNControllerClientJFrame extends JFrame {
         findControllerClientTimeoutTextField = new JTextField("2500");
 
         findControllerClientServiceAmountLabel = new JLabel("Amount:");
-        findControllerClientServiceAmountTextField = new JTextField("4");
+        findControllerClientServiceAmountTextField = new JTextField("6");
 
         findControllerClientReceiverTextArea = new JTextArea();
         findControllerClientReceiverTextArea.setColumns(20);
@@ -445,7 +473,7 @@ public class SDNControllerClientJFrame extends JFrame {
         getFlowIdButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                jButtonGetFlowIDActionPerfomed(evt);
+                jButtonGetFlowIDActionPerformed(evt);
             }
         });
         getFlowIdButton.setEnabled(false);
@@ -477,7 +505,7 @@ public class SDNControllerClientJFrame extends JFrame {
         addDestinationButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                jButtonAddDestinationActionPerfomed(evt);
+                jButtonAddDestinationActionPerformed(evt);
             }
         });
 
@@ -485,7 +513,7 @@ public class SDNControllerClientJFrame extends JFrame {
         resetDestinationButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                jButtonResetDestinationActionPerfomed(evt);
+                jButtonResetDestinationActionPerformed(evt);
             }
         });
 
@@ -508,12 +536,6 @@ public class SDNControllerClientJFrame extends JFrame {
         );
 
         refreshAdditionalComboBoxPanel();
-
-        if (SDNcontrollerClient.getFlowPolicy() != FlowPolicy.MULTICASTING) {
-            additionalDestinationPanel.setVisible(false);
-            addDestinationButton.setEnabled(false);
-            resetDestinationButton.setEnabled(false);
-        }
     }
 
     private void refreshAdditionalComboBoxPanel() {
@@ -537,25 +559,67 @@ public class SDNControllerClientJFrame extends JFrame {
             resetDestinationButton.setEnabled(true);
         }
 
-        // Print again the JFrame to perform layout recalculation
+        /*
+         * Print again the JFrame to perform layout recalculation
+         */
         this.repaint();
         this.revalidate();
     }
 
-    private void jButtonAddDestinationActionPerfomed(ActionEvent evt) {
+    private void jButtonAddDestinationActionPerformed(ActionEvent evt) {
         JComboBox comboBox = new JComboBox();
-        String[] items = new String[availableServices.size()];
-        for (int i = 0; i < availableServices.size(); i++) {
-            items[i] = "" + availableServices.elementAt(i).getServerNodeId();
+        int availableClientsSize = availableClients.keySet().size();
+        String[] items = new String[availableClientsSize];
+        int i = 0;
+        for (String key : availableClients.keySet()) {
+            items[i] = "" + key;
+            i++;
         }
+
         comboBox.setModel(new DefaultComboBoxModel(items));
         allAdditionalDestinationNodeComboBox.add(comboBox);
         refreshAdditionalComboBoxPanel();
     }
 
-    private void jButtonResetDestinationActionPerfomed(ActionEvent evt) {
-        this.allAdditionalDestinationNodeComboBox = new Vector<JComboBox>(0);
+    private void jButtonResetDestinationActionPerformed(ActionEvent evt) {
+        this.allAdditionalDestinationNodeComboBox = new Vector<>(0);
         refreshAdditionalComboBoxPanel();
+    }
+
+    private void initGetOSLevelRoutePanel() {
+        getOSLevelRoutePanel = new JPanel();
+        getOSLevelRoutePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("OS Level Routing"));
+
+        getOSLevelRouteLabel = new JLabel("Destination Node ID:");
+
+        getOSLevelRouteDestinationNodeComboBox = new JComboBox();
+        String[] empty = new String[0];
+        DefaultComboBoxModel dcm = new DefaultComboBoxModel(empty);
+        getOSLevelRouteDestinationNodeComboBox.setModel(dcm);
+
+        getOSLevelRouteButton = new JButton("Get Route");
+        getOSLevelRouteButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                jButtonGetOSLevelRouteActionPerformed(evt);
+            }
+        });
+        getOSLevelRouteButton.setEnabled(false);
+
+        GroupLayout getOSLevelRouteLayout = new GroupLayout(getOSLevelRoutePanel);
+        getOSLevelRoutePanel.setLayout(getOSLevelRouteLayout);
+        getOSLevelRouteLayout.setHorizontalGroup(getOSLevelRouteLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addComponent(getOSLevelRouteLabel, GroupLayout.DEFAULT_SIZE, 220, Short.MAX_VALUE)
+                .addComponent(getOSLevelRouteDestinationNodeComboBox, GroupLayout.DEFAULT_SIZE, 220, Short.MAX_VALUE)
+                .addComponent(getOSLevelRouteButton, GroupLayout.DEFAULT_SIZE, 220, Short.MAX_VALUE)
+        );
+        getOSLevelRouteLayout.setVerticalGroup(getOSLevelRouteLayout.createSequentialGroup()
+                .addComponent(getOSLevelRouteLabel)
+                .addGap(5)
+                .addComponent(getOSLevelRouteDestinationNodeComboBox)
+                .addGap(5)
+                .addComponent(getOSLevelRouteButton)
+        );
     }
 
     private void initDefaultPathTablePanel() {
@@ -612,27 +676,24 @@ public class SDNControllerClientJFrame extends JFrame {
         sendPacketButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                jButtonSendPacketActionPerfomed(evt);
+                jButtonSendPacketActionPerformed(evt);
             }
         });
         sendPacketButton.setEnabled(false);
 
         sendPacketDestinationIDLabel = new JLabel("Destination ID");
         sendMessageDestinationIDComboBox = new JComboBox();
-//        sendMessageDestinationIDComboBox.addActionListener(new ActionListener() {
-//            @Override
-//            public void actionPerformed(ActionEvent evt) {
-//                jComboBoxSendMessageDestinationIDActionPerfomed(evt);
-//            }
-//        });
 
         sendPacketFlowIDLabel = new JLabel("FlowID");
         sendPacketFlowIDComboBox = new JComboBox();
 
+        sendPacketRouteIDLabel = new JLabel("RouteID");
+        sendPacketRouteIDComboBox = new JComboBox();
+
         initMulticastDestinationsPanel();
 
         sendPacketPayloadLabel = new JLabel("Payload kb");
-        sendPacketPayloadTextField = new JTextField("65536");
+        sendPacketPayloadTextField = new JTextField("500");
 
         sendPacketRepetitionLabel = new JLabel("Repeat");
         sendPacketRepetitionTextField = new JTextField("1");
@@ -645,6 +706,8 @@ public class SDNControllerClientJFrame extends JFrame {
                 .addComponent(sendMessageDestinationIDComboBox, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
                 .addComponent(sendPacketFlowIDLabel, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
                 .addComponent(sendPacketFlowIDComboBox, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+                .addComponent(sendPacketRouteIDLabel, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+                .addComponent(sendPacketRouteIDComboBox, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
                 .addComponent(multicastDestinationsPanel, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
                 .addComponent(sendPacketPayloadLabel, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
                 .addComponent(sendPacketPayloadTextField, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
@@ -659,7 +722,10 @@ public class SDNControllerClientJFrame extends JFrame {
                 .addGap(5)
                 .addComponent(sendPacketFlowIDLabel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                 .addGap(5)
-                .addComponent(sendPacketFlowIDComboBox, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addComponent(sendPacketFlowIDComboBox, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE).addComponent(sendPacketRouteIDLabel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addGap(5)
+                .addComponent(sendPacketRouteIDComboBox, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addGap(5)
                 .addComponent(multicastDestinationsPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                 .addGap(5)
                 .addComponent(sendPacketPayloadLabel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -672,12 +738,6 @@ public class SDNControllerClientJFrame extends JFrame {
                 .addGap(5)
                 .addComponent(sendPacketButton, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
         );
-        if (SDNcontrollerClient.getFlowPolicy() != FlowPolicy.MULTICASTING) {
-            multicastDestinationsPanel.setVisible(false);
-        } else {
-            sendPacketDestinationIDLabel.setVisible(false);
-            sendMessageDestinationIDComboBox.setVisible(false);
-        }
     }
 
     private void initMulticastDestinationsPanel() {
@@ -715,7 +775,7 @@ public class SDNControllerClientJFrame extends JFrame {
         receivePacketButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                jButtonReceivePacketActionPerfomed(evt);
+                jButtonReceivePacketActionPerformed(evt);
             }
         });
 
@@ -723,7 +783,7 @@ public class SDNControllerClientJFrame extends JFrame {
         deleteReceivedPacketsButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                jButtonDeletePacketActionPerfomed(evt);
+                jButtonDeletePacketActionPerformed(evt);
             }
         });
 
@@ -764,7 +824,7 @@ public class SDNControllerClientJFrame extends JFrame {
         refreshInfoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                jButtonRefreshInfoActionPerfomed(evt);
+                jButtonRefreshInfoActionPerformed(evt);
             }
         });
 
@@ -778,17 +838,17 @@ public class SDNControllerClientJFrame extends JFrame {
         );
     }
 
-    private void jButtonSetApplicationRequirementsActionPerfomed(ActionEvent evt) {
-        applicationRequirements.setApplicationType(ApplicationRequirements.ApplicationType.valueOf(applicationTypeComboBox.getSelectedItem().toString()));
+    private void jButtonSetApplicationRequirementsActionPerformed(ActionEvent evt) {
+        applicationRequirements.setApplicationType(ApplicationType.valueOf(applicationTypeComboBox.getSelectedItem().toString()));
 
         int bitrate = Integer.parseInt(bitrateTextField.getText());
-        if (bitrate == -1) {
+        if (bitrate < 0) {
             bitrate = ApplicationRequirements.UNUSED_FIELD;
         }
         applicationRequirements.setBitrate(bitrate);
 
         int trafficAmount = Integer.parseInt(trafficAmountTextField.getText());
-        if (trafficAmount == -1) {
+        if (trafficAmount < 0) {
             trafficAmount = ApplicationRequirements.UNUSED_FIELD;
         }
         applicationRequirements.setTrafficAmount(trafficAmount);
@@ -811,85 +871,168 @@ public class SDNControllerClientJFrame extends JFrame {
         System.out.println(applicationRequirements.toString());
     }
 
-    private void jButtonGetFlowIDActionPerfomed(ActionEvent evt) {
-        FlowPolicy flowPolicy = SDNcontrollerClient.getFlowPolicy();
+    private void jButtonGetFlowIDActionPerformed(ActionEvent evt) {
+        TrafficEngineeringPolicy trafficEngineeringPolicy = SDNcontrollerClient.getTrafficEngineeringPolicy();
 
         String selectedPathSelectionMetric = availablePathSelectionMetricComboBox.getSelectedItem().toString();
-        TopologyGraphSelector.PathSelectionMetric pathSelectionMetric = TopologyGraphSelector.PathSelectionMetric.valueOf(selectedPathSelectionMetric);
-        int destinationNodeId = Integer.parseInt(getFlowIDDestinationNodeComboBox.getSelectedItem().toString());
+        PathSelectionMetric pathSelectionMetric = PathSelectionMetric.valueOf(selectedPathSelectionMetric);
+        String destinationNode = getFlowIDDestinationNodeComboBox.getSelectedItem().toString();
+        int destinationNodeId = availableClients.get(destinationNode).getServerNodeId();
         int[] destNodeIds = null;
         int[] destPorts = null;
 
-        if (flowPolicy == FlowPolicy.MULTICASTING) {
+        /*
+         * Retrieve destNodeIds and destPorts according to the trafficEngineeringPolicy.
+         */
+        if (trafficEngineeringPolicy == TrafficEngineeringPolicy.MULTICASTING) {
+            /*
+             * Add 1 in order to take into account also the first ComboBox called getFlowIDDestinationNodeComboBox
+             */
             int count = 1 + allAdditionalDestinationNodeComboBox.size();
             destNodeIds = new int[count];
             destPorts = new int[count];
 
             int index = 0;
             destNodeIds[index] = destinationNodeId;
-            destPorts[index] = availableClients.get(destinationNodeId).getServerPort();
+            destPorts[index] = availableClients.get(destinationNode).getServerPort();
             index++;
 
             for (int i = 0; i < allAdditionalDestinationNodeComboBox.size(); i++) {
-                int additionalDestinationNodeId = Integer.parseInt(allAdditionalDestinationNodeComboBox.get(i).getSelectedItem().toString());
-                destNodeIds[index] = additionalDestinationNodeId;
-                destPorts[index] = availableClients.get(additionalDestinationNodeId).getServerPort();
+                String additionalDestinationNode = allAdditionalDestinationNodeComboBox.get(i).getSelectedItem().toString();
+                destNodeIds[index] = availableClients.get(additionalDestinationNode).getServerNodeId();
+                destPorts[index] = availableClients.get(additionalDestinationNode).getServerPort();
                 index++;
             }
         } else {
             destNodeIds = new int[]{destinationNodeId};
         }
 
+        /*
+         * get the flowId to use
+         */
         int flowId = SDNcontrollerClient.getFlowId(applicationRequirements, destNodeIds, destPorts, pathSelectionMetric);
-        if (SDNcontrollerClient.getFlowPolicy() != FlowPolicy.MULTICASTING) {
+
+        /*
+         * Update the local data structures with the obtained flowId and fill the combo boxes according
+         * to the current trafficEngineeringPolicy.
+         */
+        if (trafficEngineeringPolicy == TrafficEngineeringPolicy.MULTICASTING) {
+            multicastFlowIDs.put(flowId, new ArrayList<>());
+            multicastFlowIDs.get(flowId).add(destinationNodeId);
+            for (int i = 0; i < allAdditionalDestinationNodeComboBox.size(); i++) {
+                String additionalDestinationNode = allAdditionalDestinationNodeComboBox.get(i).getSelectedItem().toString();
+                int additionalDestinationNodeId = availableClients.get(additionalDestinationNode).getServerNodeId();
+                multicastFlowIDs.get(flowId).add(additionalDestinationNodeId);
+            }
+
+            /*
+             * Remove the action listener active when a TrafficEngineeringPolicy different from MULTICASTING
+             * was active.
+             */
+            if (destinationIDComboBoxActionListener != null) {
+                sendMessageDestinationIDComboBox.removeActionListener(destinationIDComboBoxActionListener);
+                destinationIDComboBoxActionListener = null;
+            }
+
+            flowIDComboBoxActionListener = new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent evt) {
+                    jComboBoxSendMessageFlowIDActionPerformed(evt);
+                }
+            };
+            sendPacketFlowIDComboBox.addActionListener(flowIDComboBoxActionListener);
+
+
+            fillMulticastFlowIdComboBox();
+
+            /*
+             * Update the destinations available in the send message panel
+             * for the current multicast flow id if it is already selected.
+             */
+            jComboBoxSendMessageFlowIDActionPerformed(null);
+        } else {
             if (!unicastFlowIDs.get(destinationNodeId).contains(flowId)) {
                 unicastFlowIDs.get(destinationNodeId).add(flowId);
             }
 
+            /*
+             * Remove the action listener active when TrafficEngineeringPolicy.MULTICASTING
+             * was active.
+             */
             if (flowIDComboBoxActionListener != null) {
                 sendPacketFlowIDComboBox.removeActionListener(flowIDComboBoxActionListener);
                 flowIDComboBoxActionListener = null;
             }
 
-            if (destionationIDComboBoxActionListener != null) {
-                destionationIDComboBoxActionListener = new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent evt) {
-                        jComboBoxSendMessageDestinationIDActionPerfomed(evt);
-                    }
-                };
-                sendMessageDestinationIDComboBox.addActionListener(destionationIDComboBoxActionListener);
+            if (destinationIDComboBoxActionListener != null) {
+                sendMessageDestinationIDComboBox.removeActionListener(destinationIDComboBoxActionListener);
+                destinationIDComboBoxActionListener = null;
             }
 
-            // Update the flow available in the send message panel for the current destination node id if it is already selected
-            jComboBoxSendMessageDestinationIDActionPerfomed(null);
-        } else {
-            multicastFlowIDs.put(flowId, new ArrayList<Integer>());
-            multicastFlowIDs.get(flowId).add(destinationNodeId);
-            for (int i = 0; i < allAdditionalDestinationNodeComboBox.size(); i++) {
-                int additionalDestinationNodeId = Integer.parseInt(allAdditionalDestinationNodeComboBox.get(i).getSelectedItem().toString());
-                multicastFlowIDs.get(flowId).add(additionalDestinationNodeId);
+            destinationIDComboBoxActionListener = new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent evt) {
+                    jComboBoxSendMessageDestinationIDActionPerformed(evt);
+                }
+            };
+            sendMessageDestinationIDComboBox.addActionListener(destinationIDComboBoxActionListener);
+
+            /*
+             * Update the flowIds available in the send message panel
+             * for the current destination node id if it is already selected.
+             */
+            jComboBoxSendMessageDestinationIDActionPerformed(null);
+        }
+
+        sendPacketButton.setEnabled(true);
+    }
+
+    private void jButtonGetOSLevelRouteActionPerformed(ActionEvent evt) {
+        /*
+         * Retrieve all the info needed to call the getRouteId method.
+         */
+        String selectedPathSelectionMetric = availablePathSelectionMetricComboBox.getSelectedItem().toString();
+        PathSelectionMetric pathSelectionMetric = PathSelectionMetric.valueOf(selectedPathSelectionMetric);
+        String destinationNode = getOSLevelRouteDestinationNodeComboBox.getSelectedItem().toString();
+        int destinationNodeId = availableClients.get(destinationNode).getServerNodeId();
+
+        int routeId = SDNcontrollerClient.getRouteId(destinationNodeId, -1, applicationRequirements, pathSelectionMetric);
+
+        if (routeId != -1) {
+            if (!routeIDs.get(destinationNode).contains(routeId)) {
+                routeIDs.get(destinationNode).add(routeId);
             }
 
-            if (destionationIDComboBoxActionListener != null) {
-                sendMessageDestinationIDComboBox.removeActionListener(destionationIDComboBoxActionListener);
-                destionationIDComboBoxActionListener = null;
-            }
-
+            /*
+             * Remove the action listener active when TrafficEngineeringPolicy.MULTICASTING
+             * was active.
+             */
             if (flowIDComboBoxActionListener != null) {
-                flowIDComboBoxActionListener = new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent evt) {
-                        jComboBoxSendMessageFlowIDActionPerfomed(evt);
-                    }
-                };
-                sendPacketFlowIDComboBox.addActionListener(flowIDComboBoxActionListener);
+                sendPacketFlowIDComboBox.removeActionListener(flowIDComboBoxActionListener);
+                flowIDComboBoxActionListener = null;
             }
 
-            fillMulticastFlowIdComboBox();
+            if (destinationIDComboBoxActionListener != null) {
+                sendMessageDestinationIDComboBox.removeActionListener(destinationIDComboBoxActionListener);
+                destinationIDComboBoxActionListener = null;
+            }
 
-            // Update the destinations available in the send message panel for the current multicast flow id if it is already selected
-            jComboBoxSendMessageFlowIDActionPerfomed(null);
+            destinationIDComboBoxActionListener = new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent evt) {
+                    jComboBoxSendMessageRouteIDActionPerformed(evt);
+                }
+            };
+            sendMessageDestinationIDComboBox.addActionListener(destinationIDComboBoxActionListener);
+
+            /*
+             * Update the routeIDs available in the send message panel
+             * for the current destination node id if it is already selected.
+             */
+            jComboBoxSendMessageRouteIDActionPerformed(null);
+
+        } else {
+            JOptionPane.showMessageDialog(null, "It is not possible to compute a routeId for this destination.");
         }
 
         sendPacketButton.setEnabled(true);
@@ -906,107 +1049,220 @@ public class SDNControllerClientJFrame extends JFrame {
         sendPacketFlowIDComboBox.setModel(dcm);
     }
 
-    private void jButtonFindControllerClientReceiverActionPerfomed(ActionEvent evt) {
-        FlowPolicy flowPolicy = SDNcontrollerClient.getFlowPolicy();
+    private void jButtonFindControllerClientReceiverActionPerformed(ActionEvent evt) {
+        TrafficEngineeringPolicy trafficEngineeringPolicy = SDNcontrollerClient.getTrafficEngineeringPolicy();
 
+        /*
+         * Stop any possible user interaction.
+         */
         findControllerClientReceiverTextArea.setText("");
         getFlowIdButton.setEnabled(false);
+        getOSLevelRouteButton.setEnabled(false);
         sendPacketButton.setEnabled(false);
-        if (flowPolicy == FlowPolicy.MULTICASTING) {
-            addDestinationButton.setEnabled(false);
-            resetDestinationButton.setEnabled(false);
-        }
+        addDestinationButton.setEnabled(false);
+        resetDestinationButton.setEnabled(false);
 
+        /*
+         * Clear all the comboBox
+         */
         String[] emptyList = {};
-        DefaultComboBoxModel emptyDcbm = new DefaultComboBoxModel(emptyList);
-        getFlowIDDestinationNodeComboBox.setModel(emptyDcbm);
+        DefaultComboBoxModel emptyDcm = new DefaultComboBoxModel(emptyList);
+        getFlowIDDestinationNodeComboBox.setModel(emptyDcm);
+        getOSLevelRouteDestinationNodeComboBox.setModel(emptyDcm);
 
+        this.repaint();
+        this.revalidate();
+
+        /*
+         * Retrieve all the info in order to call the findControllerClientReceiver method.
+         */
+        String selectedProtocol = protocolComboBox.getSelectedItem().toString();
+        int protocol;
+        if (selectedProtocol.equals("UDP")) {
+            protocol = E2EComm.UDP;
+        } else {
+            protocol = E2EComm.TCP;
+        }
+        int ttl = Integer.parseInt(findControllerClientTTLTextField.getText());
+        int timeout = Integer.parseInt(findControllerClientTimeoutTextField.getText());
+        int serviceAmount = Integer.parseInt(findControllerClientServiceAmountTextField.getText());
+
+        /*
+         * Find the available services.
+         */
+        Vector<ServiceResponse> serviceResponses = new Vector<>();
         try {
-            String selectedProtocol = protocolComboBox.getSelectedItem().toString();
-            int protocol = -1;
-            if(selectedProtocol == "UDP") {
-                protocol = E2EComm.UDP;
-            } else {
-                protocol = E2EComm.TCP;
-            }
-            int ttl = Integer.parseInt(findControllerClientTTLTextField.getText());
-            int timeout = Integer.parseInt(findControllerClientTimeoutTextField.getText());
-            int serviceAmount = Integer.parseInt(findControllerClientServiceAmountTextField.getText());
-
-            Vector<ServiceResponse> serviceResponses = SDNcontrollerClient.findControllerClientReceiver(protocol, ttl, timeout, serviceAmount);
-            // Populate availableServices excluding the currentNode
-            int availableResponsesLen = serviceResponses.size() - 1;
-            availableServices = new Vector<ServiceResponse>(availableResponsesLen);
-            availableClients = new HashMap<Integer, ServiceResponse>();
-
-            // Remove
-            int j = 0;
-            for (int i = 0; i < serviceResponses.size(); i++) {
-                if (serviceResponses.elementAt(i).getServerNodeId() != this.localNodeID) {
-                    availableClients.put(serviceResponses.elementAt(i).getServerNodeId(), serviceResponses.elementAt(i));
-                    availableServices.add(j, serviceResponses.elementAt(i));
-                    j++;
-                }
-            }
-
-            if (flowPolicy == FlowPolicy.MULTICASTING) {
-                multicastFlowIDs = new HashMap<Integer, List<Integer>>();
-            } else {
-                // Initialise the flowID information for the new current Nodes
-                unicastFlowIDs = new HashMap<Integer, List<Integer>>();
-            }
-
-            String text = "";
-            int serverNodeId;
-            String[] items = new String[availableServices.size()];
-            for (int i = 0; i < availableServices.size(); i++) {
-                ServiceResponse element = availableServices.elementAt(i);
-                text += element + "\n";
-                serverNodeId = element.getServerNodeId();
-                items[i] = "" + serverNodeId;
-                if (flowPolicy != FlowPolicy.MULTICASTING) {
-                    unicastFlowIDs.put(serverNodeId, new ArrayList<Integer>());
-                }
-            }
-            findControllerClientReceiverTextArea.setText(text);
-            DefaultComboBoxModel dcm = new DefaultComboBoxModel(items);
-
-            getFlowIDDestinationNodeComboBox.setModel(dcm);
-
-            if (flowPolicy != FlowPolicy.MULTICASTING) {
-                sendMessageDestinationIDComboBox.setModel(dcm);
-            }
-
-            if (availableServices.size() > 0) {
-                getFlowIdButton.setEnabled(true);
-                sendPacketButton.setEnabled(true);
-                if (flowPolicy == FlowPolicy.MULTICASTING && availableServices.size() > 1) {
-                    addDestinationButton.setEnabled(true);
-                }
-            }
+            serviceResponses = SDNcontrollerClient.findControllerClientReceiver(protocol, ttl, timeout, serviceAmount);
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
+        availableClients = new HashMap<>();
 
-    private void jButtonSendPacketActionPerfomed(ActionEvent evt) {
-        int flowId = Integer.parseInt(sendPacketFlowIDComboBox.getSelectedItem().toString());
-        int payload = Integer.parseInt(sendPacketPayloadTextField.getText());
-        int repetitions = Integer.parseInt(sendPacketRepetitionTextField.getText());
-        if (SDNcontrollerClient.getFlowPolicy() != FlowPolicy.MULTICASTING) {
-            int destinationNodeIdIndex = sendMessageDestinationIDComboBox.getSelectedIndex();
-            ServiceResponse destinationNodeServiceResponse = availableServices.elementAt(destinationNodeIdIndex);
-            SDNcontrollerClient.sendUnicastMessage(destinationNodeServiceResponse, payload, flowId, repetitions);
-        } else {
-            // TODO improve protocol retrieval
-            int genericDestination = multicastFlowIDs.get(flowId).get(0);
-            int protocol = availableClients.get(genericDestination).getProtocol();
-            SDNcontrollerClient.sendMulticastMessage(multicastFlowIDs.get(flowId), payload, flowId, protocol, repetitions);
+        /* TODO Remove me
+         * Populate the availableClients structure according to the current trafficEngineeringPolicy
+         */
+//        if (trafficEngineeringPolicy == TrafficEngineeringPolicy.OS_ROUTING) {
+//            for (int i = 0; i < serviceResponses.size(); i++) {
+//                /*
+//                 * We omit to store the service available at this node.
+//                 */
+//                if (serviceResponses.elementAt(i).getServerNodeId() != this.localNodeID) {
+//                    int getServerDestLen = serviceResponses.elementAt(i).getServerDest().length;
+//                    String destinationIP = serviceResponses.elementAt(i).getServerDest()[getServerDestLen - 1];
+//                    String key = "";
+//                    if (getServerDestLen > 1) {
+//                        /*
+//                         * In case a service can be reached via different paths add also the viaIP information
+//                         * to differentiate the ServiceResponse.
+//                         */
+//                        String viaIP = serviceResponses.elementAt(i).getServerDest()[0];
+//                        key = "" + serviceResponses.elementAt(i).getServerNodeId() + "@" + destinationIP + "via" + viaIP;
+//                    } else {
+//                        /*
+//                         * Only for OS_ROUTING add the destinationIP info in order to let the user
+//                         * to understand better which are the reachable destination nodes.
+//                         */
+//                        key = "" + serviceResponses.elementAt(i).getServerNodeId() + "@" + destinationIP;
+//                    }
+//                    availableClients.put(key, serviceResponses.elementAt(i));
+//                }
+//            }
+//
+//            // TODO Improve routeIDs retrieval for example getting the info from the ControllerService.
+//            routeIDs = new HashMap<>();
+//        } else {
+        for (ServiceResponse serviceResponse : serviceResponses) {
+            String key = "" + serviceResponse.getServerNodeId();
+            /*
+             * We omit to store the service available at this node.
+             */
+            if (serviceResponse.getServerNodeId() != this.localNodeID && !availableClients.containsKey(key)) {
+                availableClients.put(key, serviceResponse);
+            }
         }
 
+        switch (trafficEngineeringPolicy) {
+            case MULTICASTING:
+                // TODO Improve multicastFlowIDs retrieval for example getting the info from the ControllerService.
+                multicastFlowIDs = new HashMap<>();
+                break;
+            case OS_ROUTING:
+                // TODO Improve routeIDs retrieval for example getting the info from the ControllerService.
+                routeIDs = new HashMap<>();
+                break;
+            default:
+                break;
+        }
+
+//            if (trafficEngineeringPolicy == TrafficEngineeringPolicy.MULTICASTING) {
+//                // TODO Improve multicastFlowIDs retrieval for example getting the info from the ControllerService.
+//                multicastFlowIDs = new HashMap<>();
+//            } else {
+//                // TODO Improve unicastFlowIDs retrieval for example getting the info from the ControllerService.
+//                unicastFlowIDs = new HashMap<>();
+//            }
+//        }
+
+        String text = "";
+        int availableClientsSize = availableClients.keySet().size();
+        String[] items = new String[availableClientsSize];
+
+        if (availableClientsSize > 0) {
+            int serverNodeId;
+            int i = 0;
+
+            for (String key : availableClients.keySet()) {
+                ServiceResponse sr = availableClients.get(key);
+                text += sr + "\n";
+                items[i] = key;
+                i++;
+                if (trafficEngineeringPolicy == TrafficEngineeringPolicy.OS_ROUTING) {
+                    /* TODO Remove me
+                     * For OS_ROUTING we still use the key in the form of nodeID@IP
+                     * in order to distinguish at which IP we want to reach
+                     * the client node.
+                     */
+                    if (!routeIDs.containsKey(key)) {
+                        routeIDs.put(key, new ArrayList<>());
+                    }
+                } else if (trafficEngineeringPolicy != TrafficEngineeringPolicy.MULTICASTING) {
+                    serverNodeId = sr.getServerNodeId();
+                    if (!unicastFlowIDs.containsKey(serverNodeId)) {
+                        unicastFlowIDs.put(serverNodeId, new ArrayList<>());
+                    }
+                }
+            }
+
+            /*
+             * Fill the combo box according to the available reachable clients
+             */
+            DefaultComboBoxModel dcm = new DefaultComboBoxModel(items);
+            DefaultComboBoxModel dcm2 = new DefaultComboBoxModel(items);
+
+            switch (trafficEngineeringPolicy) {
+                case OS_ROUTING:
+                    getOSLevelRouteDestinationNodeComboBox.setModel(dcm);
+                    getOSLevelRouteButton.setEnabled(true);
+                    sendMessageDestinationIDComboBox.setModel(dcm2);
+                    break;
+                case MULTICASTING:
+                    getFlowIDDestinationNodeComboBox.setModel(dcm);
+                    getFlowIdButton.setEnabled(true);
+                    if (availableClientsSize > 1) {
+                        addDestinationButton.setEnabled(true);
+                    }
+                    break;
+                default:
+                    getFlowIDDestinationNodeComboBox.setModel(dcm);
+                    getFlowIdButton.setEnabled(true);
+                    sendMessageDestinationIDComboBox.setModel(dcm2);
+                    break;
+            }
+        }
+        /*
+         * Display the available services.
+         */
+        findControllerClientReceiverTextArea.setText(text);
     }
 
-    private void jButtonReceivePacketActionPerfomed(ActionEvent evt) {
+    private void jButtonSendPacketActionPerformed(ActionEvent evt) {
+        TrafficEngineeringPolicy trafficEngineeringPolicy = SDNcontrollerClient.getTrafficEngineeringPolicy();
+
+        int payload = Integer.parseInt(sendPacketPayloadTextField.getText());
+        int repetitions = Integer.parseInt(sendPacketRepetitionTextField.getText());
+        String destinationNode;
+        ServiceResponse destinationNodeServiceResponse;
+        int flowId;
+        int routeId;
+
+        switch (trafficEngineeringPolicy) {
+            case OS_ROUTING:
+                routeId = Integer.parseInt(sendPacketRouteIDComboBox.getSelectedItem().toString());
+                destinationNode = sendMessageDestinationIDComboBox.getSelectedItem().toString();
+                destinationNodeServiceResponse = availableClients.get(destinationNode);
+                String selectedProtocol = protocolComboBox.getSelectedItem().toString();
+                if (selectedProtocol.equals("UDP")) {
+                    SDNcontrollerClient.sendDatagramSocketMessage(destinationNodeServiceResponse, payload, routeId, repetitions);
+                } else {
+                    SDNcontrollerClient.sendServiceSocketMessage(destinationNodeServiceResponse, payload, routeId, repetitions);
+                }
+                break;
+            case MULTICASTING:
+                flowId = Integer.parseInt(sendPacketFlowIDComboBox.getSelectedItem().toString());
+                // TODO improve protocol retrieval
+                String genericDestination = multicastFlowIDs.get(flowId).get(0).toString();
+                int protocol = availableClients.get(genericDestination).getProtocol();
+                SDNcontrollerClient.sendMulticastMessage(multicastFlowIDs.get(flowId), payload, flowId, protocol, repetitions);
+                break;
+            default:
+                flowId = Integer.parseInt(sendPacketFlowIDComboBox.getSelectedItem().toString());
+                destinationNode = sendMessageDestinationIDComboBox.getSelectedItem().toString();
+                destinationNodeServiceResponse = availableClients.get(destinationNode);
+                SDNcontrollerClient.sendUnicastMessage(destinationNodeServiceResponse, payload, flowId, repetitions);
+        }
+    }
+
+    private void jButtonReceivePacketActionPerformed(ActionEvent evt) {
         String res = "";
         Vector<String> messageList = SDNcontrollerClient.getReceivedMessages();
         for (String mess : messageList) {
@@ -1015,41 +1271,34 @@ public class SDNControllerClientJFrame extends JFrame {
         receivePacketTextArea.setText(res);
     }
 
-    private void jButtonDeletePacketActionPerfomed(ActionEvent evt) {
+    private void jButtonDeletePacketActionPerformed(ActionEvent evt) {
         SDNcontrollerClient.resetReceivedMessages();
-        this.jButtonReceivePacketActionPerfomed(null);
+        this.jButtonReceivePacketActionPerformed(null);
     }
 
-    private void jButtonRefreshInfoActionPerfomed(ActionEvent evt) {
-        /* Update Current Flow Policy */
-        FlowPolicy currentFlowPolicy = SDNcontrollerClient.getFlowPolicy();
-        currentPolicyTextField.setText(currentFlowPolicy.toString());
+    private void jButtonRefreshInfoActionPerformed(ActionEvent evt) {
+        /*
+         * Update Current TrafficEngineeringPolicy.
+         */
+        TrafficEngineeringPolicy currentTrafficEngineeringPolicy = SDNcontrollerClient.getTrafficEngineeringPolicy();
+        currentTrafficEngineeringPolicyTextField.setText(currentTrafficEngineeringPolicy.toString());
 
-        if (currentFlowPolicy == FlowPolicy.MULTICASTING) {
-            additionalDestinationPanel.setVisible(true);
-            multicastDestinationsPanel.setVisible(true);
-            sendPacketDestinationIDLabel.setVisible(false);
-            sendMessageDestinationIDComboBox.setVisible(false);
-            if (availableServices != null && availableServices.size() > 1) {
-                addDestinationButton.setEnabled(true);
-            }
-            multicastFlowIDs = new HashMap<Integer, List<Integer>>();
-        } else {
-            additionalDestinationPanel.setVisible(false);
-            multicastDestinationsPanel.setVisible(false);
-            sendPacketDestinationIDLabel.setVisible(true);
-            sendMessageDestinationIDComboBox.setVisible(true);
-        }
-
-        /* Show tables according to the Current Flow Policy */
+        /*
+         * Show tables according to the Current TrafficEngineeringPolicy.
+         */
         showAndUpdateTablesPolicy();
+
+        /*
+         * Find ControllerClientReceivers according to the new policy.
+         */
+        jButtonFindControllerClientReceiverActionPerformed(null);
     }
 
     private void formWindowClosed(java.awt.event.WindowEvent evt) {
 
     }
 
-    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {
         System.out.println("SDNControllerClientJFrame: formWindowClosing");
         this.SDNcontrollerClient.stopClient();
     }
@@ -1057,55 +1306,113 @@ public class SDNControllerClientJFrame extends JFrame {
     private void showAndUpdateTablesPolicy() {
         defaultFlowPathPanel.setVisible(false);
         flowPrioritiesPanel.setVisible(false);
+        getFlowIDPanel.setVisible(false);
+        additionalDestinationPanel.setVisible(false);
+        getOSLevelRoutePanel.setVisible(false);
+        sendPacketDestinationIDLabel.setVisible(false);
+        sendMessageDestinationIDComboBox.setVisible(false);
+        multicastDestinationsPanel.setVisible(false);
+        sendPacketFlowIDLabel.setVisible(false);
+        sendPacketFlowIDComboBox.setVisible(false);
+        sendPacketRouteIDLabel.setVisible(false);
+        sendPacketRouteIDComboBox.setVisible(false);
 
-        FlowPolicy currentFlowPolicy = SDNcontrollerClient.getFlowPolicy();
-        if (currentFlowPolicy == FlowPolicy.REROUTING) {
-            defaultFlowPathPanel.setVisible(true);
-            /* Update Default Flow Path Table */
-            DefaultTableModel dtm = new DefaultTableModel();
-            dtm.addColumn("FlowID");
-            dtm.addColumn("Path");
-            ConcurrentHashMap<Integer, PathDescriptor> defaultFlowPath = SDNcontrollerClient.getDefaultFlowPath();
+        TrafficEngineeringPolicy currentTrafficEngineeringPolicy = SDNcontrollerClient.getTrafficEngineeringPolicy();
+        DefaultTableModel dtm;
+        switch (currentTrafficEngineeringPolicy) {
+            case REROUTING:
+                getFlowIDPanel.setVisible(true);
+                defaultFlowPathPanel.setVisible(true);
+                sendPacketDestinationIDLabel.setVisible(true);
+                sendMessageDestinationIDComboBox.setVisible(true);
+                sendPacketFlowIDLabel.setVisible(true);
+                sendPacketFlowIDComboBox.setVisible(true);
 
-            for (Map.Entry<Integer, PathDescriptor> entry : defaultFlowPath.entrySet()) {
-                String flowId = entry.getKey().toString();
-                String[] path = entry.getValue().getPath();
-                int pathLen = path.length;
-                String pathString = "";
-                for (int i = 0; i < pathLen; i++) {
-                    if (i == pathLen - 1) {
-                        pathString += path[i];
-                    } else {
-                        pathString += path[i] + " - ";
+                /*
+                 * Update Default Flow Path Table
+                 */
+                dtm = new DefaultTableModel();
+                dtm.addColumn("FlowID");
+                dtm.addColumn("Path");
+                ConcurrentHashMap<Integer, PathDescriptor> defaultFlowPath = SDNcontrollerClient.getDefaultFlowPath();
+
+                for (Map.Entry<Integer, PathDescriptor> entry : defaultFlowPath.entrySet()) {
+                    String flowId = entry.getKey().toString();
+                    String[] path = entry.getValue().getPath();
+                    int pathLen = path.length;
+                    String pathString = "";
+                    for (int i = 0; i < pathLen; i++) {
+                        if (i == pathLen - 1) {
+                            pathString += path[i];
+                        } else {
+                            pathString += path[i] + " - ";
+                        }
                     }
+                    dtm.addRow(new String[]{flowId, pathString});
                 }
-                dtm.addRow(new String[]{flowId, pathString});
-            }
 
-            defaultFlowPathTable.setModel(dtm);
-        } else if (currentFlowPolicy != FlowPolicy.MULTICASTING) {
-            flowPrioritiesPanel.setVisible(true);
-            /* Update Default Flow Path Table */
-            DefaultTableModel dtm = new DefaultTableModel();
-            dtm.addColumn("FlowID");
-            dtm.addColumn("Priority");
-            ConcurrentHashMap<Integer, Integer> flowPriorities = SDNcontrollerClient.getFlowPriorities();
+                defaultFlowPathTable.setModel(dtm);
+                break;
+            case OS_ROUTING:
+                getOSLevelRoutePanel.setVisible(true);
+                sendPacketDestinationIDLabel.setVisible(true);
+                sendMessageDestinationIDComboBox.setVisible(true);
+                sendPacketRouteIDLabel.setVisible(true);
+                sendPacketRouteIDComboBox.setVisible(true);
+                break;
+            case MULTICASTING:
+                getFlowIDPanel.setVisible(true);
+                additionalDestinationPanel.setVisible(true);
+                multicastDestinationsPanel.setVisible(true);
+                sendPacketFlowIDLabel.setVisible(true);
+                sendPacketFlowIDComboBox.setVisible(true);
 
-            for (Map.Entry<Integer, Integer> entry : flowPriorities.entrySet()) {
-                String flowId = entry.getKey().toString();
-                String priority = entry.getValue().toString();
-                dtm.addRow(new String[]{flowId, priority});
-            }
-            defaultFlowPathTable.setModel(dtm);
+                if (availableClients != null && availableClients.keySet().size() > 1) {
+                    addDestinationButton.setEnabled(true);
+                }
+                multicastFlowIDs = new HashMap<>();
+            default:
+                getFlowIDPanel.setVisible(true);
+                flowPrioritiesPanel.setVisible(true);
+                sendPacketDestinationIDLabel.setVisible(true);
+                sendMessageDestinationIDComboBox.setVisible(true);
+                sendPacketFlowIDLabel.setVisible(true);
+                sendPacketFlowIDComboBox.setVisible(true);
+
+                /*
+                 * Update Default Flow Path Table
+                 */
+                dtm = new DefaultTableModel();
+                dtm.addColumn("FlowID");
+                dtm.addColumn("Priority");
+                ConcurrentHashMap<Integer, Integer> flowPriorities = SDNcontrollerClient.getFlowPriorities();
+
+                for (Map.Entry<Integer, Integer> entry : flowPriorities.entrySet()) {
+                    String flowId = entry.getKey().toString();
+                    String priority = entry.getValue().toString();
+                    dtm.addRow(new String[]{flowId, priority});
+                }
+                defaultFlowPathTable.setModel(dtm);
+                break;
         }
     }
 
-    private void jComboBoxApplicationTypeActionPerfomed(ActionEvent evt) {
+    private void jComboBoxApplicationTypeActionPerformed(ActionEvent evt) {
         showApplicationRequirementsFieldsPolicy();
     }
 
-    private void jComboBoxSendMessageDestinationIDActionPerfomed(ActionEvent evt) {
-        int selectedDestinationNodeId = Integer.parseInt(sendMessageDestinationIDComboBox.getSelectedItem().toString());
+    /**
+     * This method working only when TrafficEngineeringPolicy.REROUTING || SINGLE_FLOW
+     * || QUEUES || TRAFFIC_SHAPING is active
+     * shows in the sendPacketFlowIDComboBox the flowID according
+     * to the destinationId selected by the user.
+     *
+     * @param evt
+     */
+    private void jComboBoxSendMessageDestinationIDActionPerformed(ActionEvent evt) {
+        String selectedDestinationNode = sendMessageDestinationIDComboBox.getSelectedItem().toString();
+        int selectedDestinationNodeId = availableClients.get(selectedDestinationNode).getServerNodeId();
+
         int count = unicastFlowIDs.get(selectedDestinationNodeId).size();
         String[] flowIdsItems = new String[count];
         count = 0;
@@ -1117,12 +1424,40 @@ public class SDNControllerClientJFrame extends JFrame {
         sendPacketFlowIDComboBox.setModel(dcm);
     }
 
-    private void jComboBoxSendMessageFlowIDActionPerfomed(ActionEvent evt) {
+    /**
+     * This method working only when TrafficEngineeringPolicy.MULTICASTING is active
+     * shows in the multicastDestinationsTextArea the destination according
+     * to the flowId selected by the user.
+     *
+     * @param evt
+     */
+    private void jComboBoxSendMessageFlowIDActionPerformed(ActionEvent evt) {
         int selectedMulticastFlowId = Integer.parseInt(sendPacketFlowIDComboBox.getSelectedItem().toString());
         String text = "";
         for (Integer d : multicastFlowIDs.get(selectedMulticastFlowId)) {
             text += d + "\n";
         }
         multicastDestinationsTextArea.setText(text);
+    }
+
+    /**
+     * This method working only when TrafficEngineeringPolicy.OS_ROUTING is active
+     * shows in the sendPacketRouteIDComboBox the routeID according
+     * to the destinationId@IP selected by the user.
+     *
+     * @param evt
+     */
+    private void jComboBoxSendMessageRouteIDActionPerformed(ActionEvent evt) {
+        String selectedDestinationNode = sendMessageDestinationIDComboBox.getSelectedItem().toString();
+
+        int count = routeIDs.get(selectedDestinationNode).size();
+        String[] routeIdsItems = new String[count];
+        count = 0;
+        for (Integer f : routeIDs.get(selectedDestinationNode)) {
+            routeIdsItems[count] = f.toString();
+            count++;
+        }
+        DefaultComboBoxModel dcm = new DefaultComboBoxModel(routeIdsItems);
+        sendPacketRouteIDComboBox.setModel(dcm);
     }
 }
