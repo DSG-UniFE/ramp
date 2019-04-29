@@ -1,10 +1,15 @@
 package it.unibo.deis.lia.ramp.service.application;
 
+import it.unibo.deis.lia.ramp.core.e2e.BoundReceiveSocket;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerService.ControllerService;
 import it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy.TrafficEngineeringPolicy;
 import org.graphstream.ui.swingViewer.DefaultView;
 
+import java.io.File;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Dmitrij David Padalino Montenero
@@ -58,6 +63,30 @@ public class SDNControllerService {
 
     public DefaultView getGraph() {
         return controllerService.getGraph();
+    }
+
+    public Set<String> getDataTypesAvailable() {
+        return controllerService.getDataTypesAvailable();
+    }
+
+    public Set<String> getAdvancedDataPlaneRules() {
+        return controllerService.getAdvancedDataPlaneRules();
+    }
+
+    public Map<String, List<String>> getAdvancedDataPlaneActiveRules() {
+        return controllerService.getAdvancedDataPlaneActiveRules();
+    }
+
+    public boolean addAdvancedDataPlaneDataType(String dataTypeFileName, File dataTypeFile) {
+        return  controllerService.addAdvancedDataPlaneDataType(dataTypeFileName, dataTypeFile);
+    }
+
+    public boolean addAdvancedDataPlaneRule(String dataType, String dataPlaneRule) {
+        return controllerService.addAdvancedDataPlaneRule(dataType, dataPlaneRule);
+    }
+
+    public void removeAdvancedDataPlaneRule(String dataType, String dataPlaneRule) {
+        controllerService.removeAdvancedDataPlaneRule(dataType, dataPlaneRule);
     }
 
     private static void sleep(int sleepFor) {

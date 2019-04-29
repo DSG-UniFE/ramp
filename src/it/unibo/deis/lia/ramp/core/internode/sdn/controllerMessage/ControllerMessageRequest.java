@@ -26,7 +26,8 @@ public class ControllerMessageRequest extends ControllerMessage {
      * PATH_REQUEST message: messageType, clientPort, destNodeIds, applicationRequirements, pathSelectionMetric, flowId,
      * MULTICAST_REQUEST message: messageType, clientPort, destNodeIds, destPorts, applicationRequirements, pathSelectionMetric, flowId
      * PRIORITY_VALUE_REQUEST message: messageType, clientPort, applicationRequirements, flowId
-     * OS_ROUTING_REQUEST TODO
+     * OS_ROUTING_REQUEST message: messageType, clientPort, destNodeIds, destPorts, applicationRequirements, pathSelectionMetric
+     * TOPOLOGY_GRAPH_REQUEST message: messageType, clientPort
      */
     public ControllerMessageRequest(MessageType messageType, int clientPort, Map<String, NodeStats> nodeStats, int[] destNodeIds, int[] destPorts, ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric, int flowId) {
         super(messageType, clientPort, nodeStats);
@@ -46,6 +47,15 @@ public class ControllerMessageRequest extends ControllerMessage {
         this.applicationRequirements = applicationRequirements;
         this.pathSelectionMetric = pathSelectionMetric;
         this.flowId = flowId;
+    }
+
+    public ControllerMessageRequest(MessageType messageType, int clientPort) {
+        super(messageType, clientPort);
+        this.destNodeIds = null;
+        this.destPorts = null;
+        this.applicationRequirements = null;
+        this.pathSelectionMetric = null;
+        this.flowId = UNUSED_FIELD;
     }
 
     public int[] getDestNodeIds() {

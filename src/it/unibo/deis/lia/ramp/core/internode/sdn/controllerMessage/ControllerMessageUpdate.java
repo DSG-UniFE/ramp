@@ -1,5 +1,6 @@
 package it.unibo.deis.lia.ramp.core.internode.sdn.controllerMessage;
 
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.dataTypeMessage.DataTypeMessage;
 import it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy.TrafficEngineeringPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.PathDescriptor;
 import it.unibo.deis.lia.ramp.core.internode.sdn.routingPolicy.RoutingPolicy;
@@ -32,14 +33,23 @@ public class ControllerMessageUpdate extends ControllerMessage {
      */
     private Map<Integer, Integer> flowPriorities;
 
+    private DataTypeMessage dataTypeMessage;
+
+    private String dataType;
+
+    private String dataPlaneRule;
+
     /**
      * TOPOLOGY_UPDATE message: messageType, neighborNodes, nodeStats
      * TRAFFIC_ENGINEERING_POLICY_UPDATE message: messageType, trafficEngineeringPolicy
      * ROUTING_POLICY_UPDATE: messageType, routingPolicy
      * DEFAULT_FLOW_PATHS_UPDATE message: messageType, newPathMappings
      * FLOW_PRIORITIES_UPDATE message: messageType, flowPriorities
+     * DATA_PLANE_ADD_DATA_TYPE message: messageType, DataTypeMessage
+     * DATA_PLANE_ADD_RULE message: messageType, dataType, dataPlaneRule
+     * DATA_PLANE_REMOVE_RULE message: messageType, dataType, dataPlaneRule
      */
-    public ControllerMessageUpdate(MessageType messageType, int clientPort, Map<String, NodeStats> nodeStats, Map<Integer, List<String>> neighborNodes, TrafficEngineeringPolicy trafficEngineeringPolicy, RoutingPolicy routingPolicy, Map<Integer, PathDescriptor> newPathMappings, Map<Integer, Integer> flowPriorities) {
+    public ControllerMessageUpdate(MessageType messageType, int clientPort, Map<String, NodeStats> nodeStats, Map<Integer, List<String>> neighborNodes, TrafficEngineeringPolicy trafficEngineeringPolicy, RoutingPolicy routingPolicy, Map<Integer, PathDescriptor> newPathMappings, Map<Integer, Integer> flowPriorities, DataTypeMessage dataTypeMessage, String dataType, String dataPlaneRule) {
         super(messageType, clientPort, nodeStats);
 
         this.neighborNodes = neighborNodes;
@@ -47,9 +57,12 @@ public class ControllerMessageUpdate extends ControllerMessage {
         this.routingPolicy = routingPolicy;
         this.newPathMappings = newPathMappings;
         this.flowPriorities = flowPriorities;
+        this.dataTypeMessage = dataTypeMessage;
+        this.dataType = dataType;
+        this.dataPlaneRule = dataPlaneRule;
     }
 
-    public ControllerMessageUpdate(MessageType messageType, Map<String, NodeStats> nodeStats, Map<Integer, List<String>> neighborNodes, TrafficEngineeringPolicy trafficEngineeringPolicy, RoutingPolicy routingPolicy, Map<Integer, PathDescriptor> newPathMappings, Map<Integer, Integer> flowPriorities) {
+    public ControllerMessageUpdate(MessageType messageType, Map<String, NodeStats> nodeStats, Map<Integer, List<String>> neighborNodes, TrafficEngineeringPolicy trafficEngineeringPolicy, RoutingPolicy routingPolicy, Map<Integer, PathDescriptor> newPathMappings, Map<Integer, Integer> flowPriorities, DataTypeMessage dataTypeMessage, String dataType, String dataPlaneRule) {
         super(messageType, nodeStats);
 
         this.neighborNodes = neighborNodes;
@@ -57,6 +70,9 @@ public class ControllerMessageUpdate extends ControllerMessage {
         this.routingPolicy = routingPolicy;
         this.newPathMappings = newPathMappings;
         this.flowPriorities = flowPriorities;
+        this.dataTypeMessage = dataTypeMessage;
+        this.dataType = dataType;
+        this.dataPlaneRule = dataPlaneRule;
     }
 
     public Map<Integer, List<String>> getNeighborNodes() {
@@ -75,11 +91,16 @@ public class ControllerMessageUpdate extends ControllerMessage {
         this.trafficEngineeringPolicy = trafficEngineeringPolicy;
     }
 
-    public RoutingPolicy getRoutingPolicy() { return this.routingPolicy; }
+    public RoutingPolicy getRoutingPolicy() {
+        return this.routingPolicy;
+    }
 
-    public void setRoutingPolicy(RoutingPolicy routingPolicy) { this.routingPolicy = routingPolicy; }
+    public void setRoutingPolicy(RoutingPolicy routingPolicy) {
+        this.routingPolicy = routingPolicy;
+    }
 
     public Map<Integer, PathDescriptor> getNewPathMappings() {
+
         return this.newPathMappings;
     }
 
@@ -93,5 +114,29 @@ public class ControllerMessageUpdate extends ControllerMessage {
 
     public void setFlowPriorities(Map<Integer, Integer> flowPriorities) {
         this.flowPriorities = flowPriorities;
+    }
+
+    public void setDataTypeMessage(DataTypeMessage dataTypeMessage) {
+        this.dataTypeMessage = dataTypeMessage;
+    }
+
+    public DataTypeMessage getDataTypeMessage() {
+        return dataTypeMessage;
+    }
+
+    public void setDataType(String dataType) {
+        this.dataType = dataType;
+    }
+
+    public String getDataType() {
+        return dataType;
+    }
+
+    public void setDataPlaneRule(String dataPlaneRule) {
+        this.dataPlaneRule = dataPlaneRule;
+    }
+
+    public String getDataPlaneRule() {
+        return dataPlaneRule;
     }
 }

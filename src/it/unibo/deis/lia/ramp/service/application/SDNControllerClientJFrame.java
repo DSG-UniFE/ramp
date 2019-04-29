@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Dmitrij David Padalino Montenero
  */
 public class SDNControllerClientJFrame extends JFrame {
-    private SDNControllerClient SDNcontrollerClient;
+    private static SDNControllerClient SDNcontrollerClient;
 
     private int localNodeID;
     /**
@@ -48,6 +48,9 @@ public class SDNControllerClientJFrame extends JFrame {
 
     private JPanel trafficEngineeringPolicyPanel;
     private JTextField currentTrafficEngineeringPolicyTextField;
+
+    private JPanel getTopologyGraphPanel;
+    private JButton getTopologyGraphButton;
 
     private JPanel refreshInfoPanel;
     private JButton refreshInfoButton;
@@ -116,6 +119,8 @@ public class SDNControllerClientJFrame extends JFrame {
     private ActionListener destinationIDComboBoxActionListener;
     private JLabel sendPacketFlowIDLabel;
     private JComboBox sendPacketFlowIDComboBox;
+    private JLabel sendPacketDataTypeLabel;
+    private JComboBox sendPacketDataTypeComboBox;
     private JLabel sendPacketRouteIDLabel;
     private JComboBox sendPacketRouteIDComboBox;
     private JPanel multicastDestinationsPanel;
@@ -155,6 +160,7 @@ public class SDNControllerClientJFrame extends JFrame {
         initFlowPrioritiesTablePanel();
         initSendPacketPanel();
         initReceivePacketPanel();
+        initGetTopologyGraphPanel();
         initRefreshInfoPanel();
 
         /*
@@ -202,6 +208,8 @@ public class SDNControllerClientJFrame extends JFrame {
                                         .addComponent(receivePacketPanel, GroupLayout.PREFERRED_SIZE, 300, GroupLayout.PREFERRED_SIZE)
                                 )
                         )
+                        .addComponent(getTopologyGraphPanel, GroupLayout.PREFERRED_SIZE, 238, GroupLayout.PREFERRED_SIZE)
+                        .addGap(20)
                         .addComponent(refreshInfoPanel, GroupLayout.PREFERRED_SIZE, 238, GroupLayout.PREFERRED_SIZE)
                 )
                 .addContainerGap()
@@ -233,6 +241,8 @@ public class SDNControllerClientJFrame extends JFrame {
                                 .addComponent(receivePacketPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                         )
                 )
+                .addGap(15)
+                .addComponent(getTopologyGraphPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                 .addGap(15)
                 .addComponent(refreshInfoPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                 .addContainerGap()
@@ -687,6 +697,11 @@ public class SDNControllerClientJFrame extends JFrame {
         sendPacketFlowIDLabel = new JLabel("FlowID");
         sendPacketFlowIDComboBox = new JComboBox();
 
+        sendPacketDataTypeLabel = new JLabel("Data Type");
+        sendPacketDataTypeComboBox = new JComboBox();
+
+        fillDataTypeComboBox();
+
         sendPacketRouteIDLabel = new JLabel("RouteID");
         sendPacketRouteIDComboBox = new JComboBox();
 
@@ -706,6 +721,8 @@ public class SDNControllerClientJFrame extends JFrame {
                 .addComponent(sendMessageDestinationIDComboBox, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
                 .addComponent(sendPacketFlowIDLabel, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
                 .addComponent(sendPacketFlowIDComboBox, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+                .addComponent(sendPacketDataTypeLabel, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+                .addComponent(sendPacketDataTypeComboBox, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
                 .addComponent(sendPacketRouteIDLabel, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
                 .addComponent(sendPacketRouteIDComboBox, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
                 .addComponent(multicastDestinationsPanel, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
@@ -724,6 +741,10 @@ public class SDNControllerClientJFrame extends JFrame {
                 .addGap(5)
                 .addComponent(sendPacketFlowIDComboBox, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE).addComponent(sendPacketRouteIDLabel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                 .addGap(5)
+                .addComponent(sendPacketDataTypeLabel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addGap(5)
+                .addComponent(sendPacketDataTypeComboBox, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addGap(5)
                 .addComponent(sendPacketRouteIDComboBox, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                 .addGap(5)
                 .addComponent(multicastDestinationsPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -738,6 +759,19 @@ public class SDNControllerClientJFrame extends JFrame {
                 .addGap(5)
                 .addComponent(sendPacketButton, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
         );
+    }
+
+    private void fillDataTypeComboBox() {
+        Set<String> currentDataTypes = SDNcontrollerClient.getDataTypesAvailable();
+        String[] dataTypeItems = new String[currentDataTypes.size()+1];
+        dataTypeItems[0] = "Default Message";
+        int count = 1;
+        for(String dataType : currentDataTypes) {
+            dataTypeItems[count] = "" + dataType;
+            count++;
+        }
+        DefaultComboBoxModel dataTypeDcm = new DefaultComboBoxModel(dataTypeItems);
+        sendPacketDataTypeComboBox.setModel(dataTypeDcm);
     }
 
     private void initMulticastDestinationsPanel() {
@@ -813,6 +847,28 @@ public class SDNControllerClientJFrame extends JFrame {
                 )
                 .addGap(5)
                 .addComponent(receivePacketScrollPane, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+        );
+    }
+
+    private void initGetTopologyGraphPanel() {
+        getTopologyGraphPanel = new JPanel();
+        getTopologyGraphPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Topology Graph"));
+
+        getTopologyGraphButton = new JButton("Get Topology Graph");
+        getTopologyGraphButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                jButtonGetTopologyGraphActionPerformed(evt);
+            }
+        });
+
+        GroupLayout topologyGraphLayout = new GroupLayout(getTopologyGraphPanel);
+        getTopologyGraphPanel.setLayout(topologyGraphLayout);
+        topologyGraphLayout.setHorizontalGroup(topologyGraphLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addComponent(getTopologyGraphButton, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+        );
+        topologyGraphLayout.setVerticalGroup(topologyGraphLayout.createSequentialGroup()
+                .addComponent(getTopologyGraphButton)
         );
     }
 
@@ -1151,6 +1207,7 @@ public class SDNControllerClientJFrame extends JFrame {
                 routeIDs = new HashMap<>();
                 break;
             default:
+                unicastFlowIDs = new HashMap<>();
                 break;
         }
 
@@ -1234,6 +1291,7 @@ public class SDNControllerClientJFrame extends JFrame {
         ServiceResponse destinationNodeServiceResponse;
         int flowId;
         int routeId;
+        String dataType = sendPacketDataTypeComboBox.getSelectedItem().toString();
 
         switch (trafficEngineeringPolicy) {
             case OS_ROUTING:
@@ -1252,13 +1310,13 @@ public class SDNControllerClientJFrame extends JFrame {
                 // TODO improve protocol retrieval
                 String genericDestination = multicastFlowIDs.get(flowId).get(0).toString();
                 int protocol = availableClients.get(genericDestination).getProtocol();
-                SDNcontrollerClient.sendMulticastMessage(multicastFlowIDs.get(flowId), payload, flowId, protocol, repetitions);
+                SDNcontrollerClient.sendMulticastMessage(multicastFlowIDs.get(flowId), dataType, payload, flowId, protocol, repetitions);
                 break;
             default:
                 flowId = Integer.parseInt(sendPacketFlowIDComboBox.getSelectedItem().toString());
                 destinationNode = sendMessageDestinationIDComboBox.getSelectedItem().toString();
                 destinationNodeServiceResponse = availableClients.get(destinationNode);
-                SDNcontrollerClient.sendUnicastMessage(destinationNodeServiceResponse, payload, flowId, repetitions);
+                SDNcontrollerClient.sendUnicastMessage(destinationNodeServiceResponse, dataType, payload, flowId, repetitions);
         }
     }
 
@@ -1274,6 +1332,10 @@ public class SDNControllerClientJFrame extends JFrame {
     private void jButtonDeletePacketActionPerformed(ActionEvent evt) {
         SDNcontrollerClient.resetReceivedMessages();
         this.jButtonReceivePacketActionPerformed(null);
+    }
+
+    private void jButtonGetTopologyGraphActionPerformed(ActionEvent evt) {
+        SDNcontrollerClient.getTopologyGraph();
     }
 
     private void jButtonRefreshInfoActionPerformed(ActionEvent evt) {
@@ -1314,6 +1376,8 @@ public class SDNControllerClientJFrame extends JFrame {
         multicastDestinationsPanel.setVisible(false);
         sendPacketFlowIDLabel.setVisible(false);
         sendPacketFlowIDComboBox.setVisible(false);
+        sendPacketDataTypeLabel.setVisible(false);
+        sendPacketDataTypeComboBox.setVisible(false);
         sendPacketRouteIDLabel.setVisible(false);
         sendPacketRouteIDComboBox.setVisible(false);
 
@@ -1327,6 +1391,10 @@ public class SDNControllerClientJFrame extends JFrame {
                 sendMessageDestinationIDComboBox.setVisible(true);
                 sendPacketFlowIDLabel.setVisible(true);
                 sendPacketFlowIDComboBox.setVisible(true);
+                sendPacketDataTypeLabel.setVisible(true);
+                sendPacketDataTypeComboBox.setVisible(true);
+
+                fillDataTypeComboBox();
 
                 /*
                  * Update Default Flow Path Table
@@ -1366,11 +1434,18 @@ public class SDNControllerClientJFrame extends JFrame {
                 multicastDestinationsPanel.setVisible(true);
                 sendPacketFlowIDLabel.setVisible(true);
                 sendPacketFlowIDComboBox.setVisible(true);
+                sendPacketDataTypeLabel.setVisible(true);
+                sendPacketDataTypeComboBox.setVisible(true);
+
+                fillDataTypeComboBox();
 
                 if (availableClients != null && availableClients.keySet().size() > 1) {
                     addDestinationButton.setEnabled(true);
                 }
                 multicastFlowIDs = new HashMap<>();
+
+
+                break;
             default:
                 getFlowIDPanel.setVisible(true);
                 flowPrioritiesPanel.setVisible(true);
@@ -1378,6 +1453,10 @@ public class SDNControllerClientJFrame extends JFrame {
                 sendMessageDestinationIDComboBox.setVisible(true);
                 sendPacketFlowIDLabel.setVisible(true);
                 sendPacketFlowIDComboBox.setVisible(true);
+                sendPacketDataTypeLabel.setVisible(true);
+                sendPacketDataTypeComboBox.setVisible(true);
+
+                fillDataTypeComboBox();
 
                 /*
                  * Update Default Flow Path Table

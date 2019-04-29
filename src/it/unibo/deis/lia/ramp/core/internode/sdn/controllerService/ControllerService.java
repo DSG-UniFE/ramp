@@ -1,6 +1,10 @@
 package it.unibo.deis.lia.ramp.core.internode.sdn.controllerService;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -8,7 +12,11 @@ import java.util.concurrent.ThreadLocalRandom;
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
 import it.unibo.deis.lia.ramp.core.internode.Resolver;
 
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.DataTypesManager;
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.dataTypeMessage.DataTypeMessage;
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.rulesManager.AdvancedDataPlaneRulesManager;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerMessage.*;
+import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.graphUtils.GraphUtils;
 import it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy.TrafficEngineeringPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.routingPolicy.RoutingPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.TopologyGraphSelector;
@@ -23,6 +31,7 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.prioritySelector.ApplicationTyp
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerMessage.ControllerMessageUpdate;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.PathSelectionMetric;
 
+import it.unibo.deis.lia.ramp.util.GeneralUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.graphstream.graph.Edge;
@@ -57,6 +66,8 @@ public class ControllerService extends Thread {
     private UpdateManager updateManager;
     private TrafficEngineeringPolicy trafficEngineeringPolicy;
     private RoutingPolicy routingPolicy;
+    private DataTypesManager dataTypesManager;
+    private AdvancedDataPlaneRulesManager dataPlaneRulesManager;
 
 
 //    /**
@@ -103,12 +114,15 @@ public class ControllerService extends Thread {
      * Data structure to hold priorities for the existing flows (flowId, priority)
      */
     private Map<Integer, Integer> flowPriorities;
+
     private PrioritySelector flowPrioritySelector;
 
     /**
      * Data structure to hold current paths for the existing flows (flowId, path)
      */
     private Map<Integer, PathDescriptor> osLevelRoutes;
+
+    private String sdnControllerDirectory = "./temp/sdnController";
 
     private ControllerService() throws Exception {
         this.serviceSocket = E2EComm.bindPreReceive(PROTOCOL);
@@ -132,6 +146,20 @@ public class ControllerService extends Thread {
         this.flowPrioritySelector = new ApplicationTypeFlowPrioritySelector();
 
         this.osLevelRoutes = new ConcurrentHashMap<>();
+
+        this.dataTypesManager = DataTypesManager.getInstance();
+
+        this.dataPlaneRulesManager = AdvancedDataPlaneRulesManager.getInstance();
+
+        File dir = new File(sdnControllerDirectory);
+        if (!dir.exists()) {
+            if (dir.mkdir()) {
+                System.out.println("ControllerService: " + dir.getName() + " folder created.");
+            } else {
+                System.out.println("ControllerService: the folder " + dir.getName() + " already exists.");
+            }
+        }
+
     }
 
     public synchronized static ControllerService getInstance() {
@@ -195,11 +223,31 @@ public class ControllerService extends Thread {
         this.topologyGraph.addAttribute("ui.screenshot", screenshotFilePath);
     }
 
+    public Set<String> getDataTypesAvailable() {
+        return this.dataTypesManager.getDataTypesAvailable();
+    }
+
+    public Set<String> getAdvancedDataPlaneRules() {
+        return this.dataPlaneRulesManager.getRulesAvailable();
+    }
+
+    public Map<String, List<String>> getAdvancedDataPlaneActiveRules() {
+        return dataPlaneRulesManager.getActiveRules();
+    }
+
+    public TrafficEngineeringPolicy getTrafficEngineeringPolicy() {
+        return this.trafficEngineeringPolicy;
+    }
+
+    public Iterator<Integer> getActiveClients() {
+        return this.activeClients.iterator();
+    }
+
     public void updateFlowPolicy(TrafficEngineeringPolicy trafficEngineeringPolicy) {
         this.trafficEngineeringPolicy = trafficEngineeringPolicy;
         for (Node clientNode : this.topologyGraph.getNodeSet()) {
             int clientNodeId = Integer.parseInt(clientNode.getId());
-            ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.TRAFFIC_ENGINEERING_POLICY_UPDATE, null, null, trafficEngineeringPolicy, null, null, null);
+            ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.TRAFFIC_ENGINEERING_POLICY_UPDATE, null, null, trafficEngineeringPolicy, null, null, null, null, null, null);
             String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
             int clientPort = clientNode.getAttribute("port");
             try {
@@ -215,7 +263,7 @@ public class ControllerService extends Thread {
         this.routingPolicy = routingPolicy;
         for (Node clientNode : this.topologyGraph.getNodeSet()) {
             int clientNodeId = Integer.parseInt(clientNode.getId());
-            ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.ROUTING_POLICY_UPDATE, null, null, null, routingPolicy, null, null);
+            ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.ROUTING_POLICY_UPDATE, null, null, null, routingPolicy, null, null, null, null, null);
             String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
             int clientPort = clientNode.getAttribute("port");
             try {
@@ -227,13 +275,214 @@ public class ControllerService extends Thread {
         System.out.println("ControllerService: New routing policy set: " + this.routingPolicy.toString());
     }
 
-    public TrafficEngineeringPolicy getTrafficEngineeringPolicy() {
-        return this.trafficEngineeringPolicy;
+    public boolean addAdvancedDataPlaneDataType(String dataTypeFileName, File dataTypeFile) {
+        BoundReceiveSocket ackSocket = null;
+        GenericPacket gp = null;
+
+        try {
+            ackSocket = E2EComm.bindPreReceive(PROTOCOL);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Collection<Node> nodeSet = this.topologyGraph.getNodeSet();
+        Node[] nodesArray = nodeSet.toArray(new Node[0]);
+        int nodesArrayLen = nodesArray.length;
+        //
+        /*
+         * Index to keep track of the intermediate nodes to contact
+         * in case of DATA_PLANE_DATA_TYPE_ABORT.
+         */
+        int intermediateNodesToNotifyAbort = 0;
+        boolean aborted = false;
+
+        byte[] fileContent = null;
+
+        try {
+            fileContent = Files.readAllBytes(dataTypeFile.toPath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String dataTypeClassName = dataTypeFileName.replaceFirst("[.][^.]+$", "");
+        DataTypeMessage dataTypeMessage = new DataTypeMessage(dataTypeFileName, dataTypeClassName, fileContent);
+
+        for (int i = 0; i < nodesArrayLen && !aborted; i++) {
+            Node clientNode = nodesArray[i];
+            int clientNodeId = Integer.parseInt(clientNode.getId());
+            ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DATA_PLANE_ADD_DATA_TYPE, ackSocket.getLocalPort(), null, null, null, routingPolicy, null, null, dataTypeMessage, null, null);
+            String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
+            int clientPort = clientNode.getAttribute("port");
+            try {
+                E2EComm.sendUnicast(clientDest, clientPort, E2EComm.TCP, E2EComm.serialize(updateMessage));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            /*
+             * Get Ack from the intermediate node in order to inform the ControllerService that
+             * the data plane rule has been successfully added.
+             */
+            try {
+                gp = E2EComm.receive(ackSocket);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if (gp instanceof UnicastPacket) {
+                UnicastPacket up = (UnicastPacket) gp;
+                Object payload = null;
+                try {
+                    payload = E2EComm.deserialize(up.getBytePayload());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                if (payload instanceof ControllerMessageAck) {
+                    ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
+                    switch (ackMessage.getMessageType()) {
+                        case DATA_PLANE_DATA_TYPE_ACK:
+                            intermediateNodesToNotifyAbort++;
+                            break;
+                        case DATA_PLANE_DATA_TYPE_ABORT:
+                            aborted = true;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+
+        if (aborted && intermediateNodesToNotifyAbort > 0) {
+            for(int j=0; j<intermediateNodesToNotifyAbort; j++) {
+                Node clientNode = nodesArray[j];
+                int clientNodeId = Integer.parseInt(clientNode.getId());
+                /**
+                 * TODO Complete the message info for removing the DATA_TYPE in case of failures.
+                 */
+                ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DATA_PLANE_REMOVE_DATA_TYPE, ackSocket.getLocalPort(), null, null, null, routingPolicy, null, null, null, null, null);
+                String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
+                int clientPort = clientNode.getAttribute("port");
+                try {
+                    E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        if(aborted) {
+            System.out.println("ControllerService: data type: " + dataTypeFileName + " added.");
+            return false;
+        } else {
+            System.out.println("ControllerService: data type: " + dataTypeFileName + " not added.");
+            return true;
+        }
     }
 
-    public Iterator<Integer> getActiveClients() {
-        return this.activeClients.iterator();
+    public boolean addAdvancedDataPlaneRule(String dataType, String dataPlaneRule) {
+        BoundReceiveSocket ackSocket = null;
+        GenericPacket gp = null;
+
+        try {
+            ackSocket = E2EComm.bindPreReceive(PROTOCOL);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Collection<Node> nodeSet = this.topologyGraph.getNodeSet();
+        Node[] nodesArray = nodeSet.toArray(new Node[0]);
+        int nodesArrayLen = nodesArray.length;
+        //
+        /*
+         * Index to keep track of the intermediate nodes to contact
+         * in case of DATA_PLANE_RULE_ABORT.
+         */
+        int intermediateNodesToNotifyAbort = 0;
+        boolean aborted = false;
+
+        for (int i = 0; i < nodesArrayLen && !aborted; i++) {
+            Node clientNode = nodesArray[i];
+            int clientNodeId = Integer.parseInt(clientNode.getId());
+            ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DATA_PLANE_ADD_RULE, ackSocket.getLocalPort(), null, null, null, routingPolicy, null, null, null, dataType, dataPlaneRule);
+            String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
+            int clientPort = clientNode.getAttribute("port");
+            try {
+                E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(updateMessage));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            /*
+             * Get Ack from the intermediate node in order to inform the ControllerService that
+             * the data plane rule has been successfully added.
+             */
+            try {
+                gp = E2EComm.receive(ackSocket);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if (gp instanceof UnicastPacket) {
+                UnicastPacket up = (UnicastPacket) gp;
+                Object payload = null;
+                try {
+                    payload = E2EComm.deserialize(up.getBytePayload());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                if (payload instanceof ControllerMessageAck) {
+                    ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
+                    switch (ackMessage.getMessageType()) {
+                        case DATA_PLANE_RULE_ACK:
+                            intermediateNodesToNotifyAbort++;
+                            break;
+                        case DATA_PLANE_RULE_ABORT:
+                            aborted = true;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+
+        if (aborted && intermediateNodesToNotifyAbort > 0) {
+            for(int j=0; j<intermediateNodesToNotifyAbort; j++) {
+                Node clientNode = nodesArray[j];
+                int clientNodeId = Integer.parseInt(clientNode.getId());
+                ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DATA_PLANE_REMOVE_RULE, ackSocket.getLocalPort(), null, null, null, routingPolicy, null, null, null, dataType, dataPlaneRule);
+                String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
+                int clientPort = clientNode.getAttribute("port");
+                try {
+                    E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        if(aborted) {
+            System.out.println("ControllerService: data plane rule: " + dataPlaneRule + " not added for data type: " + dataType);
+            return false;
+        } else {
+            System.out.println("ControllerService: data plane rule: " + dataPlaneRule + " added for data type: " + dataType);
+            return true;
+        }
     }
+
+    public void removeAdvancedDataPlaneRule(String dataType, String dataPlaneRule) {
+        for (Node clientNode : this.topologyGraph.getNodeSet()) {
+            int clientNodeId = Integer.parseInt(clientNode.getId());
+            ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DATA_PLANE_REMOVE_RULE, null, null, null, routingPolicy, null, null, null, dataType, dataPlaneRule);
+            String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
+            int clientPort = clientNode.getAttribute("port");
+            try {
+                E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(updateMessage));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println("ControllerService: data plane rule: " + dataPlaneRule + " removed for data type: " + dataType);
+    }
+
+
 
     @Override
     public void run() {
@@ -309,6 +558,9 @@ public class ControllerService extends Thread {
                             break;
                         case OS_ROUTING_REQUEST:
                             handleOsRoutingRequest((ControllerMessageRequest) controllerMessage, clientNodeId, clientDest);
+                            break;
+                        case TOPOLOGY_GRAPH_REQUEST:
+                            handleTopologyGraphRequest((ControllerMessageRequest) controllerMessage, clientNodeId, clientDest);
                             break;
                         default:
                             break;
@@ -585,7 +837,7 @@ public class ControllerService extends Thread {
             flowPriorities = flowPrioritySelector.getFlowPriorities(flowPriorities, flowApplicationRequirements);
             flowStartTimes.put(flowId, System.currentTimeMillis());
 
-            ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.FLOW_PRIORITIES_UPDATE, null, null, null, null, null, flowPriorities);
+            ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.FLOW_PRIORITIES_UPDATE, null, null, null, null, null, flowPriorities, null, null, null);
             /*
              * Send the new priority value to the client
              */
@@ -748,7 +1000,14 @@ public class ControllerService extends Thread {
                 routeId = ThreadLocalRandom.current().nextInt();
             }
 
-            // TODO flowPaths to remove
+            /*
+             * TODO Generalize the pathSelector
+             * At the moment the TopologyGraphSelector interface is designed with flowId in mind.
+             * For the os level routing it would be nice to generalize this interface with the possibility
+             * to return a List<PathDescriptor> instead of just one PathDescriptor.
+             * For example, let's say we want at maximum 3 paths the usage will be something like
+             * List<PathDescriptor> newOSRoutingPaths = pathSelector.selectPath(clientNodeId, destNodeId, applicationRequirements, flowPaths, 3);
+             */
             PathDescriptor newOSRoutingPath = pathSelector.selectPath(clientNodeId, destNodeId, applicationRequirements, flowPaths);
 
             int hopCount = newOSRoutingPath.getPathNodeIds().size();
@@ -926,6 +1185,31 @@ public class ControllerService extends Thread {
                 e.printStackTrace();
             }
         }
+
+        private void handleTopologyGraphRequest(ControllerMessageRequest requestMessage, int clientNodeId, String[] clientDest) {
+            int clientPort = requestMessage.getClientPort();
+
+            File f = GraphUtils.saveTopologyGraphIntoDGSFile(topologyGraph, sdnControllerDirectory + "/" + "topologyGraph.dgs");
+            FileInputStream fis = null;
+            try {
+                fis = new FileInputStream(f);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                E2EComm.sendUnicast(
+                        clientDest,
+                        clientPort,
+                        E2EComm.TCP,
+                        fis
+                );
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            System.out.println("ControllerService: topology graph request from client " + clientNodeId + " successfully sent");
+        }
     }
 
     private class UpdateManager extends Thread {
@@ -979,7 +1263,7 @@ public class ControllerService extends Thread {
             for (Node clientNode : topologyGraph.getNodeSet()) {
                 int clientNodeId = Integer.parseInt(clientNode.getId());
                 Map<Integer, PathDescriptor> defaultFlowPathMappings = defaultPathSelector.getAllPathsFromSource(clientNodeId);
-                ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DEFAULT_FLOW_PATHS_UPDATE, null, null, null, null, defaultFlowPathMappings, null);
+                ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DEFAULT_FLOW_PATHS_UPDATE, null, null, null, null, defaultFlowPathMappings, null, null, null, null);
                 String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
                 int clientPort = clientNode.getAttribute("port");
                 try {
@@ -994,7 +1278,7 @@ public class ControllerService extends Thread {
             for (Node clientNode : topologyGraph.getNodeSet()) {
                 int clientNodeId = Integer.parseInt(clientNode.getId());
                 flowPriorities = flowPrioritySelector.getFlowPriorities(flowPriorities, flowApplicationRequirements);
-                ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.FLOW_PRIORITIES_UPDATE, ControllerMessage.UNUSED_FIELD, null, null, null, null, null, flowPriorities);
+                ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.FLOW_PRIORITIES_UPDATE, ControllerMessage.UNUSED_FIELD, null, null, null, null, null, flowPriorities, null, null,null);
                 String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
                 int clientPort = clientNode.getAttribute("port");
                 try {

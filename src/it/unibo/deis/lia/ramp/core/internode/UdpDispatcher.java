@@ -274,7 +274,7 @@ public class UdpDispatcher extends Thread {
 		/*
 		 * TODO Check with Giannelli about dest.length > 0
 		 */
-		if (dest != null && dest.length > 0) {
+		if (dest != null) {
 			String ipDest = null;
 			int portDest;
 			if (currentHop == dest.length) {

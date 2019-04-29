@@ -1,21 +1,20 @@
-package it.unibo.deis.lia.ramp.service.application;
+package it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager;
 
 import java.io.Serializable;
 
-public class SDNControllerMessage implements Serializable {
+public abstract class AbstractDataType implements Serializable {
+    private static final long serialVersionUID = -6368488354603521877L;
 
-    private static final long serialVersionUID = -1361610314097603574L;
+    protected int seqNumber;
 
-    private int seqNumber;
+    protected byte[] payload;
 
-    private byte[] payload;
-
-    public SDNControllerMessage() {
+    public AbstractDataType() {
         this.seqNumber = -1;
         this.payload = new byte[0];
     }
 
-    public SDNControllerMessage(int seqNumber, int payloadSize) {
+    public AbstractDataType(int seqNumber, int payloadSize) {
         this.seqNumber = seqNumber;
         this.payload = new byte[payloadSize];
     }

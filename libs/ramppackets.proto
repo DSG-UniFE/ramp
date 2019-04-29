@@ -41,6 +41,8 @@ message UnicastHeader{
 	required int32 connectTimeout = 14; // [default = 500];
 	
 	optional int32 flowId = 15; // Alessandro Dolci
+
+	optional int64 dataType = 16; // Dmitrij David Padalino Montenero
 }
 
 // packet id 3
@@ -67,8 +69,10 @@ message UnicastPacket{
 	required int32 connectTimeout = 14; // [default = 500];
 	
 	optional int32 flowId = 15; // Alessandro Dolci
+
+	optional int64 dataType = 16; // Dmitrij David Padalino Montenero
 	
-	required bytes payload = 16;
+	required bytes payload = 99;
 }
 	
 // packet id 2
@@ -82,8 +86,10 @@ message BroadcastPacket{
 	required int32 ttl = 5;
 	required int32 destPort = 6;
 	optional int32 expiry = 7;
-	
-	required bytes payload = 8;
+
+	optional int64 dataType = 8; // Dmitrij David Padalino Montenero
+
+	required bytes payload = 99;
 }
 
 

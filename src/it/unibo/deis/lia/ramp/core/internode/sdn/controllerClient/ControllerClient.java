@@ -1,24 +1,28 @@
 package it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
+import it.unibo.deis.lia.ramp.core.e2e.*;
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.DataTypesManager;
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.dataTypeMessage.DataTypeMessage;
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.rulesManager.AdvancedDataPlaneRulesManager;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.controllerServiceDiscoveryPolicy.ControllerServiceDiscoveryPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.controllerServiceDiscoveryPolicy.controllerServiceDiscoverer.ControllerServiceDiscoverer;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.controllerServiceDiscoveryPolicy.controllerServiceDiscoverer.FirstAvailableControllerServiceDiscoverer;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerMessage.*;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerMessage.ControllerMessage;
 import it.unibo.deis.lia.ramp.core.internode.sdn.osRoutingManager.OsRoutingManager;
+import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.graphUtils.GraphUtils;
 import it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy.TrafficEngineeringPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.routingPolicy.RoutingPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.dataPlaneForwarder.DataPlaneForwarder;
@@ -32,14 +36,12 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.Applica
 import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.ApplicationType;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.PathSelectionMetric;
 
-import it.unibo.deis.lia.ramp.core.e2e.BoundReceiveSocket;
-import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
-import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
-import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 import it.unibo.deis.lia.ramp.core.internode.*;
 import it.unibo.deis.lia.ramp.service.management.ServiceResponse;
+import it.unibo.deis.lia.ramp.util.GeneralUtils;
 import it.unibo.deis.lia.ramp.util.NetworkInterfaceStats;
 import it.unibo.deis.lia.ramp.util.NodeStats;
+import org.graphstream.graph.Graph;
 
 /**
  * @author Alessandro Dolci
@@ -55,7 +57,7 @@ public class ControllerClient extends Thread {
     /**
      * Paths time-to-live value.
      */
-    private static final int FLOW_PATHS_TTL = 60*1000;
+    private static final int FLOW_PATHS_TTL = 60 * 1000;
 
     /**
      * ControllerClient instance.
@@ -155,12 +157,38 @@ public class ControllerClient extends Thread {
      */
     private Map<Integer, List<PathDescriptor>> flowMulticastNextHops;
 
+    /**
+     * This object will store the topology graph sent by the ControllerService when requested.
+     * This graph could be used in case of fat ControllerClient, however the implementation of this ControllerClient
+     * is a thin one so for the moment this functionality is used only for test purposes.
+     */
+    private Graph topologyGraph;
+
+    /**
+     * This String specifies the directory the ControllerClient must use in order to store files sent
+     * by the ControllerService, for instance the dgs file for the topologyGraph or other files to be used
+     * in future extensions of this class.
+     */
+    private String sdnClientDirectory = "./temp/sdnClient";
+
+    /**
+     * This component is responsible to maintain the data plane rules to apply when the ControllerClient
+     * forwards certain types of traffic.
+     */
+    private AdvancedDataPlaneRulesManager advancedDataPlaneRulesManager;
+
+    /**
+     * This component is responsible to manage the data types available for advanced data plane rules to apply when the ControllerClient
+     * forwards certain types of traffic.
+     */
+    private DataTypesManager dataTypesManager;
+
     private ControllerClient() {
 
         this.controllerServiceDiscoveryPolicy = ControllerServiceDiscoveryPolicy.FIRST_AVAILABLE;
-        this.controllerServiceDiscoverer = new FirstAvailableControllerServiceDiscoverer(5, 5*1000, 1, 30*1000);
+        this.controllerServiceDiscoverer = new FirstAvailableControllerServiceDiscoverer(5, 5 * 1000, 1, 30 * 1000);
         ServiceResponse serviceResponse = this.controllerServiceDiscoverer.getControllerService();
-        if(serviceResponse == null) {
+        if (serviceResponse == null) {
             System.out.println("ControllerClient: controller service not found, cannot bind client socket");
         } else {
             try {
@@ -188,6 +216,17 @@ public class ControllerClient extends Thread {
         this.flowMulticastNextHops = new ConcurrentHashMap<>();
 
         this.osRoutingManager = null;
+
+        this.topologyGraph = null;
+
+        File dir = new File(sdnClientDirectory);
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+
+        this.advancedDataPlaneRulesManager = AdvancedDataPlaneRulesManager.getInstance();
+
+        this.dataTypesManager = DataTypesManager.getInstance();
     }
 
     public synchronized static ControllerClient getInstance() {
@@ -213,17 +252,17 @@ public class ControllerClient extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        if(this.flowDataPlaneForwarder != null) {
+        if (this.flowDataPlaneForwarder != null) {
             this.flowDataPlaneForwarder.deactivate();
             this.flowDataPlaneForwarder = null;
         }
-        if(this.routingDataPlaneForwarder != null) {
+        if (this.routingDataPlaneForwarder != null) {
             this.routingDataPlaneForwarder.deactivate();
             this.routingDataPlaneForwarder = null;
         }
 
         // TODO Improve this talk with Giannelli
-        if(this.osRoutingManager != null) {
+        if (this.osRoutingManager != null) {
             this.osRoutingManager.deactivate();
             this.osRoutingManager = null;
         }
@@ -237,7 +276,7 @@ public class ControllerClient extends Thread {
     }
 
     public int getFlowId(ApplicationRequirements applicationRequirements, int destNodeId) {
-        return getFlowId(applicationRequirements, new int[] {destNodeId}, null);
+        return getFlowId(applicationRequirements, new int[]{destNodeId}, null);
     }
 
     public int getFlowId(ApplicationRequirements applicationRequirements, int[] destNodeIds, int[] destPorts) {
@@ -262,11 +301,11 @@ public class ControllerClient extends Thread {
         return flowId;
     }
 
-    public int getRouteId(int destNodeId, int destPort,  ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric) {
-        return getRouteId(new int[] {destNodeId}, new int[] {destPort}, applicationRequirements, pathSelectionMetric);
+    public int getRouteId(int destNodeId, int destPort, ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric) {
+        return getRouteId(new int[]{destNodeId}, new int[]{destPort}, applicationRequirements, pathSelectionMetric);
     }
 
-    public int getRouteId(int[] destNodeIds, int[] destPorts,  ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric) {
+    public int getRouteId(int[] destNodeIds, int[] destPorts, ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric) {
         return sendOSLevelRoutingRequest(destNodeIds, destPorts, applicationRequirements, pathSelectionMetric);
     }
 
@@ -302,9 +341,8 @@ public class ControllerClient extends Thread {
                 if (flowId != DEFAULT_FLOW_ID) {
                     System.out.println("ControllerClient: entry found for flow " + flowId + ", but its validity has expired, sending request to the controller");
                     // The path request is not the first one for this application, so applicationRequirements is null
-                    flowPath = sendNewPathRequest(new int[] {destNodeId}, null, null, flowId);
-                }
-                else
+                    flowPath = sendNewPathRequest(new int[]{destNodeId}, null, null, flowId);
+                } else
                     System.out.println("ControllerClient: entry found for default flow, but its validity has expired, returning null");
             }
         }
@@ -342,7 +380,7 @@ public class ControllerClient extends Thread {
 
     public String getRouteIdSourceIpAddress(int routeId) {
         String result = null;
-        if(this.osRoutingManager != null) {
+        if (this.osRoutingManager != null) {
             result = this.osRoutingManager.getRouteIdSourceIpAddress(routeId);
         }
         return result;
@@ -350,10 +388,14 @@ public class ControllerClient extends Thread {
 
     public String getRouteIdDestinationIpAddress(int routeId) {
         String result = null;
-        if(this.osRoutingManager != null) {
+        if (this.osRoutingManager != null) {
             result = this.osRoutingManager.getRouteIdDestinationIpAddress(routeId);
         }
         return result;
+    }
+
+    public Set<String> getDataTypesAvailable() {
+        return this.dataTypesManager.getDataTypesAvailable();
     }
 
     private String[] sendNewPathRequest(int[] destNodeIds, ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric, int flowId) {
@@ -363,7 +405,7 @@ public class ControllerClient extends Thread {
          * Controller service has to be found before sending any message
          */
         ServiceResponse serviceResponse = this.controllerServiceDiscoverer.getControllerService();
-        if(serviceResponse == null) {
+        if (serviceResponse == null) {
             System.out.println("ControllerClient: controller service not found, cannot bind client socket");
         } else {
             try {
@@ -391,7 +433,7 @@ public class ControllerClient extends Thread {
         GenericPacket gp = null;
         try {
             gp = E2EComm.receive(responseSocket);
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         if (gp instanceof UnicastPacket) {
@@ -419,8 +461,7 @@ public class ControllerClient extends Thread {
                             this.flowStartTimes.put(flowId, System.currentTimeMillis());
                             this.flowDurations.put(flowId, applicationRequirements.getDuration());
                             System.out.println("ControllerClient: response with a new path for flow " + flowId + " received from the controller");
-                        }
-                        else
+                        } else
                             System.out.println("ControllerClient: null path received from the controller for flow " + flowId);
                         break;
                     default:
@@ -449,7 +490,7 @@ public class ControllerClient extends Thread {
          * Controller service has to be found before sending any message
          */
         ServiceResponse serviceResponse = this.controllerServiceDiscoverer.getControllerService();
-        if(serviceResponse == null) {
+        if (serviceResponse == null) {
             System.out.println("ControllerClient: controller service not found, cannot bind client socket");
         } else {
             try {
@@ -484,7 +525,7 @@ public class ControllerClient extends Thread {
             }
             if (payload instanceof ControllerMessage) {
                 ControllerMessageUpdate responseMessage = (ControllerMessageUpdate) payload;
-                switch(responseMessage.getMessageType()) {
+                switch (responseMessage.getMessageType()) {
                     case FLOW_PRIORITIES_UPDATE:
                         newPriorityValue = responseMessage.getFlowPriorities().get(flowId);
                         this.flowPriorities = responseMessage.getFlowPriorities();
@@ -511,7 +552,7 @@ public class ControllerClient extends Thread {
          * Controller service has to be found before sending any message
          */
         ServiceResponse serviceResponse = this.controllerServiceDiscoverer.getControllerService();
-        if(serviceResponse == null) {
+        if (serviceResponse == null) {
             System.out.println("ControllerClient: controller service not found, cannot bind client socket");
         } else {
             try {
@@ -557,7 +598,7 @@ public class ControllerClient extends Thread {
     }
 
     //TODO Improve signature
-    private int sendOSLevelRoutingRequest(int[] destNodeIds, int[] destPorts,  ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric) {
+    private int sendOSLevelRoutingRequest(int[] destNodeIds, int[] destPorts, ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric) {
         //List<PathDescriptor> nextHops = new ArrayList<PathDescriptor>();
         BoundReceiveSocket responseSocket = null;
         int routeId = -1;
@@ -565,7 +606,7 @@ public class ControllerClient extends Thread {
          * Controller service has to be found before sending any message
          */
         ServiceResponse serviceResponse = this.controllerServiceDiscoverer.getControllerService();
-        if(serviceResponse == null) {
+        if (serviceResponse == null) {
             System.out.println("ControllerClient: controller service not found, cannot bind client socket");
         } else {
             try {
@@ -594,13 +635,70 @@ public class ControllerClient extends Thread {
             }
             if (payload instanceof ControllerMessageResponse) {
                 ControllerMessageResponse responseMessage = (ControllerMessageResponse) payload;
-                if(responseMessage.getMessageType() == MessageType.OS_ROUTING_RESPONSE) {
+                if (responseMessage.getMessageType() == MessageType.OS_ROUTING_RESPONSE) {
                     routeId = responseMessage.getRouteId();
                 }
             }
         }
 
         return routeId;
+    }
+
+    public void getTopologyGraph() {
+        BoundReceiveSocket responseSocket = null;
+        /*
+         * Controller service has to be found before sending any message
+         */
+        ServiceResponse serviceResponse = this.controllerServiceDiscoverer.getControllerService();
+        if (serviceResponse == null) {
+            System.out.println("ControllerClient: controller service not found, cannot bind client socket");
+        } else {
+            try {
+                /*
+                 * Use the protocol specified by the controller
+                 */
+                responseSocket = E2EComm.bindPreReceive(serviceResponse.getProtocol());
+                /*
+                 * Send a priority value request to the controller for a certain flowId
+                 */
+                ControllerMessageRequest requestMessage = new ControllerMessageRequest(MessageType.TOPOLOGY_GRAPH_REQUEST, responseSocket.getLocalPort());
+                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(requestMessage));
+                System.out.println("ControllerClient: topology graph request sent to the controller");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(sdnClientDirectory + "/" + "topologyGraph.dgs");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            UnicastHeader uh = (UnicastHeader) E2EComm.receive(
+                    responseSocket,
+                    0,
+                    fos
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            responseSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        this.topologyGraph = GraphUtils.loadTopologyGraphFromDGSFile(sdnClientDirectory + "/topologyGraph.dgs");
     }
 
     private void joinService() {
@@ -627,7 +725,7 @@ public class ControllerClient extends Thread {
          * Controller service has to be found before sending any message
          */
         ServiceResponse serviceResponse = this.controllerServiceDiscoverer.getControllerService();
-        if(serviceResponse == null) {
+        if (serviceResponse == null) {
             System.out.println("ControllerClient: controller service not found, cannot bind client socket");
         } else {
             try {
@@ -648,7 +746,7 @@ public class ControllerClient extends Thread {
          * Controller service has to be found before sending any message
          */
         ServiceResponse serviceResponse = this.controllerServiceDiscoverer.getControllerService();
-        if(serviceResponse == null) {
+        if (serviceResponse == null) {
             System.out.println("ControllerClient: controller service not found, cannot bind client socket");
         } else {
             try {
@@ -670,7 +768,7 @@ public class ControllerClient extends Thread {
                 /*
                  * Receive packets from the controller and pass them to newly created handlers
                  */
-                GenericPacket gp = E2EComm.receive(this.clientSocket, 5*1000);
+                GenericPacket gp = E2EComm.receive(this.clientSocket, 5 * 1000);
                 new PacketHandler(gp).start();
             } catch (Exception e) {
                 // e.printStackTrace();
@@ -728,6 +826,16 @@ public class ControllerClient extends Thread {
                             break;
                         case OS_ROUTING_DELETE_ROUTE:
                             handleOsRoutingDeleteRoute((ControllerMessageResponse) controllerMessage);
+                            break;
+                        case DATA_PLANE_ADD_DATA_TYPE:
+                            handleDataPlaneAddDataType((ControllerMessageUpdate) controllerMessage);
+                            break;
+                        case DATA_PLANE_ADD_RULE:
+                            handleDataPlaneAddRule((ControllerMessageUpdate) controllerMessage);
+                            break;
+                        case DATA_PLANE_REMOVE_RULE:
+                            handleDataPlaneRemoveRule((ControllerMessageUpdate) controllerMessage);
+                            break;
                         default:
                             break;
                     }
@@ -737,16 +845,16 @@ public class ControllerClient extends Thread {
 
         private void handleTrafficEngineeringPolicyUpdate(ControllerMessageUpdate updateMessage) {
             TrafficEngineeringPolicy newTrafficEngineeringPolicy = updateMessage.getTrafficEngineeringPolicy();
-            if(flowDataPlaneForwarder != null) {
+            if (flowDataPlaneForwarder != null) {
                 flowDataPlaneForwarder.deactivate();
             }
 
             // TODO Improve this
-            if(trafficEngineeringPolicy == TrafficEngineeringPolicy.OS_ROUTING && newTrafficEngineeringPolicy != trafficEngineeringPolicy && osRoutingManager != null) {
+            if (trafficEngineeringPolicy == TrafficEngineeringPolicy.OS_ROUTING && newTrafficEngineeringPolicy != trafficEngineeringPolicy && osRoutingManager != null) {
                 osRoutingManager.deactivate();
             }
 
-            switch(newTrafficEngineeringPolicy) {
+            switch (newTrafficEngineeringPolicy) {
                 case REROUTING:
                     flowDataPlaneForwarder = BestPathForwarder.getInstance();
                     break;
@@ -777,15 +885,15 @@ public class ControllerClient extends Thread {
             }
 
             trafficEngineeringPolicy = newTrafficEngineeringPolicy;
-            System.out.println("ControllerClient: flow policy update ("+ trafficEngineeringPolicy +") received from the controller and successfully applied");
+            System.out.println("ControllerClient: flow policy update (" + trafficEngineeringPolicy + ") received from the controller and successfully applied");
         }
 
         private void handleRoutingPolicyUpdate(ControllerMessageUpdate updateMessage) {
             RoutingPolicy newRoutingPolicy = updateMessage.getRoutingPolicy();
-            if(routingDataPlaneForwarder != null) {
+            if (routingDataPlaneForwarder != null) {
                 routingDataPlaneForwarder.deactivate();
             }
-            switch(newRoutingPolicy) {
+            switch (newRoutingPolicy) {
                 case REROUTING:
                     routingDataPlaneForwarder = BestPathForwarder.getInstance();
                     break;
@@ -807,7 +915,7 @@ public class ControllerClient extends Thread {
             }
 
             routingPolicy = newRoutingPolicy;
-            System.out.println("ControllerClient: routing policy update ("+ routingPolicy +") received from the controller and successfully applied");
+            System.out.println("ControllerClient: routing policy update (" + routingPolicy + ") received from the controller and successfully applied");
         }
 
         private void handleDefaultFlowPathsUpdate(ControllerMessageUpdate updateMessage) {
@@ -854,7 +962,7 @@ public class ControllerClient extends Thread {
              * Controller service has to be found before sending any message
              */
             ServiceResponse serviceResponse = controllerServiceDiscoverer.getControllerService();
-            if(serviceResponse == null) {
+            if (serviceResponse == null) {
                 System.out.println("ControllerClient: controller service not found, cannot bind client socket");
             } else {
                 /*
@@ -862,7 +970,7 @@ public class ControllerClient extends Thread {
                  * an OS_ROUTING_ACK message to the ControllerService otherwise send
                  * an OS_ROUTING_ABORT message.
                  */
-                if(success) {
+                if (success) {
                     /*
                      * If this is the sender the method osRoutingManager.getRouteIdSourceIpAddress(routeId)
                      * returns the srcIP address selected for this route, otherwise null.
@@ -892,6 +1000,106 @@ public class ControllerClient extends Thread {
             int routeId = responseMessage.getRouteId();
             osRoutingManager.deleteRoute(routeId);
             System.out.println("ControllerClient: OS_ROUTING_DELETE_ROUTE for routeId: " + routeId + " received from the controller and successfully applied");
+        }
+
+        private void handleDataPlaneAddDataType(ControllerMessageUpdate updateMessage) {
+            int ackSocketPort = updateMessage.getClientPort();
+
+            DataTypeMessage dataTypeMessage = updateMessage.getDataTypeMessage();
+            String dataTypeFileName = updateMessage.getDataTypeMessage().getFileName();
+            boolean success = dataTypesManager.addNewDataType(dataTypeMessage);
+
+            /*
+             * Controller service has to be found before sending any message
+             */
+            ServiceResponse serviceResponse = controllerServiceDiscoverer.getControllerService();
+            if (serviceResponse == null) {
+                System.out.println("ControllerClient: controller service not found, cannot bind client socket");
+            } else {
+                /*
+                 * If the the rules command has been successfully applied send
+                 * an DATA_PLANE_RULE_ACK message to the ControllerService otherwise send
+                 * an DATA_PLANE_RULE_ABORT message.
+                 */
+                if (success) {
+                    /*
+                     * If this is the sender the method osRoutingManager.getRouteIdSourceIpAddress(routeId)
+                     * returns the srcIP address selected for this route, otherwise null.
+                     */
+                    ControllerMessageAck ackMessage = new ControllerMessageAck(MessageType.DATA_PLANE_DATA_TYPE_ACK);
+                    try {
+                        E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(ackMessage));
+                        System.out.println("ControllerClient: DATA_PLANE_DATA_TYPE_ACK sent to the controller");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println("ControllerClient: DATA_PLANE_ADD_DATA_TYPE: add type: " + dataTypeFileName + " received from the controller and successfully applied");
+                } else {
+                    ControllerMessageAck abortMessage = new ControllerMessageAck(MessageType.DATA_PLANE_DATA_TYPE_ABORT);
+                    try {
+                        E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(abortMessage));
+                        System.out.println("ControllerClient: DATA_PLANE_DATA_TYPE_ABORT sent to the controller");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println("ControllerClient: DATA_PLANE_ADD_DATA_TYPE: add type: " + dataTypeFileName + " received from the controller but not applied");
+                }
+            }
+        }
+
+        private void handleDataPlaneAddRule(ControllerMessageUpdate updateMessage) {
+            int ackSocketPort = updateMessage.getClientPort();
+
+            String dataType = updateMessage.getDataType();
+            long dataTypeId = dataTypesManager.getDataTypeId(dataType);
+            String dataPlaneRule = updateMessage.getDataPlaneRule();
+
+            boolean success = advancedDataPlaneRulesManager.addDataTypeRule(dataTypeId, dataPlaneRule);
+
+            /*
+             * Controller service has to be found before sending any message
+             */
+            ServiceResponse serviceResponse = controllerServiceDiscoverer.getControllerService();
+            if (serviceResponse == null) {
+                System.out.println("ControllerClient: controller service not found, cannot bind client socket");
+            } else {
+                /*
+                 * If the the rules command has been successfully applied send
+                 * an DATA_PLANE_RULE_ACK message to the ControllerService otherwise send
+                 * an DATA_PLANE_RULE_ABORT message.
+                 */
+                if (success) {
+                    /*
+                     * If this is the sender the method osRoutingManager.getRouteIdSourceIpAddress(routeId)
+                     * returns the srcIP address selected for this route, otherwise null.
+                     */
+                    ControllerMessageAck ackMessage = new ControllerMessageAck(MessageType.DATA_PLANE_RULE_ACK);
+                    try {
+                        E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(ackMessage));
+                        System.out.println("ControllerClient: DATA_PLANE_RULE_ACK sent to the controller");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println("ControllerClient: DATA_PLANE_ADD_RULE: add rule: " + dataPlaneRule + " for data type: " + dataType + " received from the controller and successfully applied");
+                } else {
+                    ControllerMessageAck abortMessage = new ControllerMessageAck(MessageType.DATA_PLANE_RULE_ABORT);
+                    try {
+                        E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(abortMessage));
+                        System.out.println("ControllerClient: DATA_PLANE_RULE_ABORT sent to the controller");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println("ControllerClient: DATA_PLANE_ADD_RULE: add rule: " + dataPlaneRule + " for data type: " + dataType + " received from the controller but not applied");
+                }
+            }
+        }
+
+        private void handleDataPlaneRemoveRule(ControllerMessageUpdate messageUpdate) {
+            String dataType = messageUpdate.getDataType();
+            long dataTypeId = dataTypesManager.getDataTypeId(dataType);
+            String dataPlaneRule = messageUpdate.getDataPlaneRule();
+            advancedDataPlaneRulesManager.removeDataTypeRule(dataTypeId, dataPlaneRule);
+            System.out.println("ControllerClient: DATA_PLANE_REMOVE_RULE:  remove rule: " + dataPlaneRule + " for dataType: " + dataType + " received from the controller and successfully applied");
         }
     }
 
@@ -932,7 +1140,7 @@ public class ControllerClient extends Thread {
                 long flowStartTime = flowStartTimes.get(flowId);
                 int duration = flowDurations.get(flowId);
                 long elapsed = System.currentTimeMillis() - flowStartTime;
-                if (elapsed > (duration+(duration/4))*1000) {
+                if (elapsed > (duration + (duration / 4)) * 1000) {
                     flowStartTimes.remove(flowId);
                     flowDurations.remove(flowId);
                     flowPaths.remove(flowId);
@@ -966,12 +1174,12 @@ public class ControllerClient extends Thread {
             /*
              * Send the obtained information about neighbor nodes to the controller
              */
-            ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.TOPOLOGY_UPDATE, this.networkInterfaceStats, neighborNodes, null, null, null, null);
+            ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.TOPOLOGY_UPDATE, this.networkInterfaceStats, neighborNodes, null, null, null, null, null, null, null);
             /*
              * Controller service has to be found before sending any message
              */
             ServiceResponse serviceResponse = getControllerService();
-            if(serviceResponse == null) {
+            if (serviceResponse == null) {
                 System.out.println("ControllerClient: controller service not found, cannot bind client socket");
             } else {
                 try {
@@ -989,7 +1197,7 @@ public class ControllerClient extends Thread {
              * Sleep two seconds in order to avoid that the updateManager sendTopologyUpdate is sent before the join message.
              */
             try {
-                Thread.sleep(2*1000);
+                Thread.sleep(2 * 1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

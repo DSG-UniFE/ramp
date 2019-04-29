@@ -406,6 +406,11 @@ public class OsRoutingManager {
         }
     }
 
+    /**
+     * Deletes the route associated to the given routeID.
+     *
+     * @param routeId actually stored
+     */
     public void deleteRoute(int routeId) {
         if (RampEntryPoint.os.startsWith("windows")) {
             // TODO Windows
@@ -466,7 +471,7 @@ public class OsRoutingManager {
 
     /**
      * This method, called when the OsRoutingManager is deactivated,
-     * is in charge to clean all the rules, routes and routing tables
+     * is in charge to clean all rules, routes and routing tables
      * created so far.
      */
     private void cleanRoutingTables() {
@@ -551,6 +556,11 @@ public class OsRoutingManager {
         System.out.println("OSRoutingManager: Cleaning completed.");
     }
 
+    /**
+     * Every time a route, a rule or a local table is added into the system
+     * a good practice is to flush the cache in order to avoid
+     * inconsistencies.
+     */
     private void ipRouteFlushCache() {
         String flushCacheCommand = "ip route flush cache";
         System.out.println("OSRoutingManager " + flushCacheCommand);
@@ -562,8 +572,8 @@ public class OsRoutingManager {
     }
 
     /**
-     * This method given a routeID returns the sourceIP to use
-     * according to the routing decisions made by the OsRoutingManager.
+     * Given a routeID this method returns the sourceIP to be used
+     * according to routing decisions made by the OsRoutingManager.
      *
      * @param routeId given by the client
      * @return sourceIP to be used by the client. It is different from null
@@ -577,6 +587,13 @@ public class OsRoutingManager {
         return result;
     }
 
+    /**
+     * Given a routeID this method returns the destinationIP to be used
+     * according to routing decisions made by the OsRoutingManager.
+     *
+     * @param routeId given by the client
+     * @return destinationIP to be used by the client.
+     */
     public String getRouteIdDestinationIpAddress(int routeId) {
         String result = null;
         if (this.currentRoutes.containsKey(routeId)) {
@@ -642,6 +659,15 @@ public class OsRoutingManager {
         return interf;
     }
 
+    /**
+     * TODO FIXME
+     * This component needs to be replaced since its performance are really poor
+     * in case of multiple commands.
+     *
+     * @param command terminal command
+     * @return standard output
+     * @throws Exception in case of wrong superUser password
+     */
     private static String sudoCommand(String command) throws Exception {
         String res = "";
 

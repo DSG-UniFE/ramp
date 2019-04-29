@@ -11,16 +11,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.URL;
-import java.net.UnknownHostException;
+import java.lang.reflect.Method;
+import java.net.*;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Properties;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -455,5 +453,79 @@ public class GeneralUtils {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * @author Dmitrij David Padalino Montenero
+	 *
+	 * Taken from https://stackoverflow.com/questions/28678026/how-can-i-get-all-class-files-in-a-specific-package-in-java
+	 * @param packageName is the package where resides the default rules already available locally
+	 * @return the list of all classes in the package
+	 */
+	public static List<Class<?>> getClassesInPackage(String packageName) {
+		String path = packageName.replaceAll("\\.", File.separator);
+		List<Class<?>> classes = new ArrayList<>();
+		String[] classPathEntries = System.getProperty("java.class.path").split(
+				System.getProperty("path.separator")
+		);
+
+		String name;
+		for (String classpathEntry : classPathEntries) {
+			if (classpathEntry.endsWith(".jar")) {
+				File jar = new File(classpathEntry);
+				try {
+					JarInputStream is = new JarInputStream(new FileInputStream(jar));
+					JarEntry entry;
+					while((entry = is.getNextJarEntry()) != null) {
+						name = entry.getName();
+						if (name.endsWith(".class")) {
+							if (name.contains(path) && name.endsWith(".class")) {
+								String classPath = name.substring(0, entry.getName().length() - 6);
+								classPath = classPath.replaceAll("[\\|/]", ".");
+								classes.add(Class.forName(classPath));
+							}
+						}
+					}
+				} catch (Exception ex) {
+					// Silence is gold
+				}
+			} else {
+				try {
+					File base = new File(classpathEntry + File.separatorChar + path);
+					for (File file : base.listFiles()) {
+						name = file.getName();
+						if (name.endsWith(".class")) {
+							name = name.substring(0, name.length() - 6);
+							classes.add(Class.forName(packageName + "." + name));
+						}
+					}
+				} catch (Exception ex) {
+					// Silence is gold
+				}
+			}
+		}
+
+		return classes;
+	}
+
+	/**
+	 * @author Dmitrij David Padalino Montenero
+	 * Taken from https://stackoverflow.com/questions/7884393/can-a-directory-be-added-to-the-class-path-at-runtime
+	 * @param path is the directory you want to add to classpath at runtime
+	 */
+	public static void addPathToClasspath(String path) throws Exception {
+		File f = new File(path);
+		URI u = f.toURI();
+		URLClassLoader urlClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+		Class<URLClassLoader> urlClass = URLClassLoader.class;
+		Method method = urlClass.getDeclaredMethod("addURL", new Class[]{URL.class});
+		method.setAccessible(true);
+		method.invoke(urlClassLoader, new Object[]{u.toURL()});
+
+//		File f = new File(path);
+//		URL url = f.toURI().toURL();
+//		Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+//		method.setAccessible(true);
+//		method.invoke(ClassLoader.getSystemClassLoader(), url);
 	}
 }

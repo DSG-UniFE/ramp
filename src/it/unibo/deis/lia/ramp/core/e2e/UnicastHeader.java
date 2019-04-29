@@ -8,33 +8,33 @@ import java.util.Arrays;
 import it.unibo.deis.lia.ramp.RampEntryPoint;
 
 /**
- *
  * @author Carlo Giannelli
  */
 public class UnicastHeader extends GenericPacket {
-    
-	public UnicastHeader(){
-		//
-	}
-	
-	public static transient final byte PACKET_ID = (byte)1;
-	
-	private int id;                 										   					//Stefano Lanzone
-	private int[] dest;				// 4 * #hop (bytes)
-    private int[] source;			// 4 * #hop (bytes)
-	private short destPort;			// 2 (bytes)
-	private int destNodeId;			// 4 (bytes)
-    private int sourceNodeId;		// 4 (bytes)
-	private boolean ack;			// 1 (bytes)
-    private short sourcePortAck;	// 2 (bytes)
-    private byte currentHop;		// 1 (bytes)
-    private int bufferSize;			// 4 (bytes)
-    private byte retry; 			// -1 => no delay tolerant					// 1 (bytes)
-    private int timeWait; 			// millis (only for delay tolerant packets)	// 4 (bytes)
-    private int expiry;				// seconds (-1 => no opportunistic networking)				//Stefano Lanzone
-    private short connectTimeout; 	// millis (only for TCP)					// 2 (bytes)
-    private int flowId;				// (-1: field not used) Alessandro Dolci
-    
+
+    public UnicastHeader() {
+        //
+    }
+
+    public static transient final byte PACKET_ID = (byte) 1;
+
+    private int id;                                                                            //Stefano Lanzone
+    private int[] dest;                // 4 * #hop (bytes)
+    private int[] source;            // 4 * #hop (bytes)
+    private short destPort;            // 2 (bytes)
+    private int destNodeId;            // 4 (bytes)
+    private int sourceNodeId;        // 4 (bytes)
+    private boolean ack;            // 1 (bytes)
+    private short sourcePortAck;    // 2 (bytes)
+    private byte currentHop;        // 1 (bytes)
+    private int bufferSize;            // 4 (bytes)
+    private byte retry;            // -1 => no delay tolerant					// 1 (bytes)
+    private int timeWait;            // millis (only for delay tolerant packets)	// 4 (bytes)
+    private int expiry;                // seconds (-1 => no opportunistic networking)				//Stefano Lanzone
+    private short connectTimeout;    // millis (only for TCP)					// 2 (bytes)
+    private int flowId;                // (-1: field not used) Alessandro Dolci
+    private long dataType;          // (-1: filed not used) Dmitrij David Padalino Montenero
+
     public UnicastHeader(
             String[] destString,
             int destPort,
@@ -48,15 +48,16 @@ public class UnicastHeader extends GenericPacket {
             int timewait,
             int expiry,
             short connectTimeout,
-            int flowId
-            ) {
-    	this.id = RampEntryPoint.nextRandomInt(); //Stefano Lanzone
+            int flowId,
+            long dataType
+    ) {
+        this.id = RampEntryPoint.nextRandomInt(); //Stefano Lanzone
         this.setDest(destString);
-    	this.destPort = (short)(destPort + Short.MIN_VALUE);
+        this.destPort = (short) (destPort + Short.MIN_VALUE);
         this.destNodeId = destNodeId;
         this.sourceNodeId = sourceNodeId;
         this.ack = ack;
-        this.sourcePortAck = (short)(sourcePortAck + Short.MIN_VALUE);
+        this.sourcePortAck = (short) (sourcePortAck + Short.MIN_VALUE);
         this.currentHop = currentHop;
         this.bufferSize = bufferSize;
         this.retry = retry;
@@ -65,28 +66,30 @@ public class UnicastHeader extends GenericPacket {
         this.connectTimeout = connectTimeout;
         this.source = new int[0];
         this.flowId = flowId; // Alessandro Dolci
+        this.dataType = dataType; // Dmitrij David Padalino Montenero
     }
-    
+
     protected UnicastHeader(
-    		int[] dest,
-    	    int[] source,
-    		short destPort,
-    		int destNodeId,
-    		int sourceNodeId,
-    		boolean ack,
-    		short sourcePortAck,
-    	    byte currentHop,
-    	    int bufferSize,
-    	    byte retry,
-    	    int timeWait,
-    	    int expiry,
-    	    short connectTimeout,
-    	    int flowId
-            ) {
-    	this.id = RampEntryPoint.nextRandomInt(); //Stefano Lanzone
+            int[] dest,
+            int[] source,
+            short destPort,
+            int destNodeId,
+            int sourceNodeId,
+            boolean ack,
+            short sourcePortAck,
+            byte currentHop,
+            int bufferSize,
+            byte retry,
+            int timeWait,
+            int expiry,
+            short connectTimeout,
+            int flowId,
+            long dataType
+    ) {
+        this.id = RampEntryPoint.nextRandomInt(); //Stefano Lanzone
         this.dest = dest;
         this.source = source;
-    	this.destPort = destPort;
+        this.destPort = destPort;
         this.destNodeId = destNodeId;
         this.sourceNodeId = sourceNodeId;
         this.ack = ack;
@@ -98,22 +101,24 @@ public class UnicastHeader extends GenericPacket {
         this.expiry = expiry; //Stefano Lanzone
         this.connectTimeout = connectTimeout;
         this.flowId = flowId; // Alessandro Dolci
+        this.dataType = dataType; // Dmitrij David Padalino Montenero
     }
-    
+
     //Stefano Lanzone
     //Id to detect duplicate
     public int getId() {
-    	return id;
+        return id;
     }
-    
+
     //Stefano Lanzone
     public void setId(int id) {
-    	this.id = id;
+        this.id = id;
     }
-    
+
     public boolean isAck() {
         return ack;
     }
+
     protected void setAck(boolean ack) {
         this.ack = ack;
     }
@@ -121,38 +126,42 @@ public class UnicastHeader extends GenericPacket {
     public byte getCurrentHop() {
         return this.currentHop;
     }
+
     public void setCurrentHop(byte currentHop) {
         this.currentHop = currentHop;
     }
 
     public String[] getDest() {
-    	String[] resDest = new String[this.dest.length];
-    	for(int i=0; i<this.dest.length; i++){
-    		resDest[i] = GenericPacket.i2s(this.dest[i]);
-    	}
-    	return resDest;
+        String[] resDest = new String[this.dest.length];
+        for (int i = 0; i < this.dest.length; i++) {
+            resDest[i] = GenericPacket.i2s(this.dest[i]);
+        }
+        return resDest;
     }
+
     public void setDest(String[] destString) {
-    	if (destString==null ){
-    		this.dest = new int[0];
-    	}
-    	else{
-	    	this.dest = new int[destString.length];
-	    	for(int i=0; i<destString.length; i++){
-	    		this.dest[i] = GenericPacket.s2i(destString[i]);
-	    	}
-    	}
+        if (destString == null) {
+            this.dest = new int[0];
+        } else {
+            this.dest = new int[destString.length];
+            for (int i = 0; i < destString.length; i++) {
+                this.dest[i] = GenericPacket.s2i(destString[i]);
+            }
+        }
     }
-    protected int[] getDestInt(){
-    	return this.dest;
+
+    protected int[] getDestInt() {
+        return this.dest;
     }
-    protected void setDestInt(int[] destInt){
-    	this.dest = destInt;
+
+    protected void setDestInt(int[] destInt) {
+        this.dest = destInt;
     }
 
     public int getBufferSize() {
         return this.bufferSize;
     }
+
     public void setBufferSize(int bufferSize) {
         this.bufferSize = bufferSize;
     }
@@ -160,6 +169,7 @@ public class UnicastHeader extends GenericPacket {
     public int getDestNodeId() {
         return this.destNodeId;
     }
+
     protected void setDestNodeId(int destNodeId) {
         this.destNodeId = destNodeId;
     }
@@ -167,97 +177,125 @@ public class UnicastHeader extends GenericPacket {
     public int getSourceNodeId() {
         return sourceNodeId;
     }
+
     protected void setSourceNodeId(int sourceNodeId) {
         this.sourceNodeId = sourceNodeId;
     }
-    
+
     public int getDestPort() {
         return destPort - Short.MIN_VALUE;
     }
+
     protected void setDestPort(int destPort) {
-        this.destPort = (short)(destPort + Short.MIN_VALUE);
+        this.destPort = (short) (destPort + Short.MIN_VALUE);
     }
-    protected short getDestPortShort(){
-    	return destPort;
+
+    protected short getDestPortShort() {
+        return destPort;
     }
 
     public int getSourcePortAck() {
         return this.sourcePortAck - Short.MIN_VALUE;
     }
+
     public void setSourcePortAck(int sourcePortAck) {
-        this.sourcePortAck = (short)(sourcePortAck + Short.MIN_VALUE);
+        this.sourcePortAck = (short) (sourcePortAck + Short.MIN_VALUE);
     }
-    protected Short getSourcePortAckShort(){
-    	return this.sourcePortAck;
+
+    protected Short getSourcePortAckShort() {
+        return this.sourcePortAck;
     }
 
     public byte getRetry() {
         return this.retry;
     }
+
     public void setRetry(byte retry) {
         this.retry = retry;
     }
+
     public int getTimeWait() {
         return this.timeWait;
     }
+
     public void setTimeWait(int timeWait) {
         this.timeWait = timeWait;
     }
-    
+
     //Stefano Lanzone
     public int getExpiry() {
-    	return expiry;
+        return expiry;
     }
-    
+
     //Stefano Lanzone
     public void setExpiry(int expiry) {
-    	this.expiry = expiry;
+        this.expiry = expiry;
     }
-    
+
     public short getConnectTimeout() {
-		return connectTimeout;
-	}
-    protected void setConnectTimeout(short connectTimeout) {
-		this.connectTimeout = connectTimeout;
-	}
-    
-	public String[] getSource() {
-    	String[] resSource = new String[source.length];
-    	for(int i=0; i<source.length; i++){
-    		resSource[i] = GenericPacket.i2s(source[i]);
-    	}
-    	return resSource;
+        return connectTimeout;
     }
+
+    protected void setConnectTimeout(short connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public String[] getSource() {
+        String[] resSource = new String[source.length];
+        for (int i = 0; i < source.length; i++) {
+            resSource[i] = GenericPacket.i2s(source[i]);
+        }
+        return resSource;
+    }
+
     public void addSource(String aSource) {
-    	int[] newSource = new int[source.length+1];
+        int[] newSource = new int[source.length + 1];
         System.arraycopy(this.source, 0, newSource, 0, this.source.length);
-        newSource[newSource.length-1] = GenericPacket.s2i(aSource);
+        newSource[newSource.length - 1] = GenericPacket.s2i(aSource);
         this.source = newSource;
     }
-    protected int[] getSourceInt(){
-    	return this.source;
+
+    protected int[] getSourceInt() {
+        return this.source;
     }
-    protected void setSourceInt(int[] source){
-    	this.source = source;
+
+    protected void setSourceInt(int[] source) {
+        this.source = source;
     }
 
     // Alessandro Dolci
-	public int getFlowId() {
-		return flowId;
-	}
+    public int getFlowId() {
+        return flowId;
+    }
 
-	// Alessandro Dolci
-	public void setFlowId(int flowId) {
-		this.flowId = flowId;
-	}
-    
+    // Alessandro Dolci
+    public void setFlowId(int flowId) {
+        this.flowId = flowId;
+    }
+
+    /**
+     * @return the dataType of the packet in case the advanced data plane feature is used
+     * @author Dmitrij David Padalino Montenero
+     */
+    public long getDataType() {
+        return dataType;
+    }
+
+    /**
+     * @param dataType of the packet in case the advanced data plane feature is used
+     * @author Dmitrij David Padalino Montenero
+     */
+    public void setDataType(long dataType) {
+        this.dataType = dataType;
+    }
+
     @Override
-	public String toString() {
-		return "UnicastHeader [id=" + id + ", dest=" + Arrays.toString(dest) + ", source=" + Arrays.toString(source) + ", destPort=" + destPort + ", destNodeId=" + destNodeId + ", sourceNodeId=" + sourceNodeId
-				+ ", ack=" + ack + ", sourcePortAck=" + sourcePortAck + ", currentHop=" + currentHop + ", bufferSize=" + bufferSize + ", retry=" + retry + ", timeWait=" + timeWait + ", expiry=" + expiry
-				+ ", connectTimeout=" + connectTimeout + "]";
-	}
-    
+    public String toString() {
+        return "UnicastHeader [id=" + id + ", dest=" + Arrays.toString(dest) + ", source=" + Arrays.toString(source) + ", destPort=" + destPort + ", destNodeId=" + destNodeId + ", sourceNodeId=" + sourceNodeId
+                + ", ack=" + ack + ", sourcePortAck=" + sourcePortAck + ", currentHop=" + currentHop + ", bufferSize=" + bufferSize + ", retry=" + retry + ", timeWait=" + timeWait + ", expiry=" + expiry
+                + ", connectTimeout=" + connectTimeout + ", flowId=" + flowId + ", dataType=" + dataType + "]";
+    }
+
     // following methods useful for Externalizable
     /*private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
     	out.writeByte(dest.length);
@@ -351,82 +389,88 @@ public class UnicastHeader extends GenericPacket {
     	out.writeShort(connectTimeout);
 	}
 	*/
-    
-	// following methods useful for ProtoBuf
+
+    // following methods useful for ProtoBuf
     public void writeToProtos(java.io.OutputStream os) throws java.io.IOException {
-    	createProtosUnicastHeader().writeDelimitedTo(os);
+        createProtosUnicastHeader().writeDelimitedTo(os);
     }
-	public byte[] toProtosByteArray(){
-		return createProtosUnicastHeader().toByteArray();
-	}
-	protected RampPacketsProtos.UnicastHeader createProtosUnicastHeader(){
-		RampPacketsProtos.UnicastHeader.Builder uhProtobufBuilder = RampPacketsProtos.UnicastHeader.newBuilder();
 
-		uhProtobufBuilder.setId(id); //1 Stefano Lanzone 
-		
-    	for(int i=0; i<dest.length; i++)
-    		uhProtobufBuilder.addDest(dest[i]); //2
-    	
-    	for(int i=0; i<source.length; i++)
-    		uhProtobufBuilder.addSource(source[i]); //3
-    	
-    	uhProtobufBuilder.setDestPort(destPort); //4
-    	uhProtobufBuilder.setDestNodeId(destNodeId); //5
-    	uhProtobufBuilder.setSourceNodeId(sourceNodeId); //6
-    	uhProtobufBuilder.setAck(ack); //7
-    	uhProtobufBuilder.setSourcePortAck(sourcePortAck); //8
-    	uhProtobufBuilder.setCurrentHop(currentHop); //9
-    	uhProtobufBuilder.setBufferSize(bufferSize); //10
-    	uhProtobufBuilder.setRetry(retry); //11
-    	uhProtobufBuilder.setTimeWait(timeWait); //12
-    	uhProtobufBuilder.setExpiry(expiry); //13 Stefano Lanzone 
-    	uhProtobufBuilder.setConnectTimeout(connectTimeout); //14
-    	uhProtobufBuilder.setFlowId(flowId); // 15 Alessandro Dolci
-    	
-		RampPacketsProtos.UnicastHeader uhProtobuf = uhProtobufBuilder.build();
-		return uhProtobuf;
-	}
-	
-	public static UnicastHeader parseFromProtos(InputStream is) throws IOException{
-		RampPacketsProtos.UnicastHeader uhProtobuf = RampPacketsProtos.UnicastHeader.parseDelimitedFrom(is);
-		return createUnicastHeader(uhProtobuf);
-	}
-	public static UnicastHeader parseFromProtos(byte[] bytes, int offset, int length) throws IOException{
-		RampPacketsProtos.UnicastHeader uhProtobuf = RampPacketsProtos.UnicastHeader.newBuilder().mergeFrom(bytes,offset,length).build();
-		return createUnicastHeader(uhProtobuf);
-	}
-	protected static UnicastHeader createUnicastHeader(RampPacketsProtos.UnicastHeader uhProtobuf){
-		UnicastHeader uh = new UnicastHeader();
-		
-		uh.id = uhProtobuf.getId(); //Stefano Lanzone 
-				
-		uh.dest = new int[uhProtobuf.getDestCount()];
-		for(int i=0; i<uhProtobuf.getDestCount(); i++)
-			uh.dest[i] = uhProtobuf.getDest(i);
+    public byte[] toProtosByteArray() {
+        return createProtosUnicastHeader().toByteArray();
+    }
 
-		uh.source = new int[uhProtobuf.getSourceCount()];
-		for(int i=0; i<uhProtobuf.getSourceCount(); i++)
-			uh.source[i] = uhProtobuf.getSource(i);
-    	
-    	uh.destPort = (short)uhProtobuf.getDestPort();
-    	uh.destNodeId = uhProtobuf.getDestNodeId();
-    	uh.sourceNodeId = uhProtobuf.getSourceNodeId();
-    	uh.ack = uhProtobuf.getAck();
-    	uh.sourcePortAck = (short)uhProtobuf.getSourcePortAck();
-    	uh.currentHop = (byte)uhProtobuf.getCurrentHop();
-    	uh.bufferSize = uhProtobuf.getBufferSize();
-    	uh.retry = (byte)uhProtobuf.getRetry();
-    	uh.timeWait = uhProtobuf.getTimeWait();
-    	uh.expiry = uhProtobuf.getExpiry(); //Stefano Lanzone 
-    	uh.connectTimeout = (short)uhProtobuf.getConnectTimeout();
-    	uh.flowId = uhProtobuf.getFlowId(); // Alessandro Dolci
-    	
-		return uh;
-	}
-	
-	@Override
-	public byte getPacketId() {
-		return PACKET_ID;
-	}
-	
+    protected RampPacketsProtos.UnicastHeader createProtosUnicastHeader() {
+        RampPacketsProtos.UnicastHeader.Builder uhProtobufBuilder = RampPacketsProtos.UnicastHeader.newBuilder();
+
+        uhProtobufBuilder.setId(id); //1 Stefano Lanzone
+
+        for (int i = 0; i < dest.length; i++)
+            uhProtobufBuilder.addDest(dest[i]); //2
+
+        for (int i = 0; i < source.length; i++)
+            uhProtobufBuilder.addSource(source[i]); //3
+
+        uhProtobufBuilder.setDestPort(destPort); //4
+        uhProtobufBuilder.setDestNodeId(destNodeId); //5
+        uhProtobufBuilder.setSourceNodeId(sourceNodeId); //6
+        uhProtobufBuilder.setAck(ack); //7
+        uhProtobufBuilder.setSourcePortAck(sourcePortAck); //8
+        uhProtobufBuilder.setCurrentHop(currentHop); //9
+        uhProtobufBuilder.setBufferSize(bufferSize); //10
+        uhProtobufBuilder.setRetry(retry); //11
+        uhProtobufBuilder.setTimeWait(timeWait); //12
+        uhProtobufBuilder.setExpiry(expiry); //13 Stefano Lanzone
+        uhProtobufBuilder.setConnectTimeout(connectTimeout); //14
+        uhProtobufBuilder.setFlowId(flowId); // 15 Alessandro Dolci
+        uhProtobufBuilder.setDataType(dataType); // 16 Dmitrij David Padalino Montenero
+
+        RampPacketsProtos.UnicastHeader uhProtobuf = uhProtobufBuilder.build();
+        return uhProtobuf;
+    }
+
+    public static UnicastHeader parseFromProtos(InputStream is) throws IOException {
+        RampPacketsProtos.UnicastHeader uhProtobuf = RampPacketsProtos.UnicastHeader.parseDelimitedFrom(is);
+        return createUnicastHeader(uhProtobuf);
+    }
+
+    public static UnicastHeader parseFromProtos(byte[] bytes, int offset, int length) throws IOException {
+        RampPacketsProtos.UnicastHeader uhProtobuf = RampPacketsProtos.UnicastHeader.newBuilder().mergeFrom(bytes, offset, length).build();
+        return createUnicastHeader(uhProtobuf);
+    }
+
+    protected static UnicastHeader createUnicastHeader(RampPacketsProtos.UnicastHeader uhProtobuf) {
+        UnicastHeader uh = new UnicastHeader();
+
+        uh.id = uhProtobuf.getId(); //Stefano Lanzone
+
+        uh.dest = new int[uhProtobuf.getDestCount()];
+        for (int i = 0; i < uhProtobuf.getDestCount(); i++)
+            uh.dest[i] = uhProtobuf.getDest(i);
+
+        uh.source = new int[uhProtobuf.getSourceCount()];
+        for (int i = 0; i < uhProtobuf.getSourceCount(); i++)
+            uh.source[i] = uhProtobuf.getSource(i);
+
+        uh.destPort = (short) uhProtobuf.getDestPort();
+        uh.destNodeId = uhProtobuf.getDestNodeId();
+        uh.sourceNodeId = uhProtobuf.getSourceNodeId();
+        uh.ack = uhProtobuf.getAck();
+        uh.sourcePortAck = (short) uhProtobuf.getSourcePortAck();
+        uh.currentHop = (byte) uhProtobuf.getCurrentHop();
+        uh.bufferSize = uhProtobuf.getBufferSize();
+        uh.retry = (byte) uhProtobuf.getRetry();
+        uh.timeWait = uhProtobuf.getTimeWait();
+        uh.expiry = uhProtobuf.getExpiry(); //Stefano Lanzone
+        uh.connectTimeout = (short) uhProtobuf.getConnectTimeout();
+        uh.flowId = uhProtobuf.getFlowId(); // Alessandro Dolci
+        uh.dataType = uhProtobuf.getDataType(); // Dmitrij David Padalino Montenero
+
+        return uh;
+    }
+
+    @Override
+    public byte getPacketId() {
+        return PACKET_ID;
+    }
+
 }

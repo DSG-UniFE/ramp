@@ -16,6 +16,10 @@ public class ControllerMessageAck extends ControllerMessage {
     /**
      * OS_ROUTING_ACK message: messageType, srcIP, routeID
      * OS_ROUTING_ABORT message: messageType, routeID
+     * DATA_PLANE_DATA_TYPE_ACK message: messageType
+     * DATA_PLANE_DATA_TYPE_ABORT message: messageType
+     * DATA_PLANE_RULE_ACK message: messageType
+     * DATA_PLANE_RULE_ABORT message: messageType
      */
     public ControllerMessageAck(MessageType messageType, int clientPort, Map<String, NodeStats> nodeStats, String srcIP, int routeId) {
         super(messageType, clientPort, nodeStats);
@@ -25,9 +29,13 @@ public class ControllerMessageAck extends ControllerMessage {
     }
 
     public ControllerMessageAck(MessageType messageType, String srcIP, int routeId) {
-        super((messageType));
+        super(messageType);
         this.srcIP = srcIP;
         this.routeId = routeId;
+    }
+
+    public ControllerMessageAck(MessageType messageType) {
+        super(messageType);
     }
 
     public String getSrcIP() { return srcIP; }
