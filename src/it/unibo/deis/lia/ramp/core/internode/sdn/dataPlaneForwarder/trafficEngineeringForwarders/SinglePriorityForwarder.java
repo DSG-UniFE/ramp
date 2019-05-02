@@ -1,5 +1,6 @@
 package it.unibo.deis.lia.ramp.core.internode.sdn.dataPlaneForwarder.trafficEngineeringForwarders;
 
+import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClientInterface;
 import it.unibo.deis.lia.ramp.core.internode.sdn.dataPlaneForwarder.DataPlaneForwarder;
 import it.unibo.deis.lia.ramp.core.e2e.BroadcastPacket;
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
@@ -7,6 +8,8 @@ import it.unibo.deis.lia.ramp.core.e2e.UnicastHeader;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClient;
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
+import it.unibo.deis.lia.ramp.util.componentLocator.ComponentLocator;
+import it.unibo.deis.lia.ramp.util.componentLocator.ComponentType;
 import org.apache.commons.net.util.SubnetUtils;
 import oshi.PlatformEnum;
 import oshi.SystemInfo;
@@ -47,7 +50,7 @@ public class SinglePriorityForwarder implements DataPlaneForwarder {
     private Map<String, NetworkInterface> networkInterfaces;
     private Map<NetworkInterface, Long> networkSpeeds;
 
-    public synchronized static SinglePriorityForwarder getInstance() {
+    public synchronized static SinglePriorityForwarder getInstance(DataPlaneForwarder routingForwarder) {
         if (singleFlowForwarder == null) {
             singleFlowForwarder = new SinglePriorityForwarder();
 
@@ -56,7 +59,8 @@ public class SinglePriorityForwarder implements DataPlaneForwarder {
             singleFlowForwarder.lastPacketSendDurations = new ConcurrentHashMap<NetworkInterface, Double>();
             singleFlowForwarder.networkInterfaces = new ConcurrentHashMap<String, NetworkInterface>();
             singleFlowForwarder.networkSpeeds = new ConcurrentHashMap<NetworkInterface, Long>();
-            Dispatcher.getInstance(false).addPacketForwardingListener(singleFlowForwarder);
+            //Dispatcher.getInstance(false).addPacketForwardingListener(singleFlowForwarder);
+            Dispatcher.getInstance(false).addPacketForwardingListenerBeforeAnother(singleFlowForwarder, routingForwarder);
             System.out.println("SingleFlowForwarder ENABLED");
         }
         return singleFlowForwarder;
@@ -163,7 +167,8 @@ public class SinglePriorityForwarder implements DataPlaneForwarder {
          * processed according to the SDN paradigm
          */
         if (up.getFlowId() != GenericPacket.UNUSED_FIELD && up.getDestNodeId() != Dispatcher.getLocalRampId()) {
-            ControllerClient controllerClient = ControllerClient.getInstance();
+            //ControllerClient controllerClient = ControllerClient.getInstance();
+            ControllerClientInterface controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
             int flowPriority = controllerClient.getFlowPriority(up.getFlowId());
             NetworkInterface nextSendNetworkInterface = getNextSendNetworkInterface(up.getDest()[up.getCurrentHop()]);
             long networkSpeed = getNetworkSpeed(nextSendNetworkInterface);
@@ -281,7 +286,8 @@ public class SinglePriorityForwarder implements DataPlaneForwarder {
          * Check if the current packet contains a valid flowId and has to be processed according to the SDN paradigm
          */
         if (uh.getFlowId() != GenericPacket.UNUSED_FIELD && uh.getDestNodeId() != Dispatcher.getLocalRampId()) {
-            ControllerClient controllerClient = ControllerClient.getInstance();
+            //ControllerClient controllerClient = ControllerClient.getInstance();
+            ControllerClientInterface controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
             int flowPriority = controllerClient.getFlowPriority(uh.getFlowId());
             NetworkInterface nextSendNetworkInterface = getNextSendNetworkInterface(uh.getDest()[uh.getCurrentHop()]);
             int packetLength = 0;

@@ -6,7 +6,8 @@ import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
-import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.DataTypesManager;
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.DataTypesManagerInterface;
+import it.unibo.deis.lia.ramp.core.internode.sdn.routingPolicy.RoutingPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy.TrafficEngineeringPolicy;
 import it.unibo.deis.lia.ramp.service.management.ServiceDiscovery;
 import it.unibo.deis.lia.ramp.service.management.ServiceManager;
@@ -16,6 +17,8 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClie
 import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.ApplicationRequirements;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.PathDescriptor;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.PathSelectionMetric;
+import it.unibo.deis.lia.ramp.util.componentLocator.ComponentLocator;
+import it.unibo.deis.lia.ramp.util.componentLocator.ComponentType;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -46,7 +49,7 @@ public class SDNControllerClient {
     private static ControllerClient controllerClient = null;
     private static SDNControllerClientJFrame ccjf;
 
-    private DataTypesManager dataTypesManager;
+    private DataTypesManagerInterface dataTypesManager;
 
     public static synchronized SDNControllerClient getInstance() {
         if (SDNControllerClient == null) {
@@ -61,7 +64,7 @@ public class SDNControllerClient {
         controllerClient = ControllerClient.getInstance();
         sleep(2);
 
-        dataTypesManager = DataTypesManager.getInstance();
+        dataTypesManager = ((DataTypesManagerInterface) ComponentLocator.getComponent(ComponentType.DATA_TYPES_MANAGER));
 
         try {
             receiveSocketTCP = E2EComm.bindPreReceive(TCP);
@@ -131,9 +134,9 @@ public class SDNControllerClient {
         System.out.println("SDNControllerClient FINISHED");
     }
 
-    public Vector<ServiceResponse> findControllerClientReceiver(int protocol, int ttl, int timeout, int serviceAmount) throws Exception {
+    public Vector<ServiceResponse> findControllerClientReceiver(int protocol, int ttl, int timeout, int serviceAmount, boolean osRoutingMode) throws Exception {
         String serviceName = "";
-        if (getTrafficEngineeringPolicy() != TrafficEngineeringPolicy.OS_ROUTING) {
+        if (!osRoutingMode) {
             if (protocol == UDP) {
                 serviceName = "SDNControllerClientReceiverUDP";
             } else {
@@ -165,6 +168,10 @@ public class SDNControllerClient {
 
     public TrafficEngineeringPolicy getTrafficEngineeringPolicy() {
         return controllerClient.getTrafficEngineeringPolicy();
+    }
+
+    public RoutingPolicy getRoutingPolicy() {
+        return controllerClient.getRoutingPolicy();
     }
 
     public int getFlowId(ApplicationRequirements applicationRequirements, int[] destNodeIds, int[] destPorts, PathSelectionMetric pathSelectionMetric) {
@@ -264,8 +271,8 @@ public class SDNControllerClient {
 
             if(!this.dataType.equals("Default Message")) {
                 try {
-                    cls = dataTypesManager.getClassForDataTypeName(this.dataType);
-                    packet = cls.newInstance();
+                    cls = dataTypesManager.getDataTypeClassObjectByName(this.dataType);
+                    packet = cls.getDeclaredConstructor().newInstance();
                     method = cls.getMethod("setPayloadSize", paramInt);
                     method.invoke(packet, this.payload);
                 } catch (IllegalAccessException e) {
@@ -600,7 +607,7 @@ public class SDNControllerClient {
                         System.out.println("SDNControllerClient.BoundReceiveSocketMessageHandler message: " + packetInfo);
                     } else if(dataTypesManager.containsDataTypeByName(payload.getClass().getSimpleName())) {
                         String dataType = payload.getClass().getSimpleName();
-                        Class cls = dataTypesManager.getClassForDataTypeName(dataType);
+                        Class cls = dataTypesManager.getDataTypeClassObjectByName(dataType);
                         Class noparams[] = {};
                         Method method =  cls.getMethod("getSeqNumber", noparams);
                         int seqNumber = (int) method.invoke(payload, null);

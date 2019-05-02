@@ -27,6 +27,7 @@ import it.unibo.deis.lia.ramp.core.internode.HeartbeatRequest;
 import it.unibo.deis.lia.ramp.core.internode.HeartbeatResponse;
 import it.unibo.deis.lia.ramp.core.internode.TcpDispatcher;
 import it.unibo.deis.lia.ramp.core.internode.UdpDispatcher;
+import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 
 
 /**
@@ -1245,7 +1246,16 @@ public class E2EComm {
         Object deserialized;
         ByteArrayInputStream bin = new ByteArrayInputStream(bytes, offset, length);
 
-        ObjectInputStream in = new ObjectInputStream(bin);
+        /*
+         * Dmitrij David Padalino Montenero
+         *
+         * Due to the introduction of RampClassLoader that has as parent the SystemClassLoader by using
+         * ClassLoaderObjectInputStream in place of ObjectInputStream from now on it is possible
+         * to resolve classes loaded at runtime that do not belong to the startup classpath.
+         * In case the RampClassLoader is not able to resolve the class it will delegate
+         * its resolution to the SystemClassLoader.
+         */
+        ObjectInputStream in = new ClassLoaderObjectInputStream(RampEntryPoint.getRampClassLoader(), bin);
 
         deserialized = in.readObject();
         in.close();

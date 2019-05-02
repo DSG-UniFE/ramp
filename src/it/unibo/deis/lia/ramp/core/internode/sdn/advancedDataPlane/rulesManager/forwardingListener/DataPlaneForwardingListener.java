@@ -5,11 +5,14 @@ import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastHeader;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 import it.unibo.deis.lia.ramp.core.internode.PacketForwardingListener;
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.rulesManager.DataPlaneRulesManager;
 
 /**
  * @author Dmitrij David Padalino Montenero
  */
-public class AdvancedDataPlaneForwardingListener implements PacketForwardingListener {
+public class DataPlaneForwardingListener implements PacketForwardingListener {
+
+    private DataPlaneRulesManager dataPlaneRulesManager = DataPlaneRulesManager.getInstance();
 
     @Override
     public void receivedUdpUnicastPacket(UnicastPacket up) {
@@ -18,20 +21,24 @@ public class AdvancedDataPlaneForwardingListener implements PacketForwardingList
 
     @Override
     public void receivedUdpBroadcastPacket(BroadcastPacket bp) {
-
+        receivedTcpBroadcastPacket(bp);
     }
 
     @Override
     public void receivedTcpUnicastPacket(UnicastPacket up) {
-        receivedTcpUnicastHeader(up.getHeader());
+        //receivedTcpUnicastHeader(up.getHeader());
+        long dataTypeId = up.getHeader().getDataType();
+        if (dataTypeId != GenericPacket.UNUSED_FIELD) {
+            dataPlaneRulesManager.executeUnicastPacketDataPlaneRule(dataTypeId, up);
+        }
     }
 
     @Override
     public void receivedTcpUnicastHeader(UnicastHeader uh) {
-        if (uh.getDataType() != GenericPacket.UNUSED_FIELD) {
-            long dataTypeId = uh.getDataType();
-            System.out.println("AdvancedDataPlaneForwardingListener: data type: " + dataTypeId);
-        }
+//        long dataTypeId = uh.getDataType();
+//        if (dataTypeId != GenericPacket.UNUSED_FIELD) {
+//            dataPlaneRulesManager.executeUnicastHeaderDataPlaneRule(dataTypeId, uh);
+//        }
     }
 
     @Override
@@ -41,7 +48,10 @@ public class AdvancedDataPlaneForwardingListener implements PacketForwardingList
 
     @Override
     public void receivedTcpBroadcastPacket(BroadcastPacket bp) {
-
+        long dataTypeId = bp.getDataType();
+        if (dataTypeId != GenericPacket.UNUSED_FIELD) {
+            dataPlaneRulesManager.executeBroadcastPacketDataPlaneRule(dataTypeId, bp);
+        }
     }
 
     @Override

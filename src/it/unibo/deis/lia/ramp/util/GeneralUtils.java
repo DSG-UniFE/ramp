@@ -507,25 +507,4 @@ public class GeneralUtils {
 
 		return classes;
 	}
-
-	/**
-	 * @author Dmitrij David Padalino Montenero
-	 * Taken from https://stackoverflow.com/questions/7884393/can-a-directory-be-added-to-the-class-path-at-runtime
-	 * @param path is the directory you want to add to classpath at runtime
-	 */
-	public static void addPathToClasspath(String path) throws Exception {
-		File f = new File(path);
-		URI u = f.toURI();
-		URLClassLoader urlClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-		Class<URLClassLoader> urlClass = URLClassLoader.class;
-		Method method = urlClass.getDeclaredMethod("addURL", new Class[]{URL.class});
-		method.setAccessible(true);
-		method.invoke(urlClassLoader, new Object[]{u.toURL()});
-
-//		File f = new File(path);
-//		URL url = f.toURI().toURL();
-//		Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-//		method.setAccessible(true);
-//		method.invoke(ClassLoader.getSystemClassLoader(), url);
-	}
 }

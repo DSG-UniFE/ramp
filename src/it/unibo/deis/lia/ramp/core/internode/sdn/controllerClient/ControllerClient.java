@@ -13,9 +13,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 import it.unibo.deis.lia.ramp.core.e2e.*;
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataPlaneMessage.DataPlaneMessage;
 import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.DataTypesManager;
-import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.dataTypeMessage.DataTypeMessage;
-import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.rulesManager.AdvancedDataPlaneRulesManager;
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.rulesManager.DataPlaneRulesManager;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.controllerServiceDiscoveryPolicy.ControllerServiceDiscoveryPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.controllerServiceDiscoveryPolicy.controllerServiceDiscoverer.ControllerServiceDiscoverer;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.controllerServiceDiscoveryPolicy.controllerServiceDiscoverer.FirstAvailableControllerServiceDiscoverer;
@@ -38,7 +38,6 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.PathSelectionMetr
 
 import it.unibo.deis.lia.ramp.core.internode.*;
 import it.unibo.deis.lia.ramp.service.management.ServiceResponse;
-import it.unibo.deis.lia.ramp.util.GeneralUtils;
 import it.unibo.deis.lia.ramp.util.NetworkInterfaceStats;
 import it.unibo.deis.lia.ramp.util.NodeStats;
 import org.graphstream.graph.Graph;
@@ -47,7 +46,7 @@ import org.graphstream.graph.Graph;
  * @author Alessandro Dolci
  * @author Dmitrij David Padalino Montenero
  */
-public class ControllerClient extends Thread {
+public class ControllerClient extends Thread implements ControllerClientInterface {
 
     /**
      * Default flow ID value, to be used by default type applications.
@@ -81,12 +80,14 @@ public class ControllerClient extends Thread {
     private UpdateManager updateManager;
 
     /**
-     * TODO Complete this
+     * At the moment this is just a base work to let the ControllerClient
+     * to choose the ControllerService according to a specific strategy.
+     * The only one currently implemented is FIRST_AVAILABLE {@link ControllerServiceDiscoveryPolicy}
      */
     private ControllerServiceDiscoveryPolicy controllerServiceDiscoveryPolicy;
 
     /**
-     * TODO Complete this
+     * ControllerService discover strategy.
      */
     private ControllerServiceDiscoverer controllerServiceDiscoverer;
 
@@ -97,18 +98,18 @@ public class ControllerClient extends Thread {
     private TrafficEngineeringPolicy trafficEngineeringPolicy;
 
     /**
-     * This field keeps track the current routingPolicy used
-     * by all ControlAgent nodes. {@link RoutingPolicy}
-     */
-    private RoutingPolicy routingPolicy;
-
-    /**
      * This component stores the DataPlaneForwarder object
      * according to the current TrafficEngineeringPolicy
      * imposed by the ControllerService.
      * flowDataPlaneForwarder and routingDataPlaneForwarder are orthogonal.
      */
     private DataPlaneForwarder flowDataPlaneForwarder;
+
+    /**
+     * This field keeps track the current routingPolicy used
+     * by all ControlAgent nodes. {@link RoutingPolicy}
+     */
+    private RoutingPolicy routingPolicy;
 
     /**
      * This component stores the DataPlaneForwarder object
@@ -175,7 +176,7 @@ public class ControllerClient extends Thread {
      * This component is responsible to maintain the data plane rules to apply when the ControllerClient
      * forwards certain types of traffic.
      */
-    private AdvancedDataPlaneRulesManager advancedDataPlaneRulesManager;
+    private DataPlaneRulesManager dataPlaneRulesManager;
 
     /**
      * This component is responsible to manage the data types available for advanced data plane rules to apply when the ControllerClient
@@ -203,8 +204,20 @@ public class ControllerClient extends Thread {
 
         this.active = true;
         this.updateManager = new UpdateManager();
+
+        /*
+         * Make sure this manager is always instantiated before any other DataPlaneForwarder
+         * so that its PacketForwardingListener is always the first one to be called.
+         */
+        this.dataPlaneRulesManager = DataPlaneRulesManager.getInstance();
+
+        this.dataTypesManager = DataTypesManager.getInstance();
+
         this.trafficEngineeringPolicy = TrafficEngineeringPolicy.SINGLE_FLOW;
-        this.flowDataPlaneForwarder = SinglePriorityForwarder.getInstance();
+        this.flowDataPlaneForwarder = SinglePriorityForwarder.getInstance(null);
+
+        this.routingPolicy = RoutingPolicy.REROUTING;
+        this.routingDataPlaneForwarder = BestPathForwarder.getInstance();
 
         this.defaultFlowPaths = new ConcurrentHashMap<>();
         this.flowPaths = new ConcurrentHashMap<>();
@@ -215,7 +228,12 @@ public class ControllerClient extends Thread {
 
         this.flowMulticastNextHops = new ConcurrentHashMap<>();
 
-        this.osRoutingManager = null;
+        try {
+            this.osRoutingManager = OsRoutingManager.getInstance();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        ;
 
         this.topologyGraph = null;
 
@@ -223,10 +241,6 @@ public class ControllerClient extends Thread {
         if (!dir.exists()) {
             dir.mkdir();
         }
-
-        this.advancedDataPlaneRulesManager = AdvancedDataPlaneRulesManager.getInstance();
-
-        this.dataTypesManager = DataTypesManager.getInstance();
     }
 
     public synchronized static ControllerClient getInstance() {
@@ -261,7 +275,6 @@ public class ControllerClient extends Thread {
             this.routingDataPlaneForwarder = null;
         }
 
-        // TODO Improve this talk with Giannelli
         if (this.osRoutingManager != null) {
             this.osRoutingManager.deactivate();
             this.osRoutingManager = null;
@@ -283,6 +296,24 @@ public class ControllerClient extends Thread {
         return getFlowId(applicationRequirements, destNodeIds, destPorts, null);
     }
 
+//    public int getFlowId(ApplicationRequirements applicationRequirements, int[] destNodeIds, int[] destPorts, PathSelectionMetric pathSelectionMetric) {
+//        int flowId;
+//        if (applicationRequirements.getApplicationType() == ApplicationType.DEFAULT)
+//            flowId = DEFAULT_FLOW_ID;
+//        else {
+//            flowId = ThreadLocalRandom.current().nextInt();
+//            while (flowId == GenericPacket.UNUSED_FIELD || flowId == DEFAULT_FLOW_ID || this.flowStartTimes.containsKey(flowId))
+//                flowId = ThreadLocalRandom.current().nextInt();
+//            if (this.trafficEngineeringPolicy == TrafficEngineeringPolicy.REROUTING)
+//                sendNewPathRequest(destNodeIds, applicationRequirements, pathSelectionMetric, flowId);
+//            else if (this.trafficEngineeringPolicy == TrafficEngineeringPolicy.SINGLE_FLOW || this.trafficEngineeringPolicy == TrafficEngineeringPolicy.QUEUES || this.trafficEngineeringPolicy == TrafficEngineeringPolicy.TRAFFIC_SHAPING)
+//                sendNewPriorityValueRequest(applicationRequirements, flowId);
+//            else if (this.trafficEngineeringPolicy == TrafficEngineeringPolicy.MULTICASTING)
+//                sendNewMulticastRequest(destNodeIds, destPorts, applicationRequirements, pathSelectionMetric, flowId);
+//        }
+//        return flowId;
+//    }
+
     public int getFlowId(ApplicationRequirements applicationRequirements, int[] destNodeIds, int[] destPorts, PathSelectionMetric pathSelectionMetric) {
         int flowId;
         if (applicationRequirements.getApplicationType() == ApplicationType.DEFAULT)
@@ -291,12 +322,14 @@ public class ControllerClient extends Thread {
             flowId = ThreadLocalRandom.current().nextInt();
             while (flowId == GenericPacket.UNUSED_FIELD || flowId == DEFAULT_FLOW_ID || this.flowStartTimes.containsKey(flowId))
                 flowId = ThreadLocalRandom.current().nextInt();
-            if (this.trafficEngineeringPolicy == TrafficEngineeringPolicy.REROUTING)
+            if (this.routingPolicy == RoutingPolicy.REROUTING) {
                 sendNewPathRequest(destNodeIds, applicationRequirements, pathSelectionMetric, flowId);
-            else if (this.trafficEngineeringPolicy == TrafficEngineeringPolicy.SINGLE_FLOW || this.trafficEngineeringPolicy == TrafficEngineeringPolicy.QUEUES || this.trafficEngineeringPolicy == TrafficEngineeringPolicy.TRAFFIC_SHAPING)
-                sendNewPriorityValueRequest(applicationRequirements, flowId);
-            else if (this.trafficEngineeringPolicy == TrafficEngineeringPolicy.MULTICASTING)
+            } else if (this.routingPolicy == RoutingPolicy.MULTICASTING) {
                 sendNewMulticastRequest(destNodeIds, destPorts, applicationRequirements, pathSelectionMetric, flowId);
+            }
+            if (this.trafficEngineeringPolicy == TrafficEngineeringPolicy.SINGLE_FLOW || this.trafficEngineeringPolicy == TrafficEngineeringPolicy.QUEUES || this.trafficEngineeringPolicy == TrafficEngineeringPolicy.TRAFFIC_SHAPING) {
+                sendNewPriorityValueRequest(applicationRequirements, flowId);
+            }
         }
         return flowId;
     }
@@ -395,7 +428,7 @@ public class ControllerClient extends Thread {
     }
 
     public Set<String> getDataTypesAvailable() {
-        return this.dataTypesManager.getDataTypesAvailable();
+        return this.dataTypesManager.getAvailableDataTypes();
     }
 
     private String[] sendNewPathRequest(int[] destNodeIds, ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric, int flowId) {
@@ -830,6 +863,15 @@ public class ControllerClient extends Thread {
                         case DATA_PLANE_ADD_DATA_TYPE:
                             handleDataPlaneAddDataType((ControllerMessageUpdate) controllerMessage);
                             break;
+                        case DATA_PLANE_REMOVE_DATA_TYPE:
+                            handleDataPlaneRemoveDataType((ControllerMessageUpdate) controllerMessage);
+                            break;
+                        case DATA_PLANE_ADD_RULE_FILE:
+                            handleDataPlaneAddRuleFile((ControllerMessageUpdate) controllerMessage);
+                            break;
+                        case DATA_PLANE_REMOVE_RULE_FILE:
+                            handleDataPlaneRemoveRuleFile((ControllerMessageUpdate) controllerMessage);
+                            break;
                         case DATA_PLANE_ADD_RULE:
                             handleDataPlaneAddRule((ControllerMessageUpdate) controllerMessage);
                             break;
@@ -843,39 +885,66 @@ public class ControllerClient extends Thread {
             }
         }
 
+//        private void handleTrafficEngineeringPolicyUpdate(ControllerMessageUpdate updateMessage) {
+//            TrafficEngineeringPolicy newTrafficEngineeringPolicy = updateMessage.getTrafficEngineeringPolicy();
+//            if (flowDataPlaneForwarder != null) {
+//                flowDataPlaneForwarder.deactivate();
+//            }
+//
+//            // TODO Improve this
+//            if (trafficEngineeringPolicy == TrafficEngineeringPolicy.OS_ROUTING && newTrafficEngineeringPolicy != trafficEngineeringPolicy && osRoutingManager != null) {
+//                osRoutingManager.deactivate();
+//            }
+//
+//            switch (newTrafficEngineeringPolicy) {
+//                case REROUTING:
+//                    flowDataPlaneForwarder = BestPathForwarder.getInstance();
+//                    break;
+//                case SINGLE_FLOW:
+//                    flowDataPlaneForwarder = SinglePriorityForwarder.getInstance(routingDataPlaneForwarder);
+//                    break;
+//                case QUEUES:
+//                    flowDataPlaneForwarder = MultipleFlowsSinglePriorityForwarder.getInstance(routingDataPlaneForwarder);
+//                    break;
+//                case TRAFFIC_SHAPING:
+//                    flowDataPlaneForwarder = MultipleFlowsMultiplePrioritiesForwarder.getInstance(routingDataPlaneForwarder);
+//                    break;
+//                case MULTICASTING:
+//                    flowDataPlaneForwarder = MulticastingForwarder.getInstance();
+//                    break;
+//                case OS_ROUTING:
+//                    try {
+//                        osRoutingManager = OsRoutingManager.getInstance();
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//                    break;
+//                case NO_FLOW_POLICY:
+//                    flowDataPlaneForwarder = null;
+//                    break;
+//                default:
+//                    break;
+//            }
+//
+//            trafficEngineeringPolicy = newTrafficEngineeringPolicy;
+//            System.out.println("ControllerClient: flow policy update (" + trafficEngineeringPolicy + ") received from the controller and successfully applied");
+//        }
+
         private void handleTrafficEngineeringPolicyUpdate(ControllerMessageUpdate updateMessage) {
             TrafficEngineeringPolicy newTrafficEngineeringPolicy = updateMessage.getTrafficEngineeringPolicy();
             if (flowDataPlaneForwarder != null) {
                 flowDataPlaneForwarder.deactivate();
             }
 
-            // TODO Improve this
-            if (trafficEngineeringPolicy == TrafficEngineeringPolicy.OS_ROUTING && newTrafficEngineeringPolicy != trafficEngineeringPolicy && osRoutingManager != null) {
-                osRoutingManager.deactivate();
-            }
-
             switch (newTrafficEngineeringPolicy) {
-                case REROUTING:
-                    flowDataPlaneForwarder = BestPathForwarder.getInstance();
-                    break;
                 case SINGLE_FLOW:
-                    flowDataPlaneForwarder = SinglePriorityForwarder.getInstance();
+                    flowDataPlaneForwarder = SinglePriorityForwarder.getInstance(routingDataPlaneForwarder);
                     break;
                 case QUEUES:
-                    flowDataPlaneForwarder = MultipleFlowsSinglePriorityForwarder.getInstance();
+                    flowDataPlaneForwarder = MultipleFlowsSinglePriorityForwarder.getInstance(routingDataPlaneForwarder);
                     break;
                 case TRAFFIC_SHAPING:
-                    flowDataPlaneForwarder = MultipleFlowsMultiplePrioritiesForwarder.getInstance();
-                    break;
-                case MULTICASTING:
-                    flowDataPlaneForwarder = MulticastingForwarder.getInstance();
-                    break;
-                case OS_ROUTING:
-                    try {
-                        osRoutingManager = OsRoutingManager.getInstance();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    flowDataPlaneForwarder = MultipleFlowsMultiplePrioritiesForwarder.getInstance(routingDataPlaneForwarder);
                     break;
                 case NO_FLOW_POLICY:
                     flowDataPlaneForwarder = null;
@@ -885,8 +954,38 @@ public class ControllerClient extends Thread {
             }
 
             trafficEngineeringPolicy = newTrafficEngineeringPolicy;
-            System.out.println("ControllerClient: flow policy update (" + trafficEngineeringPolicy + ") received from the controller and successfully applied");
+            System.out.println("ControllerClient: TrafficEngineeringPolicy update (" + trafficEngineeringPolicy + ") received from the controller and successfully applied");
         }
+
+        //        private void handleRoutingPolicyUpdate(ControllerMessageUpdate updateMessage) {
+//            RoutingPolicy newRoutingPolicy = updateMessage.getRoutingPolicy();
+//            if (routingDataPlaneForwarder != null) {
+//                routingDataPlaneForwarder.deactivate();
+//            }
+//            switch (newRoutingPolicy) {
+//                case REROUTING:
+//                    routingDataPlaneForwarder = BestPathForwarder.getInstance();
+//                    break;
+//                case MULTICASTING:
+//                    routingDataPlaneForwarder = MulticastingForwarder.getInstance();
+//                    break;
+//                case OS_ROUTING:
+//                    try {
+//                        osRoutingManager = OsRoutingManager.getInstance();
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//                    break;
+//                case NO_ROUTING_POLICY:
+//                    routingDataPlaneForwarder = null;
+//                    break;
+//                default:
+//                    break;
+//            }
+//
+//            routingPolicy = newRoutingPolicy;
+//            System.out.println("ControllerClient: routing policy update (" + routingPolicy + ") received from the controller and successfully applied");
+//        }
 
         private void handleRoutingPolicyUpdate(ControllerMessageUpdate updateMessage) {
             RoutingPolicy newRoutingPolicy = updateMessage.getRoutingPolicy();
@@ -899,13 +998,6 @@ public class ControllerClient extends Thread {
                     break;
                 case MULTICASTING:
                     routingDataPlaneForwarder = MulticastingForwarder.getInstance();
-                    break;
-                case OS_ROUTING:
-                    try {
-                        osRoutingManager = OsRoutingManager.getInstance();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
                     break;
                 case NO_ROUTING_POLICY:
                     routingDataPlaneForwarder = null;
@@ -1005,9 +1097,58 @@ public class ControllerClient extends Thread {
         private void handleDataPlaneAddDataType(ControllerMessageUpdate updateMessage) {
             int ackSocketPort = updateMessage.getClientPort();
 
-            DataTypeMessage dataTypeMessage = updateMessage.getDataTypeMessage();
-            String dataTypeFileName = updateMessage.getDataTypeMessage().getFileName();
-            boolean success = dataTypesManager.addNewDataType(dataTypeMessage);
+            DataPlaneMessage dataPlaneMessage = updateMessage.getDataPlaneMessage();
+            String dataTypeFileName = updateMessage.getDataPlaneMessage().getFileName();
+            boolean success = dataTypesManager.addUserDefinedDataType(dataPlaneMessage);
+
+            /*
+             * Controller service has to be found before sending any message
+             */
+            ServiceResponse serviceResponse = controllerServiceDiscoverer.getControllerService();
+            if (serviceResponse == null) {
+                System.out.println("ControllerClient: controller service not found, cannot bind client socket");
+            } else {
+                /*
+                 * If the the rules command has been successfully applied send
+                 * an DATA_PLANE_DATA_TYPE_ACK message to the ControllerService otherwise send
+                 * an DATA_PLANE_DATA_TYPE_ABORT message.
+                 */
+                if (success) {
+                    ControllerMessageAck ackMessage = new ControllerMessageAck(MessageType.DATA_PLANE_DATA_TYPE_ACK);
+                    try {
+                        E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(ackMessage));
+                        System.out.println("ControllerClient: DATA_PLANE_DATA_TYPE_ACK sent to the controller");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println("ControllerClient: DATA_PLANE_ADD_DATA_TYPE: add DataType: " + dataTypeFileName + " received from the controller and successfully applied");
+                } else {
+                    ControllerMessageAck abortMessage = new ControllerMessageAck(MessageType.DATA_PLANE_DATA_TYPE_ABORT);
+                    try {
+                        E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(abortMessage));
+                        System.out.println("ControllerClient: DATA_PLANE_DATA_TYPE_ABORT sent to the controller");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println("ControllerClient: DATA_PLANE_ADD_DATA_TYPE: add DataType: " + dataTypeFileName + " received from the controller but not applied");
+                }
+            }
+        }
+
+        private void handleDataPlaneRemoveDataType(ControllerMessageUpdate updateMessage) {
+            String dataTypeClassName = updateMessage.getDataType();
+            dataTypesManager.removeUserDefinedDataType(dataTypeClassName);
+            System.out.println("ControllerClient: DATA_PLANE_REMOVE_DATA_TYPE: DataType: " + dataTypeClassName + " received from the controller ans successfully not applied");
+
+        }
+
+        private void handleDataPlaneAddRuleFile(ControllerMessageUpdate updateMessage) {
+            int ackSocketPort = updateMessage.getClientPort();
+
+            DataPlaneMessage dataPlaneMessage = updateMessage.getDataPlaneMessage();
+            String dataPlaneRuleFileName = updateMessage.getDataPlaneMessage().getFileName();
+
+            boolean success = dataPlaneRulesManager.addUserDefinedDataPlaneRule(dataPlaneMessage);
 
             /*
              * Controller service has to be found before sending any message
@@ -1022,29 +1163,31 @@ public class ControllerClient extends Thread {
                  * an DATA_PLANE_RULE_ABORT message.
                  */
                 if (success) {
-                    /*
-                     * If this is the sender the method osRoutingManager.getRouteIdSourceIpAddress(routeId)
-                     * returns the srcIP address selected for this route, otherwise null.
-                     */
-                    ControllerMessageAck ackMessage = new ControllerMessageAck(MessageType.DATA_PLANE_DATA_TYPE_ACK);
+                    ControllerMessageAck ackMessage = new ControllerMessageAck(MessageType.DATA_PLANE_RULE_ACK);
                     try {
                         E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(ackMessage));
-                        System.out.println("ControllerClient: DATA_PLANE_DATA_TYPE_ACK sent to the controller");
+                        System.out.println("ControllerClient: DATA_PLANE_RULE_ACK sent to the controller");
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    System.out.println("ControllerClient: DATA_PLANE_ADD_DATA_TYPE: add type: " + dataTypeFileName + " received from the controller and successfully applied");
+                    System.out.println("ControllerClient: DATA_PLANE_ADD_RULE_FILE: add DataPlaneRule: " + dataPlaneRuleFileName + " received from the controller and successfully applied");
                 } else {
-                    ControllerMessageAck abortMessage = new ControllerMessageAck(MessageType.DATA_PLANE_DATA_TYPE_ABORT);
+                    ControllerMessageAck abortMessage = new ControllerMessageAck(MessageType.DATA_PLANE_RULE_ABORT);
                     try {
                         E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(abortMessage));
-                        System.out.println("ControllerClient: DATA_PLANE_DATA_TYPE_ABORT sent to the controller");
+                        System.out.println("ControllerClient: DATA_PLANE_RULE_ABORT sent to the controller");
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    System.out.println("ControllerClient: DATA_PLANE_ADD_DATA_TYPE: add type: " + dataTypeFileName + " received from the controller but not applied");
+                    System.out.println("ControllerClient: DATA_PLANE_ADD_RULE_FILE: add DataPlaneRule: " + dataPlaneRuleFileName + " received from the controller but not applied");
                 }
             }
+        }
+
+        private void handleDataPlaneRemoveRuleFile(ControllerMessageUpdate updateMessage) {
+            String dataPlaneClassName = updateMessage.getDataPlaneRule();
+            dataPlaneRulesManager.removeUserDefinedDataPlaneRule(dataPlaneClassName);
+            System.out.println("ControllerClient: DATA_PLANE_REMOVE_RULE_FILE: DataPlaneRule: " + dataPlaneClassName + " received from the controller ans successfully not applied");
         }
 
         private void handleDataPlaneAddRule(ControllerMessageUpdate updateMessage) {
@@ -1054,7 +1197,7 @@ public class ControllerClient extends Thread {
             long dataTypeId = dataTypesManager.getDataTypeId(dataType);
             String dataPlaneRule = updateMessage.getDataPlaneRule();
 
-            boolean success = advancedDataPlaneRulesManager.addDataTypeRule(dataTypeId, dataPlaneRule);
+            boolean success = dataPlaneRulesManager.addDataPlaneRuleForDataType(dataTypeId, dataPlaneRule);
 
             /*
              * Controller service has to be found before sending any message
@@ -1096,9 +1239,8 @@ public class ControllerClient extends Thread {
 
         private void handleDataPlaneRemoveRule(ControllerMessageUpdate messageUpdate) {
             String dataType = messageUpdate.getDataType();
-            long dataTypeId = dataTypesManager.getDataTypeId(dataType);
             String dataPlaneRule = messageUpdate.getDataPlaneRule();
-            advancedDataPlaneRulesManager.removeDataTypeRule(dataTypeId, dataPlaneRule);
+            dataPlaneRulesManager.removeDataPlaneRuleByDataTypeName(dataType, dataPlaneRule);
             System.out.println("ControllerClient: DATA_PLANE_REMOVE_RULE:  remove rule: " + dataPlaneRule + " for dataType: " + dataType + " received from the controller and successfully applied");
         }
     }

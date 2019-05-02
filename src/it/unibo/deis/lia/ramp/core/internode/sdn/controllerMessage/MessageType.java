@@ -29,8 +29,10 @@ public enum MessageType {
     DATA_PLANE_REMOVE_DATA_TYPE,
     DATA_PLANE_DATA_TYPE_ACK,
     DATA_PLANE_DATA_TYPE_ABORT,
-    DATA_PLANE_ADD_RULE,
-    DATA_PLANE_REMOVE_RULE,
+    DATA_PLANE_ADD_RULE_FILE, // This is used to send a user defined DataPlaneRule .class file
+    DATA_PLANE_REMOVE_RULE_FILE, // This is used to remove a user defined DataPlaneRule .class file
+    DATA_PLANE_ADD_RULE, // This is used to set in the database a specific DataPlaneRule for a specific DataType
+    DATA_PLANE_REMOVE_RULE, // This is used to remove from the database a specific DataPlaneRule for a specific DataType
     DATA_PLANE_RULE_ACK,
     DATA_PLANE_RULE_ABORT
 }

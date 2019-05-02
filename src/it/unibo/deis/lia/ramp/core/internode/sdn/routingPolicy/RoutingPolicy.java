@@ -6,6 +6,5 @@ package it.unibo.deis.lia.ramp.core.internode.sdn.routingPolicy;
 public enum RoutingPolicy {
     REROUTING,
     MULTICASTING,
-    OS_ROUTING,
     NO_ROUTING_POLICY
 }

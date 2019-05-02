@@ -1,6 +1,6 @@
 package it.unibo.deis.lia.ramp.service.application;
 
-import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.PathDescriptor;
+import it.unibo.deis.lia.ramp.core.internode.sdn.routingPolicy.RoutingPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy.TrafficEngineeringPolicy;
 import org.graphstream.ui.swingViewer.DefaultView;
 
@@ -22,10 +22,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SDNControllerServiceJFrame extends JFrame {
     private SDNControllerService SDNControllerService;
 
+    private JFileChooser fileChooser;
+
     private JPanel trafficEngineeringPolicyPanel;
-    private JTextField currentPolicyTextField;
-    private JComboBox availableFlowPoliciesComboBox;
-    private JButton updateFlowPolicyButton;
+    private JTextField currentTrafficEngineeringPolicyTextField;
+    private JComboBox availableTrafficEngineeringPoliciesComboBox;
+    private JButton updateTrafficEngineeringPolicyButton;
+
+    private JPanel routingPolicyPanel;
+    private JTextField currentRoutingPolicyTextField;
+    private JComboBox availableRoutingPoliciesComboBox;
+    private JButton updateRoutingPolicyButton;
 
     private JPanel activeClientsPanel;
     private JTextArea activeClientsTextArea;
@@ -37,11 +44,13 @@ public class SDNControllerServiceJFrame extends JFrame {
 
     private JPanel dataTypesPanel;
     private JButton getDataTypesButton;
-    private JFileChooser addDataTypeFileChooser;
     private JButton addDataTypeButton;
     private JTextArea dataTypesTextArea;
 
     private JPanel dataPlaneRulesPanel;
+    private JButton getDataPlaneRulesButton;
+    private JButton addDataPlaneRuleButton;
+    private JTextArea dataPlaneRulesTextArea;
     private JLabel dataPlaneRulesDataTypeLabel;
     private JComboBox dataPlaneRulesAvailableDataTypesComboBox;
     private JLabel dataPlaneRulesRuleLabel;
@@ -60,7 +69,10 @@ public class SDNControllerServiceJFrame extends JFrame {
     }
 
     private void initComponents() {
-        initFlowPolicyPanel();
+        fileChooser = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
+
+        initTrafficEngineeringPolicyPanel();
+        initRoutingPolicyPanel();
         initActiveClientsPanel();
         initDisplayGraphPanel();
         initDataTypesPanel();
@@ -92,6 +104,7 @@ public class SDNControllerServiceJFrame extends JFrame {
                         .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup()
                                         .addComponent(trafficEngineeringPolicyPanel, GroupLayout.PREFERRED_SIZE, 238, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(routingPolicyPanel, GroupLayout.PREFERRED_SIZE, 238, GroupLayout.PREFERRED_SIZE)
                                         .addComponent(activeClientsPanel, GroupLayout.PREFERRED_SIZE, 238, GroupLayout.PREFERRED_SIZE)
                                         .addComponent(displayGraphPanel, GroupLayout.PREFERRED_SIZE, 238, GroupLayout.PREFERRED_SIZE)
                                 )
@@ -115,6 +128,8 @@ public class SDNControllerServiceJFrame extends JFrame {
                         .addGroup(layout.createSequentialGroup()
                                 .addComponent(trafficEngineeringPolicyPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                                 .addGap(15)
+                                .addComponent(routingPolicyPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                                .addGap(15)
                                 .addComponent(activeClientsPanel, GroupLayout.PREFERRED_SIZE, 264, GroupLayout.PREFERRED_SIZE)
                                 .addGap(15)
                                 .addComponent(displayGraphPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -135,45 +150,87 @@ public class SDNControllerServiceJFrame extends JFrame {
         pack();
     }
 
-    private void initFlowPolicyPanel() {
+    private void initTrafficEngineeringPolicyPanel() {
         trafficEngineeringPolicyPanel = new JPanel();
         trafficEngineeringPolicyPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Traffic Engineering Policy"));
 
-        currentPolicyTextField = new JTextField(SDNControllerService.getFlowPolicy().toString());
-        currentPolicyTextField.setEditable(false);
+        currentTrafficEngineeringPolicyTextField = new JTextField(SDNControllerService.getTrafficEngineeringPolicy().toString());
+        currentTrafficEngineeringPolicyTextField.setEditable(false);
 
-        availableFlowPoliciesComboBox = new JComboBox();
+        availableTrafficEngineeringPoliciesComboBox = new JComboBox();
         int count = TrafficEngineeringPolicy.values().length;
-        String[] flowPolicyItems = new String[count];
+        String[] trafficEngineeringPolicyItems = new String[count];
         count = 0;
-        for (TrafficEngineeringPolicy f : TrafficEngineeringPolicy.values()) {
-            flowPolicyItems[count] = f.toString();
+        for (TrafficEngineeringPolicy tef : TrafficEngineeringPolicy.values()) {
+            trafficEngineeringPolicyItems[count] = tef.toString();
             count++;
         }
-        DefaultComboBoxModel dcm = new DefaultComboBoxModel(flowPolicyItems);
-        availableFlowPoliciesComboBox.setModel(dcm);
+        DefaultComboBoxModel dcm = new DefaultComboBoxModel(trafficEngineeringPolicyItems);
+        availableTrafficEngineeringPoliciesComboBox.setModel(dcm);
 
-        updateFlowPolicyButton = new JButton("Update Policy");
-        updateFlowPolicyButton.addActionListener(new ActionListener() {
+        updateTrafficEngineeringPolicyButton = new JButton("Update Traffic Policy");
+        updateTrafficEngineeringPolicyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                jButtonUpdateFlowPolicyActionPerformed(evt);
+                jButtonUpdateTrafficEngineeringPolicyActionPerformed(evt);
             }
         });
 
-        GroupLayout flowPoliciesLayout = new GroupLayout(trafficEngineeringPolicyPanel);
-        trafficEngineeringPolicyPanel.setLayout(flowPoliciesLayout);
-        flowPoliciesLayout.setHorizontalGroup(flowPoliciesLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                .addComponent(currentPolicyTextField, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
-                .addComponent(availableFlowPoliciesComboBox, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
-                .addComponent(updateFlowPolicyButton, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+        GroupLayout trafficEngineeringPolicyLayout = new GroupLayout(trafficEngineeringPolicyPanel);
+        trafficEngineeringPolicyPanel.setLayout(trafficEngineeringPolicyLayout);
+        trafficEngineeringPolicyLayout.setHorizontalGroup(trafficEngineeringPolicyLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addComponent(currentTrafficEngineeringPolicyTextField, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                .addComponent(availableTrafficEngineeringPoliciesComboBox, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                .addComponent(updateTrafficEngineeringPolicyButton, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
         );
-        flowPoliciesLayout.setVerticalGroup(flowPoliciesLayout.createSequentialGroup()
-                .addComponent(currentPolicyTextField)
+        trafficEngineeringPolicyLayout.setVerticalGroup(trafficEngineeringPolicyLayout.createSequentialGroup()
+                .addComponent(currentTrafficEngineeringPolicyTextField)
                 .addGap(5)
-                .addComponent(availableFlowPoliciesComboBox)
+                .addComponent(availableTrafficEngineeringPoliciesComboBox)
                 .addGap(5)
-                .addComponent(updateFlowPolicyButton)
+                .addComponent(updateTrafficEngineeringPolicyButton)
+        );
+    }
+
+    private void initRoutingPolicyPanel() {
+        routingPolicyPanel = new JPanel();
+        routingPolicyPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Routing Policy"));
+
+        currentRoutingPolicyTextField = new JTextField(SDNControllerService.getRoutingPolicy().toString());
+        currentRoutingPolicyTextField.setEditable(false);
+
+        availableRoutingPoliciesComboBox = new JComboBox();
+        int count = RoutingPolicy.values().length;
+        String[] routingPolicyItems = new String[count];
+        count = 0;
+        for (RoutingPolicy rp : RoutingPolicy.values()) {
+            routingPolicyItems[count] = rp.toString();
+            count++;
+        }
+        DefaultComboBoxModel dcm = new DefaultComboBoxModel(routingPolicyItems);
+        availableRoutingPoliciesComboBox.setModel(dcm);
+
+        updateRoutingPolicyButton = new JButton("Update Routing Policy");
+        updateRoutingPolicyButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                jButtonUpdateRoutingPolicyActionPerformed(evt);
+            }
+        });
+
+        GroupLayout routingPolicyLayout = new GroupLayout(routingPolicyPanel);
+        routingPolicyPanel.setLayout(routingPolicyLayout);
+        routingPolicyLayout.setHorizontalGroup(routingPolicyLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addComponent(currentRoutingPolicyTextField, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                .addComponent(availableRoutingPoliciesComboBox, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                .addComponent(updateRoutingPolicyButton, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+        );
+        routingPolicyLayout.setVerticalGroup(routingPolicyLayout.createSequentialGroup()
+                .addComponent(currentRoutingPolicyTextField)
+                .addGap(5)
+                .addComponent(availableRoutingPoliciesComboBox)
+                .addGap(5)
+                .addComponent(updateRoutingPolicyButton)
         );
     }
 
@@ -256,8 +313,6 @@ public class SDNControllerServiceJFrame extends JFrame {
             }
         });
 
-        addDataTypeFileChooser = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
-
         GroupLayout dataTypesLayout = new GroupLayout(dataTypesPanel);
         dataTypesPanel.setLayout(dataTypesLayout);
         dataTypesLayout.setHorizontalGroup(dataTypesLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
@@ -278,7 +333,7 @@ public class SDNControllerServiceJFrame extends JFrame {
         try {
             String text = "";
             int i = 0;
-            Iterator<String> currentDataTypes = this.SDNControllerService.getDataTypesAvailable().iterator();
+            Iterator<String> currentDataTypes = this.SDNControllerService.getAvailableDataTypes().iterator();
             while (currentDataTypes.hasNext()) {
                 text = text + currentDataTypes.next() + "\n";
                 i++;
@@ -292,6 +347,29 @@ public class SDNControllerServiceJFrame extends JFrame {
     private void initDataPlaneRulesPanel() {
         dataPlaneRulesPanel = new JPanel();
         dataPlaneRulesPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Data Plane Rules Manager"));
+
+        getDataPlaneRulesButton = new JButton("Get Data Plane Rules");
+        getDataPlaneRulesButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                jButtonGetDataPlaneRulesActionPerformed(evt);
+            }
+        });
+
+        dataPlaneRulesTextArea = new JTextArea();
+        dataPlaneRulesTextArea.setColumns(20);
+        dataPlaneRulesTextArea.setEditable(false);
+        dataPlaneRulesTextArea.setRows(5);
+
+        fillDataPlaneRulesTextArea();
+
+        addDataPlaneRuleButton = new JButton("Insert Data Plane Rule");
+        addDataPlaneRuleButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                jButtonInsertDataPlaneRuleFileActionPerformed(evt);
+            }
+        });
 
         dataPlaneRulesDataTypeLabel = new JLabel("Data Type:");
         dataPlaneRulesAvailableDataTypesComboBox = new JComboBox();
@@ -320,6 +398,9 @@ public class SDNControllerServiceJFrame extends JFrame {
         GroupLayout dataPlaneRulesLayout = new GroupLayout(dataPlaneRulesPanel);
         dataPlaneRulesPanel.setLayout(dataPlaneRulesLayout);
         dataPlaneRulesLayout.setHorizontalGroup(dataPlaneRulesLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addComponent(getDataPlaneRulesButton, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                .addComponent(dataPlaneRulesTextArea, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                .addComponent(addDataPlaneRuleButton, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
                 .addComponent(dataPlaneRulesDataTypeLabel, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
                 .addComponent(dataPlaneRulesAvailableDataTypesComboBox, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
                 .addComponent(dataPlaneRulesRuleLabel, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
@@ -328,6 +409,12 @@ public class SDNControllerServiceJFrame extends JFrame {
                 .addComponent(removeRuleButton, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
         );
         dataPlaneRulesLayout.setVerticalGroup(dataPlaneRulesLayout.createSequentialGroup()
+                .addComponent(getDataPlaneRulesButton)
+                .addGap(5)
+                .addComponent(dataPlaneRulesTextArea)
+                .addGap(5)
+                .addComponent(addDataPlaneRuleButton)
+                .addGap(5)
                 .addComponent(dataPlaneRulesDataTypeLabel)
                 .addGap(5)
                 .addComponent(dataPlaneRulesAvailableDataTypesComboBox)
@@ -342,8 +429,23 @@ public class SDNControllerServiceJFrame extends JFrame {
         );
     }
 
+    private void fillDataPlaneRulesTextArea() {
+        try {
+            String text = "";
+            int i = 0;
+            Iterator<String> currentDataPlaneRules = this.SDNControllerService.getAvailableDataPlaneRules().iterator();
+            while (currentDataPlaneRules.hasNext()) {
+                text = text + currentDataPlaneRules.next() + "\n";
+                i++;
+            }
+            dataPlaneRulesTextArea.setText(text);
+        } catch (Exception e) {
+            dataPlaneRulesTextArea.setText(e.toString());
+        }
+    }
+
     private void fillDataPlaneRulesComboBoxes() {
-        Set<String> currentDataTypes = SDNControllerService.getDataTypesAvailable();
+        Set<String> currentDataTypes = SDNControllerService.getAvailableDataTypes();
         String[] dataTypeItems = new String[currentDataTypes.size()];
         int count = 0;
         for (String dataType : currentDataTypes) {
@@ -353,7 +455,7 @@ public class SDNControllerServiceJFrame extends JFrame {
         DefaultComboBoxModel dataTypeDcm = new DefaultComboBoxModel(dataTypeItems);
         dataPlaneRulesAvailableDataTypesComboBox.setModel(dataTypeDcm);
 
-        Set<String> currentRules = SDNControllerService.getAdvancedDataPlaneRules();
+        Set<String> currentRules = SDNControllerService.getAvailableDataPlaneRules();
         String[] ruleItems = new String[currentRules.size()];
         count = 0;
         for (String rule : currentRules) {
@@ -413,12 +515,23 @@ public class SDNControllerServiceJFrame extends JFrame {
         }
     }
 
-    private void jButtonUpdateFlowPolicyActionPerformed(ActionEvent evt) {
+    private void jButtonUpdateTrafficEngineeringPolicyActionPerformed(ActionEvent evt) {
         try {
-            String selectedFlowPolicy = availableFlowPoliciesComboBox.getSelectedItem().toString();
-            TrafficEngineeringPolicy trafficEngineeringPolicy = TrafficEngineeringPolicy.valueOf(selectedFlowPolicy);
-            SDNControllerService.updateFlowPolicy(trafficEngineeringPolicy);
-            currentPolicyTextField.setText(SDNControllerService.getFlowPolicy().toString());
+            String selectedTrafficEngineeringPolicy = availableTrafficEngineeringPoliciesComboBox.getSelectedItem().toString();
+            TrafficEngineeringPolicy trafficEngineeringPolicy = TrafficEngineeringPolicy.valueOf(selectedTrafficEngineeringPolicy);
+            SDNControllerService.updateTrafficEngineeringPolicy(trafficEngineeringPolicy);
+            currentTrafficEngineeringPolicyTextField.setText(SDNControllerService.getTrafficEngineeringPolicy().toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void jButtonUpdateRoutingPolicyActionPerformed(ActionEvent evt) {
+        try {
+            String selectedRoutingPolicy = availableRoutingPoliciesComboBox.getSelectedItem().toString();
+            RoutingPolicy routingPolicy = RoutingPolicy.valueOf(selectedRoutingPolicy);
+            SDNControllerService.updateRoutingPolicy(routingPolicy);
+            currentRoutingPolicyTextField.setText(SDNControllerService.getRoutingPolicy().toString());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -438,28 +551,57 @@ public class SDNControllerServiceJFrame extends JFrame {
 
     private void jButtonGetDataTypesActionPerformed(ActionEvent evt) {
         fillDataTypesTextArea();
+        fillDataPlaneRulesComboBoxes();
     }
 
     private void jButtonAddDataTypesActionPerformed(ActionEvent evt) {
         File dataTypeFile = null;
         String fileName = "";
-        int returnVal = addDataTypeFileChooser.showOpenDialog((Component) evt.getSource());
+        int returnVal = fileChooser.showOpenDialog((Component) evt.getSource());
         if (returnVal == JFileChooser.APPROVE_OPTION) {
-            dataTypeFile = addDataTypeFileChooser.getSelectedFile();
+            dataTypeFile = fileChooser.getSelectedFile();
             try {
                 fileName = dataTypeFile.getName();
             } catch (Exception ex) {
-                System.out.println("problem accessing file " + dataTypeFile.getAbsolutePath());
+                System.out.println("Problem accessing file " + dataTypeFile.getAbsolutePath());
             }
         } else {
             System.out.println("File access cancelled by user.");
         }
-        boolean result = SDNControllerService.addAdvancedDataPlaneDataType(fileName, dataTypeFile);
+        boolean result = SDNControllerService.addUserDefinedDataType(fileName, dataTypeFile);
 
         if (result) {
             jButtonGetDataTypesActionPerformed(null);
         } else {
-            JOptionPane.showMessageDialog(null, "It is not possible to add the specified data type.");
+            JOptionPane.showMessageDialog(null, "It is not possible to add the specified DataType.");
+        }
+    }
+
+    private void jButtonGetDataPlaneRulesActionPerformed(ActionEvent evt) {
+        fillDataPlaneRulesTextArea();
+        fillDataPlaneRulesComboBoxes();
+    }
+
+    private void jButtonInsertDataPlaneRuleFileActionPerformed(ActionEvent evt) {
+        File dataPlaneRuleFile = null;
+        String fileName = "";
+        int returnVal = fileChooser.showOpenDialog((Component) evt.getSource());
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            dataPlaneRuleFile = fileChooser.getSelectedFile();
+            try {
+                fileName = dataPlaneRuleFile.getName();
+            } catch (Exception ex) {
+                System.out.println("Problem accessing file " + dataPlaneRuleFile.getAbsolutePath());
+            }
+        } else {
+            System.out.println("File access cancelled by user.");
+        }
+        boolean result = SDNControllerService.addUserDefinedDataPlaneRule(fileName, dataPlaneRuleFile);
+
+        if (result) {
+            jButtonGetDataPlaneRulesActionPerformed(null);
+        } else {
+            JOptionPane.showMessageDialog(null, "It is not possible to add the specified DataPlaneRule.");
         }
     }
 
@@ -467,7 +609,7 @@ public class SDNControllerServiceJFrame extends JFrame {
         String dataType = dataPlaneRulesAvailableDataTypesComboBox.getSelectedItem().toString();
         String dataPlaneRule = dataPlaneRulesAvailableRulesComboBox.getSelectedItem().toString();
 
-        boolean result = SDNControllerService.addAdvancedDataPlaneRule(dataType, dataPlaneRule);
+        boolean result = SDNControllerService.addDataPlaneRule(dataType, dataPlaneRule);
 
         if (!result) {
             JOptionPane.showMessageDialog(null, "It is not possible to add the data plane rule for this data type.");
@@ -478,7 +620,7 @@ public class SDNControllerServiceJFrame extends JFrame {
         String dataType = dataPlaneRulesAvailableDataTypesComboBox.getSelectedItem().toString();
         String dataPlaneRule = dataPlaneRulesAvailableRulesComboBox.getSelectedItem().toString();
 
-        SDNControllerService.removeAdvancedDataPlaneRule(dataType, dataPlaneRule);
+        SDNControllerService.removeDataPlaneRule(dataType, dataPlaneRule);
     }
 
     private void jButtonRefreshActiveRulesActionPerformed(ActionEvent evt) {
@@ -487,7 +629,7 @@ public class SDNControllerServiceJFrame extends JFrame {
         dtm.addColumn("Data Type");
         dtm.addColumn("Rule");
 
-        ConcurrentHashMap<String, List<String>> activeRules = (ConcurrentHashMap<String, List<String>>) SDNControllerService.getAdvancedDataPlaneActiveRules();
+        ConcurrentHashMap<String, List<String>> activeRules = (ConcurrentHashMap<String, List<String>>) SDNControllerService.getActiveDataPlaneRules();
 
         for (Map.Entry<String, List<String>> entry : activeRules.entrySet()) {
             String dataType = entry.getKey();

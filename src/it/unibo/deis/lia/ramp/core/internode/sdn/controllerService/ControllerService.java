@@ -12,9 +12,9 @@ import java.util.concurrent.ThreadLocalRandom;
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
 import it.unibo.deis.lia.ramp.core.internode.Resolver;
 
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataPlaneMessage.DataPlaneMessage;
 import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.DataTypesManager;
-import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.dataTypeMessage.DataTypeMessage;
-import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.rulesManager.AdvancedDataPlaneRulesManager;
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.rulesManager.DataPlaneRulesManager;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerMessage.*;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.graphUtils.GraphUtils;
 import it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy.TrafficEngineeringPolicy;
@@ -31,7 +31,6 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.prioritySelector.ApplicationTyp
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerMessage.ControllerMessageUpdate;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.PathSelectionMetric;
 
-import it.unibo.deis.lia.ramp.util.GeneralUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.graphstream.graph.Edge;
@@ -67,7 +66,7 @@ public class ControllerService extends Thread {
     private TrafficEngineeringPolicy trafficEngineeringPolicy;
     private RoutingPolicy routingPolicy;
     private DataTypesManager dataTypesManager;
-    private AdvancedDataPlaneRulesManager dataPlaneRulesManager;
+    private DataPlaneRulesManager dataPlaneRulesManager;
 
 
 //    /**
@@ -129,6 +128,7 @@ public class ControllerService extends Thread {
         ServiceManager.getInstance(false).registerService("SDNController", this.serviceSocket.getLocalPort(), PROTOCOL);
         this.active = true;
         this.updateManager = new UpdateManager();
+
         this.trafficEngineeringPolicy = TrafficEngineeringPolicy.SINGLE_FLOW;
         this.routingPolicy = RoutingPolicy.REROUTING;
 
@@ -149,7 +149,7 @@ public class ControllerService extends Thread {
 
         this.dataTypesManager = DataTypesManager.getInstance();
 
-        this.dataPlaneRulesManager = AdvancedDataPlaneRulesManager.getInstance();
+        this.dataPlaneRulesManager = DataPlaneRulesManager.getInstance();
 
         File dir = new File(sdnControllerDirectory);
         if (!dir.exists()) {
@@ -159,7 +159,6 @@ public class ControllerService extends Thread {
                 System.out.println("ControllerService: the folder " + dir.getName() + " already exists.");
             }
         }
-
     }
 
     public synchronized static ControllerService getInstance() {
@@ -223,27 +222,15 @@ public class ControllerService extends Thread {
         this.topologyGraph.addAttribute("ui.screenshot", screenshotFilePath);
     }
 
-    public Set<String> getDataTypesAvailable() {
-        return this.dataTypesManager.getDataTypesAvailable();
-    }
-
-    public Set<String> getAdvancedDataPlaneRules() {
-        return this.dataPlaneRulesManager.getRulesAvailable();
-    }
-
-    public Map<String, List<String>> getAdvancedDataPlaneActiveRules() {
-        return dataPlaneRulesManager.getActiveRules();
+    public Iterator<Integer> getActiveClients() {
+        return this.activeClients.iterator();
     }
 
     public TrafficEngineeringPolicy getTrafficEngineeringPolicy() {
         return this.trafficEngineeringPolicy;
     }
 
-    public Iterator<Integer> getActiveClients() {
-        return this.activeClients.iterator();
-    }
-
-    public void updateFlowPolicy(TrafficEngineeringPolicy trafficEngineeringPolicy) {
+    public void updateTrafficEngineeringPolicy(TrafficEngineeringPolicy trafficEngineeringPolicy) {
         this.trafficEngineeringPolicy = trafficEngineeringPolicy;
         for (Node clientNode : this.topologyGraph.getNodeSet()) {
             int clientNodeId = Integer.parseInt(clientNode.getId());
@@ -257,6 +244,10 @@ public class ControllerService extends Thread {
             }
         }
         System.out.println("ControllerService: New flow policy set: " + this.trafficEngineeringPolicy.toString());
+    }
+
+    public RoutingPolicy getRoutingPolicy() {
+        return routingPolicy;
     }
 
     public void updateRoutingPolicy(RoutingPolicy routingPolicy) {
@@ -275,7 +266,11 @@ public class ControllerService extends Thread {
         System.out.println("ControllerService: New routing policy set: " + this.routingPolicy.toString());
     }
 
-    public boolean addAdvancedDataPlaneDataType(String dataTypeFileName, File dataTypeFile) {
+    public Set<String> getAvailableDataTypes() {
+        return this.dataTypesManager.getAvailableDataTypes();
+    }
+
+    public boolean addUserDefinedDataType(String dataTypeFileName, File dataTypeFile) {
         BoundReceiveSocket ackSocket = null;
         GenericPacket gp = null;
 
@@ -305,12 +300,12 @@ public class ControllerService extends Thread {
         }
 
         String dataTypeClassName = dataTypeFileName.replaceFirst("[.][^.]+$", "");
-        DataTypeMessage dataTypeMessage = new DataTypeMessage(dataTypeFileName, dataTypeClassName, fileContent);
+        DataPlaneMessage dataPlaneMessage = new DataPlaneMessage(dataTypeFileName, dataTypeClassName, fileContent);
 
         for (int i = 0; i < nodesArrayLen && !aborted; i++) {
             Node clientNode = nodesArray[i];
             int clientNodeId = Integer.parseInt(clientNode.getId());
-            ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DATA_PLANE_ADD_DATA_TYPE, ackSocket.getLocalPort(), null, null, null, routingPolicy, null, null, dataTypeMessage, null, null);
+            ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DATA_PLANE_ADD_DATA_TYPE, ackSocket.getLocalPort(), null, null, null, routingPolicy, null, null, dataPlaneMessage, null, null);
             String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
             int clientPort = clientNode.getAttribute("port");
             try {
@@ -352,13 +347,10 @@ public class ControllerService extends Thread {
         }
 
         if (aborted && intermediateNodesToNotifyAbort > 0) {
-            for(int j=0; j<intermediateNodesToNotifyAbort; j++) {
+            for (int j = 0; j < intermediateNodesToNotifyAbort; j++) {
                 Node clientNode = nodesArray[j];
                 int clientNodeId = Integer.parseInt(clientNode.getId());
-                /**
-                 * TODO Complete the message info for removing the DATA_TYPE in case of failures.
-                 */
-                ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DATA_PLANE_REMOVE_DATA_TYPE, ackSocket.getLocalPort(), null, null, null, routingPolicy, null, null, null, null, null);
+                ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DATA_PLANE_REMOVE_DATA_TYPE, ackSocket.getLocalPort(), null, null, null, null, null, null, null, dataTypeClassName, null);
                 String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
                 int clientPort = clientNode.getAttribute("port");
                 try {
@@ -369,16 +361,125 @@ public class ControllerService extends Thread {
             }
         }
 
-        if(aborted) {
-            System.out.println("ControllerService: data type: " + dataTypeFileName + " added.");
+        if (aborted) {
+            System.out.println("ControllerService: user defined DataType: " + dataTypeFileName + " added.");
             return false;
         } else {
-            System.out.println("ControllerService: data type: " + dataTypeFileName + " not added.");
+            System.out.println("ControllerService: user defined DataType: " + dataTypeFileName + " not added.");
             return true;
         }
     }
 
-    public boolean addAdvancedDataPlaneRule(String dataType, String dataPlaneRule) {
+    public Set<String> getAvailableDataPlaneRules() {
+        return this.dataPlaneRulesManager.getAvailableDataPlaneRules();
+    }
+
+    public Map<String, List<String>> getActiveDataPlaneRules() {
+        return dataPlaneRulesManager.getActiveDataPlaneRulesByDataType();
+    }
+
+    public boolean addUserDefinedDataPlaneRule(String dataPlaneRuleFileName, File dataPlaneRuleFile) {
+        BoundReceiveSocket ackSocket = null;
+        GenericPacket gp = null;
+
+        try {
+            ackSocket = E2EComm.bindPreReceive(PROTOCOL);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Collection<Node> nodeSet = this.topologyGraph.getNodeSet();
+        Node[] nodesArray = nodeSet.toArray(new Node[0]);
+        int nodesArrayLen = nodesArray.length;
+        //
+        /*
+         * Index to keep track of the intermediate nodes to contact
+         * in case of DATA_PLANE_RULE_ABORT.
+         */
+        int intermediateNodesToNotifyAbort = 0;
+        boolean aborted = false;
+
+        byte[] fileContent = null;
+
+        try {
+            fileContent = Files.readAllBytes(dataPlaneRuleFile.toPath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String dataPlaneRuleClassName = dataPlaneRuleFileName.replaceFirst("[.][^.]+$", "");
+        DataPlaneMessage dataPlaneMessage = new DataPlaneMessage(dataPlaneRuleFileName, dataPlaneRuleClassName, fileContent);
+
+        for (int i = 0; i < nodesArrayLen && !aborted; i++) {
+            Node clientNode = nodesArray[i];
+            int clientNodeId = Integer.parseInt(clientNode.getId());
+            ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DATA_PLANE_ADD_RULE_FILE, ackSocket.getLocalPort(), null, null, null, null, null, null, dataPlaneMessage, null, null);
+            String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
+            int clientPort = clientNode.getAttribute("port");
+            try {
+                E2EComm.sendUnicast(clientDest, clientPort, E2EComm.TCP, E2EComm.serialize(updateMessage));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            /*
+             * Get Ack from the intermediate node in order to inform the ControllerService that
+             * the data plane rule has been successfully added.
+             */
+            try {
+                gp = E2EComm.receive(ackSocket);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if (gp instanceof UnicastPacket) {
+                UnicastPacket up = (UnicastPacket) gp;
+                Object payload = null;
+                try {
+                    payload = E2EComm.deserialize(up.getBytePayload());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                if (payload instanceof ControllerMessageAck) {
+                    ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
+                    switch (ackMessage.getMessageType()) {
+                        case DATA_PLANE_RULE_ACK:
+                            intermediateNodesToNotifyAbort++;
+                            break;
+                        case DATA_PLANE_RULE_ABORT:
+                            aborted = true;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+
+        if (aborted && intermediateNodesToNotifyAbort > 0) {
+            for (int j = 0; j < intermediateNodesToNotifyAbort; j++) {
+                Node clientNode = nodesArray[j];
+                int clientNodeId = Integer.parseInt(clientNode.getId());
+
+                ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DATA_PLANE_REMOVE_RULE_FILE, ackSocket.getLocalPort(), null, null, null, null, null, null, null, null, dataPlaneRuleClassName);
+                String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
+                int clientPort = clientNode.getAttribute("port");
+                try {
+                    E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        if (aborted) {
+            System.out.println("ControllerService: user defined DataPlaneRule: " + dataPlaneRuleFileName + " added.");
+            return false;
+        } else {
+            System.out.println("ControllerService: user defined DataPlaneRule: " + dataPlaneRuleFileName + " not added.");
+            return true;
+        }
+    }
+
+    public boolean addDataPlaneRule(String dataType, String dataPlaneRule) {
         BoundReceiveSocket ackSocket = null;
         GenericPacket gp = null;
 
@@ -444,7 +545,7 @@ public class ControllerService extends Thread {
         }
 
         if (aborted && intermediateNodesToNotifyAbort > 0) {
-            for(int j=0; j<intermediateNodesToNotifyAbort; j++) {
+            for (int j = 0; j < intermediateNodesToNotifyAbort; j++) {
                 Node clientNode = nodesArray[j];
                 int clientNodeId = Integer.parseInt(clientNode.getId());
                 ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DATA_PLANE_REMOVE_RULE, ackSocket.getLocalPort(), null, null, null, routingPolicy, null, null, null, dataType, dataPlaneRule);
@@ -458,7 +559,7 @@ public class ControllerService extends Thread {
             }
         }
 
-        if(aborted) {
+        if (aborted) {
             System.out.println("ControllerService: data plane rule: " + dataPlaneRule + " not added for data type: " + dataType);
             return false;
         } else {
@@ -467,7 +568,7 @@ public class ControllerService extends Thread {
         }
     }
 
-    public void removeAdvancedDataPlaneRule(String dataType, String dataPlaneRule) {
+    public void removeDataPlaneRule(String dataType, String dataPlaneRule) {
         for (Node clientNode : this.topologyGraph.getNodeSet()) {
             int clientNodeId = Integer.parseInt(clientNode.getId());
             ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.DATA_PLANE_REMOVE_RULE, null, null, null, routingPolicy, null, null, null, dataType, dataPlaneRule);
@@ -481,7 +582,6 @@ public class ControllerService extends Thread {
         }
         System.out.println("ControllerService: data plane rule: " + dataPlaneRule + " removed for data type: " + dataType);
     }
-
 
 
     @Override
@@ -587,7 +687,11 @@ public class ControllerService extends Thread {
             clientNode.addAttribute("last_update", System.currentTimeMillis());
             clientNode.addAttribute("ui.label", clientNode.getId());
             System.out.println("ControllerService: join request received from client " + clientNodeId + ", successfully added to the topology");
-            updateFlowPolicy(trafficEngineeringPolicy);
+            /*
+             * Update the ControllerClient with the currents policies.
+             */
+            updateTrafficEngineeringPolicy(trafficEngineeringPolicy);
+            updateRoutingPolicy(routingPolicy);
         }
 
         private void handleLeaveService(int clientNodeId) {
@@ -1278,7 +1382,7 @@ public class ControllerService extends Thread {
             for (Node clientNode : topologyGraph.getNodeSet()) {
                 int clientNodeId = Integer.parseInt(clientNode.getId());
                 flowPriorities = flowPrioritySelector.getFlowPriorities(flowPriorities, flowApplicationRequirements);
-                ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.FLOW_PRIORITIES_UPDATE, ControllerMessage.UNUSED_FIELD, null, null, null, null, null, flowPriorities, null, null,null);
+                ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.FLOW_PRIORITIES_UPDATE, ControllerMessage.UNUSED_FIELD, null, null, null, null, null, flowPriorities, null, null, null);
                 String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
                 int clientPort = clientNode.getAttribute("port");
                 try {
@@ -1300,10 +1404,14 @@ public class ControllerService extends Thread {
                 }
                 updateTopology();
                 updateFlows();
-                // TODO There is no more mutual exclusion
-                if (trafficEngineeringPolicy == TrafficEngineeringPolicy.REROUTING)
+//                // TODO There is no more mutual exclusion
+//                if (trafficEngineeringPolicy == TrafficEngineeringPolicy.REROUTING)
+//                    sendDefaultFlowPathsUpdate();
+//                else if (trafficEngineeringPolicy == TrafficEngineeringPolicy.SINGLE_FLOW || trafficEngineeringPolicy == TrafficEngineeringPolicy.QUEUES || trafficEngineeringPolicy == TrafficEngineeringPolicy.TRAFFIC_SHAPING)
+//                    sendFlowPrioritiesUpdate();
+                if (routingPolicy == RoutingPolicy.REROUTING)
                     sendDefaultFlowPathsUpdate();
-                else if (trafficEngineeringPolicy == TrafficEngineeringPolicy.SINGLE_FLOW || trafficEngineeringPolicy == TrafficEngineeringPolicy.QUEUES || trafficEngineeringPolicy == TrafficEngineeringPolicy.TRAFFIC_SHAPING)
+                if (trafficEngineeringPolicy == TrafficEngineeringPolicy.SINGLE_FLOW || trafficEngineeringPolicy == TrafficEngineeringPolicy.QUEUES || trafficEngineeringPolicy == TrafficEngineeringPolicy.TRAFFIC_SHAPING)
                     sendFlowPrioritiesUpdate();
             }
             System.out.println("ControllerService UpdateManager FINISHED");

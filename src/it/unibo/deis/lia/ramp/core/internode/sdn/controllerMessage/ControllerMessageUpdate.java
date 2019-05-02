@@ -1,6 +1,6 @@
 package it.unibo.deis.lia.ramp.core.internode.sdn.controllerMessage;
 
-import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.dataTypeMessage.DataTypeMessage;
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataPlaneMessage.DataPlaneMessage;
 import it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy.TrafficEngineeringPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.PathDescriptor;
 import it.unibo.deis.lia.ramp.core.internode.sdn.routingPolicy.RoutingPolicy;
@@ -33,7 +33,7 @@ public class ControllerMessageUpdate extends ControllerMessage {
      */
     private Map<Integer, Integer> flowPriorities;
 
-    private DataTypeMessage dataTypeMessage;
+    private DataPlaneMessage dataPlaneMessage;
 
     private String dataType;
 
@@ -45,11 +45,14 @@ public class ControllerMessageUpdate extends ControllerMessage {
      * ROUTING_POLICY_UPDATE: messageType, routingPolicy
      * DEFAULT_FLOW_PATHS_UPDATE message: messageType, newPathMappings
      * FLOW_PRIORITIES_UPDATE message: messageType, flowPriorities
-     * DATA_PLANE_ADD_DATA_TYPE message: messageType, DataTypeMessage
+     * DATA_PLANE_ADD_DATA_TYPE message: messageType, DataPlaneMessage
+     * DATA_PLANE_REMOVE_DATA_TYPE message: messageType, dataType
+     * DATA_PLANE_ADD_RULE_FILE message: messageType, DataPlaneMessage
+     * DATA_PLANE_REMOVE_RULE_FILE message: messageType, dataPlaneRule
      * DATA_PLANE_ADD_RULE message: messageType, dataType, dataPlaneRule
      * DATA_PLANE_REMOVE_RULE message: messageType, dataType, dataPlaneRule
      */
-    public ControllerMessageUpdate(MessageType messageType, int clientPort, Map<String, NodeStats> nodeStats, Map<Integer, List<String>> neighborNodes, TrafficEngineeringPolicy trafficEngineeringPolicy, RoutingPolicy routingPolicy, Map<Integer, PathDescriptor> newPathMappings, Map<Integer, Integer> flowPriorities, DataTypeMessage dataTypeMessage, String dataType, String dataPlaneRule) {
+    public ControllerMessageUpdate(MessageType messageType, int clientPort, Map<String, NodeStats> nodeStats, Map<Integer, List<String>> neighborNodes, TrafficEngineeringPolicy trafficEngineeringPolicy, RoutingPolicy routingPolicy, Map<Integer, PathDescriptor> newPathMappings, Map<Integer, Integer> flowPriorities, DataPlaneMessage dataPlaneMessage, String dataType, String dataPlaneRule) {
         super(messageType, clientPort, nodeStats);
 
         this.neighborNodes = neighborNodes;
@@ -57,12 +60,12 @@ public class ControllerMessageUpdate extends ControllerMessage {
         this.routingPolicy = routingPolicy;
         this.newPathMappings = newPathMappings;
         this.flowPriorities = flowPriorities;
-        this.dataTypeMessage = dataTypeMessage;
+        this.dataPlaneMessage = dataPlaneMessage;
         this.dataType = dataType;
         this.dataPlaneRule = dataPlaneRule;
     }
 
-    public ControllerMessageUpdate(MessageType messageType, Map<String, NodeStats> nodeStats, Map<Integer, List<String>> neighborNodes, TrafficEngineeringPolicy trafficEngineeringPolicy, RoutingPolicy routingPolicy, Map<Integer, PathDescriptor> newPathMappings, Map<Integer, Integer> flowPriorities, DataTypeMessage dataTypeMessage, String dataType, String dataPlaneRule) {
+    public ControllerMessageUpdate(MessageType messageType, Map<String, NodeStats> nodeStats, Map<Integer, List<String>> neighborNodes, TrafficEngineeringPolicy trafficEngineeringPolicy, RoutingPolicy routingPolicy, Map<Integer, PathDescriptor> newPathMappings, Map<Integer, Integer> flowPriorities, DataPlaneMessage dataPlaneMessage, String dataType, String dataPlaneRule) {
         super(messageType, nodeStats);
 
         this.neighborNodes = neighborNodes;
@@ -70,7 +73,7 @@ public class ControllerMessageUpdate extends ControllerMessage {
         this.routingPolicy = routingPolicy;
         this.newPathMappings = newPathMappings;
         this.flowPriorities = flowPriorities;
-        this.dataTypeMessage = dataTypeMessage;
+        this.dataPlaneMessage = dataPlaneMessage;
         this.dataType = dataType;
         this.dataPlaneRule = dataPlaneRule;
     }
@@ -116,12 +119,12 @@ public class ControllerMessageUpdate extends ControllerMessage {
         this.flowPriorities = flowPriorities;
     }
 
-    public void setDataTypeMessage(DataTypeMessage dataTypeMessage) {
-        this.dataTypeMessage = dataTypeMessage;
+    public void setDataPlaneMessage(DataPlaneMessage dataPlaneMessage) {
+        this.dataPlaneMessage = dataPlaneMessage;
     }
 
-    public DataTypeMessage getDataTypeMessage() {
-        return dataTypeMessage;
+    public DataPlaneMessage getDataPlaneMessage() {
+        return dataPlaneMessage;
     }
 
     public void setDataType(String dataType) {

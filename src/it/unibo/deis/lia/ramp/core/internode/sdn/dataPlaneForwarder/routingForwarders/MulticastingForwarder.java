@@ -1,5 +1,6 @@
 package it.unibo.deis.lia.ramp.core.internode.sdn.dataPlaneForwarder.routingForwarders;
 
+import it.unibo.deis.lia.ramp.RampEntryPointInterface;
 import it.unibo.deis.lia.ramp.core.e2e.*;
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClient;
@@ -10,9 +11,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClientInterface;
 import it.unibo.deis.lia.ramp.core.internode.sdn.dataPlaneForwarder.DataPlaneForwarder;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.PathDescriptor;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.MulticastPathDescriptor;
+import it.unibo.deis.lia.ramp.util.componentLocator.ComponentLocator;
+import it.unibo.deis.lia.ramp.util.componentLocator.ComponentType;
 
 /**
  * @author Alessandro Dolci
@@ -49,7 +54,8 @@ public class MulticastingForwarder implements DataPlaneForwarder {
     @Override
     public void receivedUdpUnicastPacket(UnicastPacket up) {
         if (up.getFlowId() != GenericPacket.UNUSED_FIELD && up.getDestNodeId() == Dispatcher.getLocalRampId() && up.getDestPort() == 40000) {
-            ControllerClient controllerClient = ControllerClient.getInstance();
+            ControllerClientInterface controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
+            //ControllerClient controllerClient = ControllerClient.getInstance();
 
             List<PathDescriptor> nextHops = controllerClient.getFlowMulticastNextHops(up.getFlowId());
             if (nextHops != null) {
@@ -132,7 +138,8 @@ public class MulticastingForwarder implements DataPlaneForwarder {
     @Override
     public void receivedTcpUnicastPacket(UnicastPacket up) {
         if (up.getFlowId() != GenericPacket.UNUSED_FIELD && up.getDestNodeId() == Dispatcher.getLocalRampId() && up.getDestPort() == 40000) {
-            ControllerClient controllerClient = ControllerClient.getInstance();
+            ControllerClientInterface controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
+            //ControllerClient controllerClient = ControllerClient.getInstance();
 
             List<PathDescriptor> nextHops = controllerClient.getFlowMulticastNextHops(up.getFlowId());
             if (nextHops != null) {

@@ -5,8 +5,11 @@ import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastHeader;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClient;
+import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClientInterface;
 import it.unibo.deis.lia.ramp.core.internode.sdn.dataPlaneForwarder.DataPlaneForwarder;
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
+import it.unibo.deis.lia.ramp.util.componentLocator.ComponentLocator;
+import it.unibo.deis.lia.ramp.util.componentLocator.ComponentType;
 
 /**
  * @author Alessandro Dolci
@@ -54,7 +57,8 @@ public class BestPathForwarder implements DataPlaneForwarder {
          */
         if (uh.getFlowId() != GenericPacket.UNUSED_FIELD) {
             String[] newPath;
-            ControllerClient controllerClient = ControllerClient.getInstance();
+            //ControllerClient controllerClient = ControllerClient.getInstance();
+            ControllerClientInterface controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
             /*
              * If the current node is the sender, check for a new complete path
              */

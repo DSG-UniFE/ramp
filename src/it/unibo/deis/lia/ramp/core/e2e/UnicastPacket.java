@@ -230,10 +230,12 @@ public class UnicastPacket extends GenericPacket {
         header.setFlowId(flowId);
     }
 
+    // Dmitrij David Padalino Montenero
     public long getDataType() {
         return header.getDataType();
     }
 
+    // Dmitrij David Padalino Montenero
     public void setDataType(long dataType) {
         header.setDataType(dataType);
     }

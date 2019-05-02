@@ -1,14 +1,11 @@
 package it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager;
 
-import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.dataTypeMessage.DataTypeMessage;
+import it.unibo.deis.lia.ramp.RampEntryPoint;
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataPlaneMessage.DataPlaneMessage;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
+import it.unibo.deis.lia.ramp.util.rampClassLoader.RampClassLoader;
 
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -18,33 +15,55 @@ import java.util.stream.Stream;
 
 /**
  * @author Dmitrij David Padalino Montenero
+ * Manager that handles all the DataType used in case of advanced data type feature usage.
  */
-public class DataTypesManager {
-
-    private Map<String, Long> dataTypesMappingByName;
-
-    private Map<Long, String> dataTypesMappingById;
-
-    private Map<String, String> dataTypesDatabase;
-
-    private Map<String, Class> dataTypeClassMapping;
-
-    private static DataTypesManager dataTypesManager;
+public class DataTypesManager implements DataTypesManagerInterface {
 
     /**
-     * This String specifies the directory that the DataTypeManger must use in order to load classes from files sent
-     * by the ControllerService.
+     * Data structure used to store the mapping between the
+     * DataType and its SerialVersionUID that in this implementation
+     * is treated like the global unique ID to identify the DataType.
+     */
+    private Map<String, Long> dataTypesMappingByName;
+
+    /**
+     * Data structure used to store the mapping between the
+     * the SerialVersionUID and the DataType name.
+     */
+    private Map<Long, String> dataTypesMappingById;
+
+    /**
+     * Data structure used to contains all the Class objects managed
+     * by this manager.
+     */
+    private Map<String, Class> dataTypeClassMapping;
+
+    /**
+     * This String specifies the directory that the DataTypeManger
+     * must use for its purposes.
      */
     private String dataTypeManagerDirectoryName = "./temp/dataTypeManager";
 
-    private String dataTypeManagerDirectoryNameAbsolutePath;
+    /**
+     * This String specifies the directory that the DataTypeManger must use
+     * in order to store and load user defined DataTypes sent by the
+     * ControllerService at runtime.
+     */
+    private String userDefinedDataTypesDirectoryName = dataTypeManagerDirectoryName + "/userDefinedDataTypes";
 
-    private ClassLoader userDefinedDataTypesClassLoader;
+    /**
+     * We use the rampClassLoader in order to load the .class files at runtime.
+     */
+    private RampClassLoader rampClassLoader;
+
+    /**
+     * DataTypesManager instance.
+     */
+    private static DataTypesManager dataTypesManager;
 
     private DataTypesManager() {
         dataTypesMappingByName = new ConcurrentHashMap<>();
         dataTypesMappingById = new ConcurrentHashMap<>();
-        dataTypesDatabase = new ConcurrentHashMap<>();
         dataTypeClassMapping = new ConcurrentHashMap<>();
 
         File dataTypeManagerDirectoryFile = new File(dataTypeManagerDirectoryName);
@@ -52,15 +71,12 @@ public class DataTypesManager {
             dataTypeManagerDirectoryFile.mkdir();
         }
 
-        URL url = null;
-        try {
-            url = dataTypeManagerDirectoryFile.toURI().toURL();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+        dataTypeManagerDirectoryFile = new File(userDefinedDataTypesDirectoryName);
+        if (!dataTypeManagerDirectoryFile.exists()) {
+            dataTypeManagerDirectoryFile.mkdir();
         }
-        URL[] urls = new URL[]{url};
 
-        userDefinedDataTypesClassLoader = new URLClassLoader(urls);
+        rampClassLoader = RampEntryPoint.getRampClassLoader();
     }
 
     synchronized public static DataTypesManager getInstance() {
@@ -76,137 +92,165 @@ public class DataTypesManager {
 
     private void initialise() {
         /*
-         * Add the dataTypesManager handled directory to classpath so that
+         * Add the dataTypesManager manged directory to classpath so that
          * the user defined DataTypes located in this directory can be
          * founded at runtime.
          */
-        try {
-            GeneralUtils.addPathToClasspath(dataTypeManagerDirectoryName);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        rampClassLoader.addPath(userDefinedDataTypesDirectoryName);
 
         /*
-         * Initialise default data types, the ones currently available at development time.
+         * Initialise default DataTypes, the ones currently available at development time.
          */
         String defaultDataTypesPackage = "it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.defaultDataTypes";
-        List<Class<?>> rulesAvailable = GeneralUtils.getClassesInPackage(defaultDataTypesPackage);
-        for (int i = 0; i < rulesAvailable.size(); i++) {
-            Class<?> currentClass = rulesAvailable.get(i);
-            addDataTypeToDataBase(currentClass);
+
+        List<Class<?>> defaultDataTypeClasses = GeneralUtils.getClassesInPackage(defaultDataTypesPackage);
+
+        for (Class<?> dataTypeClass : defaultDataTypeClasses) {
+            addDataTypeToDataBase(dataTypeClass);
         }
 
         /*
-         * Initialise user defined data types if available,
+         * Initialise user defined DataTypes if available,
          * the ones currently available from previous ControllerClient sessions.
          */
-        Set<String> userDefinedDataTypes = Stream.of(new File(dataTypeManagerDirectoryName).listFiles())
+        Set<String> userDefinedDataTypes = Stream.of(new File(userDefinedDataTypesDirectoryName).listFiles())
                 .filter(file -> !file.isDirectory())
                 .map(File::getName)
                 .collect(Collectors.toSet());
 
-        if (userDefinedDataTypes.size() > 0) {
-            for(String dataTypeFileName : userDefinedDataTypes) {
-                String dataTypeClassName = dataTypeFileName.replaceFirst("[.][^.]+$", "");
-                try {
-                    Class cls = userDefinedDataTypesClassLoader.loadClass(dataTypeClassName);
-                    addDataTypeToDataBase(cls);
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                }
+        for (String dataTypeFileName : userDefinedDataTypes) {
+            String dataTypeClassName = dataTypeFileName.replaceFirst("[.][^.]+$", "");
+            try {
+                Class cls = rampClassLoader.loadClass(dataTypeClassName);
+                addDataTypeToDataBase(cls);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
+        }
+    }
+
+    public void deactivate() {
+        /*
+         * Not used at the moment because in the case there is a ControllerClient in the same
+         * machine of the ControllerService, if the ControllerService stops this manager
+         * will become null for the ControllerClient.
+         */
+        if(dataTypesManager != null) {
+            dataTypesMappingByName = null;
+            dataTypesMappingById = null;
+            dataTypeClassMapping = null;
+            rampClassLoader = null;
         }
     }
 
     private void addDataTypeToDataBase(Class dataTypeClass) {
         dataTypesMappingByName.put(dataTypeClass.getSimpleName(), ObjectStreamClass.lookup(dataTypeClass).getSerialVersionUID());
         dataTypesMappingById.put(ObjectStreamClass.lookup(dataTypeClass).getSerialVersionUID(), dataTypeClass.getSimpleName());
-        dataTypesDatabase.put(dataTypeClass.getSimpleName(), dataTypeClass.getName());
         dataTypeClassMapping.put(dataTypeClass.getSimpleName(), dataTypeClass);
     }
 
-    public Set<String> getDataTypesAvailable() {
-        return dataTypesDatabase.keySet();
+    private void removeDataTypeFromDataBase(String dataTypeName) {
+        long dataTypeId = dataTypesMappingByName.get(dataTypeName);
+        /*
+         * Clean user defined DataType references from the database.
+         */
+        dataTypesMappingByName.remove(dataTypeName);
+        dataTypesMappingById.remove(dataTypeId);
+        dataTypeClassMapping.remove(dataTypeName);
+        /*
+         * Delete stored .class file
+         */
+        String dataTypeFileName = dataTypeName + ".class";
+        File dataTypeClassFile = new File(userDefinedDataTypesDirectoryName + "/" + dataTypeFileName);
+
+        if (dataTypeClassFile.delete()) {
+            System.out.println("DataTypesManager: " + dataTypeFileName + " successfully deleted.");
+        } else {
+            System.out.println("DataTypesManager: " + dataTypeFileName + " not deleted.");
+        }
+
+
     }
 
-    public boolean addNewDataType(DataTypeMessage dataTypeMessage) {
-        String dataTypeFileName = dataTypeMessage.getFileName();
-        String dataTypeClassName = dataTypeMessage.getClassName();
+    public Set<String> getAvailableDataTypes() {
+        return dataTypesMappingByName.keySet();
+    }
 
-        if (dataTypesDatabase.containsKey(dataTypeClassName)) {
-            System.out.println("DataType Manager: user defined DataType: " + dataTypeClassName + "already exists.");
+    /**
+     * Method to add at runtime a new DataType sent by the ControllerService
+     *
+     * @param dataPlaneMessage sent by the ControllerService
+     * @return boolean
+     */
+    public boolean addUserDefinedDataType(DataPlaneMessage dataPlaneMessage) {
+        String dataTypeFileName = dataPlaneMessage.getFileName();
+        String dataTypeClassName = dataPlaneMessage.getClassName();
+
+        if (containsDataTypeByName(dataTypeClassName)) {
+            System.out.println("DataTypeManager: user defined DataType: " + dataTypeClassName + "already exists.");
             return true;
         }
 
-        File dataTypeFile = new File(dataTypeManagerDirectoryName + "/" + dataTypeFileName);
-        byte[] bytes = dataTypeMessage.getFile();
+        File dataTypeClassFile = new File(userDefinedDataTypesDirectoryName + "/" + dataTypeFileName);
+        byte[] bytes = dataPlaneMessage.getClassFile();
 
         try {
-            OutputStream os = new FileOutputStream(dataTypeFile);
+            OutputStream os = new FileOutputStream(dataTypeClassFile);
             os.write(bytes);
             os.close();
-
-            System.out.println("DataType Manager: user defined DataType: " + dataTypeFileName + "successfully stored.");
+            System.out.println("DataTypeManager: user defined DataType: " + dataTypeFileName + "successfully stored.");
         } catch (Exception e) {
-            System.out.println("DataType Manager: user defined DataType: " + dataTypeFileName + "received but not stored.");
+            System.out.println("DataTypeManager: user defined DataType: " + dataTypeFileName + "received but not stored.");
             return false;
         }
 
         try {
-            Class cls = userDefinedDataTypesClassLoader.loadClass(dataTypeClassName);
-            addDataTypeToDataBase(cls);
+            Class dataTypeClass = rampClassLoader.loadClass(dataTypeClassName);
+            addDataTypeToDataBase(dataTypeClass);
         } catch (ClassNotFoundException e) {
-            System.out.println("DataType Manager: user defined DataType: " + dataTypeClassName + "not loaded by URLClassLoader.");
+            System.out.println("DataTypeManager: user defined DataType: " + dataTypeClassName + "not loaded by RampClassLoader.");
             return false;
         }
         return true;
     }
 
-    public long getDataTypeId(String className) {
-        return dataTypesMappingByName.get(className);
+    public void removeUserDefinedDataType(String dataTypeSimpleClassName) {
+        removeDataTypeFromDataBase(dataTypeSimpleClassName);
+    }
+
+    public long getDataTypeId(String dataTypeSimpleClassName) {
+        return dataTypesMappingByName.get(dataTypeSimpleClassName);
     }
 
     public String getDataTypeName(long dataTypeId) {
         return dataTypesMappingById.get(dataTypeId);
     }
 
-    public boolean containsDataTypeById(long id) {
-        return this.dataTypesMappingById.containsKey(id);
+    public boolean containsDataTypeById(long dataTypeId) {
+        return this.dataTypesMappingById.containsKey(dataTypeId);
     }
 
-    public boolean containsDataTypeByName(String dataType) {
-        return this.dataTypesMappingByName.containsKey(dataType);
+    public boolean containsDataTypeByName(String dataTypeSimpleClassName) {
+        return this.dataTypesMappingByName.containsKey(dataTypeSimpleClassName);
     }
 
-    public String getDataTypeClassName(String dataType) {
-        return this.dataTypesDatabase.get(dataType);
+    /**
+     * Method to use in place of Class.forName for DataType Class object retrieval.
+     *
+     * @param dataTypeSimpleClassName simple name of the DataType class
+     * @return the Class object of the provided dataType
+     */
+    public Class getDataTypeClassObjectByName(String dataTypeSimpleClassName) {
+        return this.dataTypeClassMapping.get(dataTypeSimpleClassName);
     }
 
-    public Class getClassForDataTypeName(String dataType) {
-        return this.dataTypeClassMapping.get(dataType);
+    /**
+     * Method to use in place of Class.forName for DataType Class object retrieval.
+     *
+     * @param dataTypeId serialVersionUID of the DataType class
+     * @return the Class object of the provided dataTypeId
+     */
+    public Class getDataTypeClassObjectById(long dataTypeId) {
+        return getDataTypeClassObjectByName(getDataTypeName(dataTypeId));
     }
-
-    public Class getClassForDataTypeId(long dataTypeId) {
-        return getClassForDataTypeName(getDataTypeName(dataTypeId));
-    }
-
-//    public Object createDataTypeObjectFromClassName(String className) {
-//        Object dataTypeObject = null;
-//        try {
-//            dataTypeObject = Class.forName(dataTypesDatabase.get(className)).newInstance();
-//        } catch (ClassNotFoundException e) {
-//            e.printStackTrace();
-//        } catch (IllegalAccessException e) {
-//            e.printStackTrace();
-//        } catch (InstantiationException e) {
-//            e.printStackTrace();
-//        }
-//
-//        return dataTypeObject;
-//    }
-//
-//    public Object createDataTypeObjectFromSerialVersionUID(long serialVersionUID) {
-//        return createDataTypeObjectFromClassName(dataTypesMapping.get(serialVersionUID));
-//    }
 }

@@ -212,6 +212,18 @@ public class Dispatcher {
 		}
 	}
 
+	/**
+	 * @author Dmitrij David Padalino Montenero
+	 */
+	public void addPacketForwardingListenerBeforeAnother(PacketForwardingListener pfw, PacketForwardingListener referencePfw) {
+		if(!packetForwardingListeners.contains(referencePfw)) {
+			addPacketForwardingListener(pfw);
+		} else {
+			int referencePwfIndex = packetForwardingListeners.indexOf(referencePfw);
+			packetForwardingListeners.insertElementAt(pfw, referencePwfIndex);
+		}
+	}
+
 	public void removePacketForwardingListener(PacketForwardingListener pfw) {
 		System.out.println("Dispatcher removing listener: " + pfw.getClass());
 		packetForwardingListeners.remove(pfw);

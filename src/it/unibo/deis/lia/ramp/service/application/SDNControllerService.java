@@ -1,7 +1,7 @@
 package it.unibo.deis.lia.ramp.service.application;
 
-import it.unibo.deis.lia.ramp.core.e2e.BoundReceiveSocket;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerService.ControllerService;
+import it.unibo.deis.lia.ramp.core.internode.sdn.routingPolicy.RoutingPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy.TrafficEngineeringPolicy;
 import org.graphstream.ui.swingViewer.DefaultView;
 
@@ -53,40 +53,52 @@ public class SDNControllerService {
         return controllerService.getActiveClients();
     }
 
-    public TrafficEngineeringPolicy getFlowPolicy() {
+    public TrafficEngineeringPolicy getTrafficEngineeringPolicy() {
         return controllerService.getTrafficEngineeringPolicy();
     }
 
-    public void updateFlowPolicy(TrafficEngineeringPolicy trafficEngineeringPolicy) {
-        controllerService.updateFlowPolicy(trafficEngineeringPolicy);
+    public void updateTrafficEngineeringPolicy(TrafficEngineeringPolicy trafficEngineeringPolicy) {
+        controllerService.updateTrafficEngineeringPolicy(trafficEngineeringPolicy);
+    }
+
+    public RoutingPolicy getRoutingPolicy() {
+        return controllerService.getRoutingPolicy();
+    }
+
+    public void updateRoutingPolicy(RoutingPolicy routingPolicy) {
+        controllerService.updateRoutingPolicy(routingPolicy);
     }
 
     public DefaultView getGraph() {
         return controllerService.getGraph();
     }
 
-    public Set<String> getDataTypesAvailable() {
-        return controllerService.getDataTypesAvailable();
+    public Set<String> getAvailableDataTypes() {
+        return controllerService.getAvailableDataTypes();
     }
 
-    public Set<String> getAdvancedDataPlaneRules() {
-        return controllerService.getAdvancedDataPlaneRules();
+    public Set<String> getAvailableDataPlaneRules() {
+        return controllerService.getAvailableDataPlaneRules();
     }
 
-    public Map<String, List<String>> getAdvancedDataPlaneActiveRules() {
-        return controllerService.getAdvancedDataPlaneActiveRules();
+    public Map<String, List<String>> getActiveDataPlaneRules() {
+        return controllerService.getActiveDataPlaneRules();
     }
 
-    public boolean addAdvancedDataPlaneDataType(String dataTypeFileName, File dataTypeFile) {
-        return  controllerService.addAdvancedDataPlaneDataType(dataTypeFileName, dataTypeFile);
+    public boolean addUserDefinedDataType(String dataTypeFileName, File dataTypeFile) {
+        return  controllerService.addUserDefinedDataType(dataTypeFileName, dataTypeFile);
     }
 
-    public boolean addAdvancedDataPlaneRule(String dataType, String dataPlaneRule) {
-        return controllerService.addAdvancedDataPlaneRule(dataType, dataPlaneRule);
+    public boolean addUserDefinedDataPlaneRule(String dataPlaneRuleFileName, File dataPlaneRuleFile) {
+        return  controllerService.addUserDefinedDataPlaneRule(dataPlaneRuleFileName, dataPlaneRuleFile);
     }
 
-    public void removeAdvancedDataPlaneRule(String dataType, String dataPlaneRule) {
-        controllerService.removeAdvancedDataPlaneRule(dataType, dataPlaneRule);
+    public boolean addDataPlaneRule(String dataType, String dataPlaneRule) {
+        return controllerService.addDataPlaneRule(dataType, dataPlaneRule);
+    }
+
+    public void removeDataPlaneRule(String dataType, String dataPlaneRule) {
+        controllerService.removeDataPlaneRule(dataType, dataPlaneRule);
     }
 
     private static void sleep(int sleepFor) {
