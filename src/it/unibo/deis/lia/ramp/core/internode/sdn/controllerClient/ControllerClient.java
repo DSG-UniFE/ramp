@@ -1197,7 +1197,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             long dataTypeId = dataTypesManager.getDataTypeId(dataType);
             String dataPlaneRule = updateMessage.getDataPlaneRule();
 
-            boolean success = dataPlaneRulesManager.addDataPlaneRuleForDataType(dataTypeId, dataPlaneRule);
+            boolean success = dataPlaneRulesManager.addDataPlaneRule(dataTypeId, dataPlaneRule);
 
             /*
              * Controller service has to be found before sending any message
@@ -1240,7 +1240,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
         private void handleDataPlaneRemoveRule(ControllerMessageUpdate messageUpdate) {
             String dataType = messageUpdate.getDataType();
             String dataPlaneRule = messageUpdate.getDataPlaneRule();
-            dataPlaneRulesManager.removeDataPlaneRuleByDataTypeName(dataType, dataPlaneRule);
+            dataPlaneRulesManager.removeDataPlaneRule(dataType, dataPlaneRule);
             System.out.println("ControllerClient: DATA_PLANE_REMOVE_RULE:  remove rule: " + dataPlaneRule + " for dataType: " + dataType + " received from the controller and successfully applied");
         }
     }

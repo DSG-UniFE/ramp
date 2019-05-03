@@ -26,19 +26,18 @@ public class DataPlaneForwardingListener implements PacketForwardingListener {
 
     @Override
     public void receivedTcpUnicastPacket(UnicastPacket up) {
-        //receivedTcpUnicastHeader(up.getHeader());
         long dataTypeId = up.getHeader().getDataType();
-        if (dataTypeId != GenericPacket.UNUSED_FIELD) {
+        if (dataTypeId != GenericPacket.UNUSED_FIELD && dataPlaneRulesManager.containsDataPlaneRuleForDataType(dataTypeId)) {
             dataPlaneRulesManager.executeUnicastPacketDataPlaneRule(dataTypeId, up);
         }
     }
 
     @Override
     public void receivedTcpUnicastHeader(UnicastHeader uh) {
-//        long dataTypeId = uh.getDataType();
-//        if (dataTypeId != GenericPacket.UNUSED_FIELD) {
-//            dataPlaneRulesManager.executeUnicastHeaderDataPlaneRule(dataTypeId, uh);
-//        }
+        long dataTypeId = uh.getDataType();
+        if (dataTypeId != GenericPacket.UNUSED_FIELD && dataPlaneRulesManager.containsDataPlaneRuleForDataType(dataTypeId)) {
+            dataPlaneRulesManager.executeUnicastHeaderDataPlaneRule(dataTypeId, uh);
+        }
     }
 
     @Override
@@ -49,7 +48,7 @@ public class DataPlaneForwardingListener implements PacketForwardingListener {
     @Override
     public void receivedTcpBroadcastPacket(BroadcastPacket bp) {
         long dataTypeId = bp.getDataType();
-        if (dataTypeId != GenericPacket.UNUSED_FIELD) {
+        if (dataTypeId != GenericPacket.UNUSED_FIELD && dataPlaneRulesManager.containsDataPlaneRuleForDataType(dataTypeId)) {
             dataPlaneRulesManager.executeBroadcastPacketDataPlaneRule(dataTypeId, bp);
         }
     }

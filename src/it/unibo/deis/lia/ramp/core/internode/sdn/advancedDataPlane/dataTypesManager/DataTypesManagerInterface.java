@@ -11,13 +11,15 @@ public interface DataTypesManagerInterface {
 
     public Set<String> getAvailableDataTypes();
 
-    public long getDataTypeId(String dataTypeSimpleClassName);
+    public long getDataTypeId(String dataTypeName);
 
     public String getDataTypeName(long dataTypeId);
 
-    public boolean containsDataTypeByName(String dataTypeSimpleClassName);
+    public boolean containsDataType(String dataTypeName);
 
-    public Class getDataTypeClassObjectByName(String dataTypeSimpleClassName);
+    public boolean containsDataType(long dataTypedId);
 
-    public Class getDataTypeClassObjectById(long dataTypeId);
+    public Class getDataTypeClassObject(String dataTypeName);
+
+    public Class getDataTypeClassObjec(long dataTypeId);
 }

@@ -7,8 +7,11 @@ import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
 import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataPlaneMessage.DataPlaneMessage;
 import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.DataTypesManager;
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.DataTypesManagerInterface;
 import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.rulesManager.forwardingListener.DataPlaneForwardingListener;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
+import it.unibo.deis.lia.ramp.util.componentLocator.ComponentLocator;
+import it.unibo.deis.lia.ramp.util.componentLocator.ComponentType;
 import it.unibo.deis.lia.ramp.util.rampClassLoader.RampClassLoader;
 
 import java.io.File;
@@ -68,7 +71,7 @@ public class DataPlaneRulesManager {
     /**
      * DataTypesManager instance.
      */
-    private DataTypesManager dataTypesManager;
+    private DataTypesManagerInterface dataTypesManager;
 
     /**
      * We use the rampClassLoader in order to load the .class at runtime
@@ -84,7 +87,7 @@ public class DataPlaneRulesManager {
         dataPlaneRulesDatabase = new ConcurrentHashMap<>();
         dataPlaneRulesClassMapping = new ConcurrentHashMap<>();
         activeDataPlaneRules = new ConcurrentHashMap<>();
-        dataTypesManager = DataTypesManager.getInstance();
+        dataTypesManager = ((DataTypesManagerInterface) ComponentLocator.getComponent(ComponentType.DATA_TYPES_MANAGER));
 
         File dataPlaneRuleManagerDirectoryFile = new File(dataPlaneRulesManagerDirectoryName);
         if (!dataPlaneRuleManagerDirectoryFile.exists()) {
@@ -249,10 +252,7 @@ public class DataPlaneRulesManager {
         removeDataPlaneRuleFromDataBase(dataPlaneRuleSimpleClassName);
     }
 
-    /**
-     * TODO Check with Gianelli synchronized effectiveness.
-     */
-    public synchronized void executeUnicastHeaderDataPlaneRule(long dataTypeId, UnicastHeader uh) {
+    public void executeUnicastHeaderDataPlaneRule(long dataTypeId, UnicastHeader uh) {
         String dataTypeName = dataTypesManager.getDataTypeName(dataTypeId);
         List<String> activeDataTypeRules = activeDataPlaneRules.get(dataTypeId);
         Object dataPlaneRule = null;
@@ -287,10 +287,7 @@ public class DataPlaneRulesManager {
         }
     }
 
-    /**
-     * TODO Check with Gianelli syncronized effectiveness.
-     */
-    public synchronized void executeUnicastPacketDataPlaneRule(long dataTypeId, UnicastPacket up) {
+    public void executeUnicastPacketDataPlaneRule(long dataTypeId, UnicastPacket up) {
         String dataTypeName = dataTypesManager.getDataTypeName(dataTypeId);
         List<String> activeDataTypeRules = activeDataPlaneRules.get(dataTypeId);
         Object dataPlaneRule = null;
@@ -325,10 +322,8 @@ public class DataPlaneRulesManager {
         }
     }
 
-    /**
-     * TODO Check with Gianelli syncronized effectiveness.
-     */
-    public synchronized void executeBroadcastPacketDataPlaneRule(long dataTypeId, BroadcastPacket bp) {
+
+    public void executeBroadcastPacketDataPlaneRule(long dataTypeId, BroadcastPacket bp) {
         String dataTypeName = dataTypesManager.getDataTypeName(dataTypeId);
         List<String> activeDataTypeRules = activeDataPlaneRules.get(dataTypeId);
         Object dataPlaneRule = null;
@@ -363,12 +358,12 @@ public class DataPlaneRulesManager {
         }
     }
 
-    public boolean addDataPlaneRuleForDataType(long dataTypeId, String dataPlaneRuleName) {
+    public boolean addDataPlaneRule(long dataTypeId, String dataPlaneRuleName) {
         /*
          * First check if the dataType reference exists in the
          * DataTypesManager.
          */
-        if (dataTypesManager.containsDataTypeById(dataTypeId)) {
+        if (dataTypesManager.containsDataType(dataTypeId)) {
             if (!activeDataPlaneRules.containsKey(dataTypeId)) {
                 List<String> rules = new ArrayList<>();
                 rules.add(dataPlaneRuleName);
@@ -382,14 +377,22 @@ public class DataPlaneRulesManager {
         return false;
     }
 
-    public void removeDataPlaneRuleByDataTypeName(String dataTypeName, String dataPlaneRuleName) {
-        removeDataPlaneRuleByDataTypeId(dataTypesManager.getDataTypeId(dataTypeName), dataPlaneRuleName);
+    public void removeDataPlaneRule(String dataTypeName, String dataPlaneRuleName) {
+        removeDataPlaneRule(dataTypesManager.getDataTypeId(dataTypeName), dataPlaneRuleName);
     }
 
-    public void removeDataPlaneRuleByDataTypeId(long dataTypeId, String dataPlaneRuleName) {
+    public void removeDataPlaneRule(long dataTypeId, String dataPlaneRuleName) {
         if (activeDataPlaneRules.containsKey(dataTypeId)) {
             activeDataPlaneRules.get(dataTypeId).remove(dataPlaneRuleName);
         }
+    }
+
+    public boolean containsDataPlaneRuleForDataType(String dataTypeName) {
+        return containsDataPlaneRuleForDataType(dataTypesManager.getDataTypeId(dataTypeName));
+    }
+
+    public boolean containsDataPlaneRuleForDataType(long dataTypeId) {
+        return activeDataPlaneRules.containsKey(dataTypeId);
     }
 
     public boolean containsDataPlaneRule(String dataPlaneRuleSimpleClassName) {

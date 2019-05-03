@@ -5,17 +5,19 @@ import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
 import it.unibo.deis.lia.ramp.core.internode.Heartbeater;
 import it.unibo.deis.lia.ramp.core.internode.sdn.osRoutingManager.ipRouteRule.IpRouteRule;
 import it.unibo.deis.lia.ramp.core.internode.sdn.osRoutingManager.localRoutingTable.LocalRoutingTable;
-
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.PumpStreamHandler;
 
 import java.io.*;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Dmitrij David Padalino Montenero
  *
- * This class is a temporary copy of Layer3RoutingManager to be used by ControllerClient.
  * This component is able to enable static routing according to decisions taken at
  * the middleware level.
  * All the rules added by this manager are ephemeral i.e. they will not survive in case
@@ -23,7 +25,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class OsRoutingManager {
     private static String superuserPassword = null;
+
     private static long lastSuperuserPasswordRefresh = -1;
+
     private static final long TIMEOUT_SU_PASSWORD = 180 * 1000; //Previously 10 * 1000
     /**
      * Data structure to hold current local IP addresses to easily get the src IP address
@@ -84,6 +88,7 @@ public class OsRoutingManager {
         this.routingLocalTables = new ConcurrentHashMap<>();
         this.routingLocalTablesIndex = 1;
         updateLocalIpAddresses();
+        getSuperUserPassword();
     }
 
     synchronized public static OsRoutingManager getInstance() throws Exception {
@@ -122,6 +127,12 @@ public class OsRoutingManager {
              */
             cleanRoutingTables();
 
+            /*
+             * Remove super user authentication for this application
+             */
+            resetSuperUserCredentials();
+
+            superuserPassword = null;
             this.currentDestinationsSourceIps = null;
             this.currentRoutes = null;
             this.currentRules = null;
@@ -204,7 +215,7 @@ public class OsRoutingManager {
             try {
                 boolean isSender = (sourceIP == null);
                 /*
-                 * In case of one hop route the sender node if it has to find a new viaIP
+                 * In case of one hop route if the sender node has to find a new viaIP
                  * it needs to update also the destinationIP.
                  */
                 boolean isOneHopRoute = isSender && destinationIP.equals(viaIP);
@@ -295,9 +306,9 @@ public class OsRoutingManager {
                     int localIpTableIndex = this.routingLocalTablesIndex;
                     String localIpTableName = "sdnOsRouting" + localIpTableIndex;
 
-                    String addRoutingTableCommand = "sh -c \"echo " + localIpTableIndex + " " + localIpTableName + " >> /etc/iproute2/rt_tables\"";
-                    System.out.println("OSRoutingManager " + addRoutingTableCommand);
-                    sudoCommand(addRoutingTableCommand);
+                    String addRoutingTableShellCommand = "echo " + localIpTableIndex + " " + localIpTableName + " >> /etc/iproute2/rt_tables";
+                    System.out.println("OSRoutingManager " + addRoutingTableShellCommand);
+                    sudoShellCommand(addRoutingTableShellCommand);
                     this.routingLocalTables.put(sourceIP, new LocalRoutingTable(localIpTableIndex, localIpTableName));
                     /*
                      * For this source we have to look up the table just created that
@@ -357,45 +368,6 @@ public class OsRoutingManager {
                 this.currentRoutes.put(routeId, addRouteRule);
 
                 return true;
-
-//                if (destinationIP != null) {
-//                    // 1) enable NAT
-//                    String com1 = "iptables -t nat -A POSTROUTING -s " + from + " -j MASQUERADE";
-//                    // System.out.println("OSRoutingManager "+com1);
-//                    sudoCommand(com1);
-//                }
-//                if (to != null) {
-//                    // 2) default gateway
-//                    // 2a) delete previous default gateways
-//                    Process pShow = Runtime.getRuntime().exec("ip route show");
-//                    BufferedReader is = new BufferedReader(new InputStreamReader(pShow.getInputStream()));
-//                    String line;
-//                    while ((line = is.readLine()) != null) {
-//                        if (line.contains("default")) {
-//                            String[] delTokens = line.split(" ");
-//                            String delCom = "ip route del default via " + delTokens[2] + " dev " + delTokens[4];
-//                            // System.out.println("OSRoutingManager delCom "+delCom);
-//                            sudoCommand(delCom);
-//                        }
-//                    }
-//
-//                    // 2b) add new default gateway
-//                    String interf = OSRoutingManager.fromIpToName(to);
-//                    String addGateway = "ip route add default via " + to + " dev " + interf;
-//                    // System.out.println("OSRoutingManager addGateway "+addGateway);
-//                    sudoCommand(addGateway);
-//                }
-//
-//                // 3) add DNS
-//                FileWriter fwDns = new FileWriter("./temp/resolv.conf");
-//                BufferedWriter writerDns = new BufferedWriter(fwDns);
-//                writerDns.write("nameserver 137.204.58.1");
-//                writerDns.newLine();
-//                writerDns.write("nameserver 137.204.59.1");
-//                writerDns.newLine();
-//                writerDns.flush();
-//                writerDns.close();
-//                sudoCommand("mv ./temp/resolv.conf /etc/resolv.conf");
             } catch (Exception e) {
                 //e.printStackTrace();
                 return false;
@@ -602,167 +574,120 @@ public class OsRoutingManager {
         return result;
     }
 
-    private static String fromIpToName(String ip) throws Exception {
-        String interf = null;
-
-        if (RampEntryPoint.os.startsWith("windows")) {
-            Process p = null;
-            p = Runtime.getRuntime().exec("ipconfig");
-            BufferedReader is = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String previousLine = null;
-            String line;
-
-            String ipAddress = ip.replaceAll("/", "");
-            // System.out.println("OSRoutingForwarder toIp "+toIp);
-            String[] tokens = ipAddress.split("[.]");
-            // System.out.println("OSRoutingForwarder tokens.length "+tokens.length);
-            String net = tokens[0] + "." + tokens[1] + "." + tokens[2] + ".";
-            // System.out.println("OSRoutingForwarder net "+net);
-            while ((interf == null) && ((line = is.readLine()) != null)) {
-                if (line.contains(net)) {
-                    // System.out.println("OSRoutingForwarder previousLine "+previousLine);
-                    interf = previousLine.split(":")[0];
-                }
-                if (line.toLowerCase().startsWith("ethernet adapter")) {
-                    previousLine = line.substring("ethernet adapter".length() + 1);
-                } else if (line.toLowerCase().startsWith("scheda ethernet")) {
-                    previousLine = line.substring("scheda ethernet".length() + 1);
-                }
-            }
-        } else if (RampEntryPoint.os.startsWith("linux")) {
-            Process p = null;
-            p = Runtime.getRuntime().exec("ip addr show");
-            BufferedReader is = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String previousLine = null;
-            String previousPreviousLine = null;
-            String line;
-
-            String toIp = ip.replaceAll("/", "");
-            // System.out.println("OSRoutingForwarder toIp "+toIp);
-            String[] tokens = toIp.split("[.]");
-            // System.out.println("OSRoutingForwarder tokens.length "+tokens.length);
-            String net = tokens[0] + "." + tokens[1] + "." + tokens[2] + ".";
-            // System.out.println("OSRoutingForwarder net "+net);
-            while ((interf == null) && ((line = is.readLine()) != null)) {
-                if (line.contains(net)) {
-                    // System.out.println("OSRoutingForwarder previousPreviousLine "+previousPreviousLine);
-                    interf = previousPreviousLine.split(": ")[1];
-                    // System.out.println("OSRoutingForwarder interf "+interf);
-                }
-                previousPreviousLine = previousLine;
-                previousLine = line;
-            }
-        } else {
-            throw new Exception("Unsupported Operating System: " + System.getProperty("os.name"));
-        }
-
-        return interf;
-    }
-
-    /**
-     * TODO FIXME
-     * This component needs to be replaced since its performance are really poor
-     * in case of multiple commands.
-     *
-     * @param command terminal command
-     * @return standard output
-     * @throws Exception in case of wrong superUser password
-     */
-    private static String sudoCommand(String command) throws Exception {
-        String res = "";
-
-        String[] commandArray = {"sh", "-c", "sudo -S " + command + " 2>&1"};
-        /*
-         * System.out.print("sudoCommand.commandArray: "); for(String s : commandArray){ System.out.print(s+" "); } System.out.println();/*
-         */
-
-        Process pRoot = Runtime.getRuntime().exec(commandArray);
-
-        InputStream is = pRoot.getInputStream();
-
-        int attempts = 10;
-        while (attempts > 0 && is.available() == 0) {
-            Thread.sleep(50);
-            attempts--;
-        }
-        String line = "";
-        while (is.available() > 0) {
-            line += (char) is.read();
-        }
-        res += line;
-        // System.out.println("sudoCommand line1: "+line);
-
-        if (line.contains("password for") || line.contains("password di")) {
-            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(pRoot.getOutputStream()));
-            String pass = getSuperuserPassword();
-            if (pass == null) {
-                throw new Exception("Need a password");
-            }
-            bw.write(pass);
-            bw.newLine();
-            bw.flush();
-
-            attempts = 10;
-            while (attempts >= 0 && is.available() <= 1) {
-                Thread.sleep(200);
-                attempts--;
-            }
-            // System.out.println("sudoCommand is.available(): "+is.available());
-            line = "";
-            while (is.available() > 0) {
-                line += (char) is.read();
-            }
-
-            /*
-             * TODO Consider to do res = line instead in order to avoid to get the "[sudo] password for" string
-             */
-            //res += line;
-            res = line;
-            // System.out.println("sudoCommand line: "+line);
-
-            if (line.contains("is not in the sudoers file")) {
-                throw new Exception("The user is not in the sudoers file");
-            } else if (line.contains("Sorry, try again")) {
-                throw new Exception("Wrong password");
-            }
-        }
-
-        String[] commandK = {"sh", "-c", "sudo -S -k 2>&1"};
-        /*
-         * System.out.print("sudoCommand.commandK: "); for(String s : commandK){ System.out.print(s+" "); } System.out.println();/*
-         */
-
-        // Process pK =
-        Runtime.getRuntime().exec(commandK);
-        /*
-         * BufferedReader brK = new BufferedReader(new InputStreamReader(pK.getInputStream())); while( (line=brK.readLine()) != null ){ System.out.println("sudoCommand line k: "+line); }/*
-         */
-
-        // System.out.println("end sudoCommand: "+command);
-
-        return res;
-    }
-
-    private static String getSuperuserPassword() {
-        // TODO Check this
-//        if (System.currentTimeMillis() - lastSuperuserPasswordRefresh > TIMEOUT_SU_PASSWORD) {
-//            // discard previous password
-//            superuserPassword = null;
-//        }
+    private void getSuperUserPassword() {
         if (superuserPassword == null) {
-            // get superuser password
-            javax.swing.JPasswordField passwordField = new javax.swing.JPasswordField();
-            Object[] message = {"root password?", passwordField};
-            int res = javax.swing.JOptionPane.showConfirmDialog(null, message, "Granting root privileges", javax.swing.JOptionPane.OK_CANCEL_OPTION, javax.swing.JOptionPane.QUESTION_MESSAGE);
-            if (res == javax.swing.JOptionPane.OK_OPTION) {
-                superuserPassword = new String(passwordField.getPassword());
-            }
-            // TODO Add check in case of wrong password.
             /*
-             * else{ throw new Exception("Need a password"); }
+             * Reset super user authentication from the last session in case
+             * the ControllerClient goes down.
              */
-            lastSuperuserPasswordRefresh = System.currentTimeMillis();
+            resetSuperUserCredentials();
+            /*
+             * Get Super User Password
+             */
+            String candidateSuperUserPassword = showSuperUserPasswordDialog("Insert root password");
+            while(candidateSuperUserPassword == null || !setupSuperUserCredentials(candidateSuperUserPassword)) {
+                candidateSuperUserPassword = showSuperUserPasswordDialog("Wrong password. Insert root password");
+            }
+            superuserPassword = candidateSuperUserPassword;
         }
-        return superuserPassword;
+    }
+
+    private String showSuperUserPasswordDialog(String message) {
+        javax.swing.JPasswordField passwordField = new javax.swing.JPasswordField();
+        Object[] userMessage = {message, passwordField};
+        int res = javax.swing.JOptionPane.showConfirmDialog(null, userMessage, "OSRoutingManager: granting root privileges", javax.swing.JOptionPane.OK_CANCEL_OPTION, javax.swing.JOptionPane.QUESTION_MESSAGE);
+        if (res == javax.swing.JOptionPane.OK_OPTION) {
+            return new String(passwordField.getPassword());
+        } else {
+            return null;
+        }
+    }
+
+    private static boolean setupSuperUserCredentials(String password) {
+        CommandLine commandLine = new CommandLine("sudo");
+        commandLine.addArgument("--validate", false);
+        commandLine.addArgument("--stdin", false);
+        DefaultExecutor executor = new DefaultExecutor();
+        ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
+        ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
+        ByteArrayInputStream stdIn = new ByteArrayInputStream((password + System.lineSeparator()).getBytes(StandardCharsets.UTF_8));
+        executor.setStreamHandler(new PumpStreamHandler(stdOut, stdErr, stdIn));
+
+        try {
+            executor.execute(commandLine);
+        } catch (IOException e) {
+            return false;
+        }
+
+        lastSuperuserPasswordRefresh = System.currentTimeMillis();
+
+        return true;
+    }
+
+    private static void resetSuperUserCredentials() {
+        CommandLine commandLine = new CommandLine("sudo");
+        commandLine.addArgument("--remove-timestamp", false);
+        DefaultExecutor executor = new DefaultExecutor();
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+        executor.setStreamHandler(new PumpStreamHandler(stdout));
+
+        try {
+            executor.execute(commandLine);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void refreshSuperUserCredentials() {
+        if (System.currentTimeMillis() - lastSuperuserPasswordRefresh > TIMEOUT_SU_PASSWORD) {
+            /*
+             * Setup again the user credentials to avoid the sudo timeout.
+             */
+            resetSuperUserCredentials();
+            setupSuperUserCredentials(superuserPassword);
+        }
+    }
+
+    private static String sudoCommand(String command) {
+        refreshSuperUserCredentials();
+
+        String sudoCommand = "sudo " + command;
+        CommandLine commandLine = CommandLine.parse(sudoCommand);
+
+        ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
+        ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
+
+        DefaultExecutor exec = new DefaultExecutor();
+        PumpStreamHandler streamHandler = new PumpStreamHandler(stdOut, stdErr);
+        exec.setStreamHandler(streamHandler);
+        try {
+            exec.execute(commandLine);
+        } catch (IOException e) {
+            System.out.println("OSRoutingManager: sudoCommand error " + stdErr.toString());
+            e.printStackTrace();
+        }
+
+        return stdOut.toString();
+    }
+
+    private static String sudoShellCommand(String command) {
+        refreshSuperUserCredentials();
+
+        CommandLine shellCommandLine = new CommandLine("sudo").addArgument("sh").addArgument("-c");
+        shellCommandLine.addArgument(command, false);
+
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+
+        DefaultExecutor exec = new DefaultExecutor();
+        PumpStreamHandler streamHandler = new PumpStreamHandler(stdout, stderr);
+        exec.setStreamHandler(streamHandler);
+        try {
+            exec.execute(shellCommandLine);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return stdout.toString();
     }
 }

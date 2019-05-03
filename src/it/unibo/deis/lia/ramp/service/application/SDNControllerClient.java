@@ -271,7 +271,7 @@ public class SDNControllerClient {
 
             if(!this.dataType.equals("Default Message")) {
                 try {
-                    cls = dataTypesManager.getDataTypeClassObjectByName(this.dataType);
+                    cls = dataTypesManager.getDataTypeClassObject(this.dataType);
                     packet = cls.getDeclaredConstructor().newInstance();
                     method = cls.getMethod("setPayloadSize", paramInt);
                     method.invoke(packet, this.payload);
@@ -605,9 +605,9 @@ public class SDNControllerClient {
                         String packetInfo = "BoundReceiveSocketMessageHandler: Default Message: " + seqNumber + ", payloadSize " + payloadSize + ", from " + up.getSourceNodeId();
                         receivedMessages.addElement(packetInfo);
                         System.out.println("SDNControllerClient.BoundReceiveSocketMessageHandler message: " + packetInfo);
-                    } else if(dataTypesManager.containsDataTypeByName(payload.getClass().getSimpleName())) {
+                    } else if(dataTypesManager.containsDataType(payload.getClass().getSimpleName())) {
                         String dataType = payload.getClass().getSimpleName();
-                        Class cls = dataTypesManager.getDataTypeClassObjectByName(dataType);
+                        Class cls = dataTypesManager.getDataTypeClassObject(dataType);
                         Class noparams[] = {};
                         Method method =  cls.getMethod("getSeqNumber", noparams);
                         int seqNumber = (int) method.invoke(payload, null);

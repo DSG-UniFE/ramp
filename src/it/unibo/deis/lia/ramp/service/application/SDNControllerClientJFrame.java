@@ -105,10 +105,10 @@ public class SDNControllerClientJFrame extends JFrame {
     private JButton resetDestinationButton;
     private JButton getFlowIdButton;
 
-    private JPanel getOSLevelRoutePanel;
-    private JLabel getOSLevelRouteLabel;
-    private JComboBox getOSLevelRouteDestinationNodeComboBox;
-    private JButton getOSLevelRouteButton;
+    private JPanel getRouteIDPanel;
+    private JLabel getRouteIDLabel;
+    private JComboBox getRouteIDDestinationNodeComboBox;
+    private JButton getRouteIDButton;
 
     private JPanel defaultFlowPathPanel;
     private JScrollPane defaultFlowPathScrollPane;
@@ -168,7 +168,7 @@ public class SDNControllerClientJFrame extends JFrame {
         initPathSelectionMetricPanel();
         initFindControllerPanel();
         initGetFlowIDPanel();
-        initGetOSLevelRoutePanel();
+        initGetRouteIDPanel();
         initDefaultPathTablePanel();
         initFlowPrioritiesTablePanel();
         initSendPacketPanel();
@@ -211,7 +211,7 @@ public class SDNControllerClientJFrame extends JFrame {
                                         .addComponent(findControllerClientReceiverPanel, GroupLayout.PREFERRED_SIZE, 550, GroupLayout.PREFERRED_SIZE)
                                         .addGroup(layout.createSequentialGroup()
                                                 .addComponent(getFlowIDPanel, GroupLayout.PREFERRED_SIZE, 245, GroupLayout.PREFERRED_SIZE)
-                                                .addComponent(getOSLevelRoutePanel, GroupLayout.PREFERRED_SIZE, 245, GroupLayout.PREFERRED_SIZE)
+                                                .addComponent(getRouteIDPanel, GroupLayout.PREFERRED_SIZE, 245, GroupLayout.PREFERRED_SIZE)
                                                 .addGap(10)
                                                 .addComponent(defaultFlowPathPanel, GroupLayout.PREFERRED_SIZE, 295, GroupLayout.PREFERRED_SIZE)
                                                 .addComponent(flowPrioritiesPanel, GroupLayout.PREFERRED_SIZE, 295, GroupLayout.PREFERRED_SIZE)
@@ -249,7 +249,7 @@ public class SDNControllerClientJFrame extends JFrame {
                                 .addGap(15)
                                 .addGroup(layout.createParallelGroup()
                                         .addComponent(getFlowIDPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(getOSLevelRoutePanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(getRouteIDPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                                         .addComponent(defaultFlowPathPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                                         .addComponent(flowPrioritiesPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                                 )
@@ -271,6 +271,8 @@ public class SDNControllerClientJFrame extends JFrame {
         pack();
 
         showAndUpdateTablesPolicy();
+
+        jButtonFindControllerClientReceiverActionPerformed(null);
     }
 
     private void initTrafficEngineeringPolicyPanel() {
@@ -319,7 +321,7 @@ public class SDNControllerClientJFrame extends JFrame {
                 } else {
                     osRoutingMode = false;
                 }
-                showAndUpdateTablesPolicy();
+                jButtonRefreshInfoActionPerformed(null);
             }
         });
 
@@ -658,39 +660,39 @@ public class SDNControllerClientJFrame extends JFrame {
         refreshAdditionalComboBoxPanel();
     }
 
-    private void initGetOSLevelRoutePanel() {
-        getOSLevelRoutePanel = new JPanel();
-        getOSLevelRoutePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("OS Level Routing"));
+    private void initGetRouteIDPanel() {
+        getRouteIDPanel = new JPanel();
+        getRouteIDPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("OS Level Routing"));
 
-        getOSLevelRouteLabel = new JLabel("Destination Node ID:");
+        getRouteIDLabel = new JLabel("Destination Node ID:");
 
-        getOSLevelRouteDestinationNodeComboBox = new JComboBox();
+        getRouteIDDestinationNodeComboBox = new JComboBox();
         String[] empty = new String[0];
         DefaultComboBoxModel dcm = new DefaultComboBoxModel(empty);
-        getOSLevelRouteDestinationNodeComboBox.setModel(dcm);
+        getRouteIDDestinationNodeComboBox.setModel(dcm);
 
-        getOSLevelRouteButton = new JButton("Get Route");
-        getOSLevelRouteButton.addActionListener(new ActionListener() {
+        getRouteIDButton = new JButton("Get Route ID");
+        getRouteIDButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                jButtonGetOSLevelRouteActionPerformed(evt);
+                jButtonGetRouteIDActionPerformed(evt);
             }
         });
-        getOSLevelRouteButton.setEnabled(false);
+        getRouteIDButton.setEnabled(false);
 
-        GroupLayout getOSLevelRouteLayout = new GroupLayout(getOSLevelRoutePanel);
-        getOSLevelRoutePanel.setLayout(getOSLevelRouteLayout);
-        getOSLevelRouteLayout.setHorizontalGroup(getOSLevelRouteLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                .addComponent(getOSLevelRouteLabel, GroupLayout.DEFAULT_SIZE, 220, Short.MAX_VALUE)
-                .addComponent(getOSLevelRouteDestinationNodeComboBox, GroupLayout.DEFAULT_SIZE, 220, Short.MAX_VALUE)
-                .addComponent(getOSLevelRouteButton, GroupLayout.DEFAULT_SIZE, 220, Short.MAX_VALUE)
+        GroupLayout getRouteIDLayout = new GroupLayout(getRouteIDPanel);
+        getRouteIDPanel.setLayout(getRouteIDLayout);
+        getRouteIDLayout.setHorizontalGroup(getRouteIDLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addComponent(getRouteIDLabel, GroupLayout.DEFAULT_SIZE, 220, Short.MAX_VALUE)
+                .addComponent(getRouteIDDestinationNodeComboBox, GroupLayout.DEFAULT_SIZE, 220, Short.MAX_VALUE)
+                .addComponent(getRouteIDButton, GroupLayout.DEFAULT_SIZE, 220, Short.MAX_VALUE)
         );
-        getOSLevelRouteLayout.setVerticalGroup(getOSLevelRouteLayout.createSequentialGroup()
-                .addComponent(getOSLevelRouteLabel)
+        getRouteIDLayout.setVerticalGroup(getRouteIDLayout.createSequentialGroup()
+                .addComponent(getRouteIDLabel)
                 .addGap(5)
-                .addComponent(getOSLevelRouteDestinationNodeComboBox)
+                .addComponent(getRouteIDDestinationNodeComboBox)
                 .addGap(5)
-                .addComponent(getOSLevelRouteButton)
+                .addComponent(getRouteIDButton)
         );
     }
 
@@ -1106,13 +1108,13 @@ public class SDNControllerClientJFrame extends JFrame {
         sendPacketButton.setEnabled(true);
     }
 
-    private void jButtonGetOSLevelRouteActionPerformed(ActionEvent evt) {
+    private void jButtonGetRouteIDActionPerformed(ActionEvent evt) {
         /*
          * Retrieve all the info needed to call the getRouteId method.
          */
         String selectedPathSelectionMetric = availablePathSelectionMetricComboBox.getSelectedItem().toString();
         PathSelectionMetric pathSelectionMetric = PathSelectionMetric.valueOf(selectedPathSelectionMetric);
-        String destinationNode = getOSLevelRouteDestinationNodeComboBox.getSelectedItem().toString();
+        String destinationNode = getRouteIDDestinationNodeComboBox.getSelectedItem().toString();
         int destinationNodeId = availableClients.get(destinationNode).getServerNodeId();
 
         int routeId = SDNcontrollerClient.getRouteId(destinationNodeId, -1, applicationRequirements, pathSelectionMetric);
@@ -1177,7 +1179,7 @@ public class SDNControllerClientJFrame extends JFrame {
          */
         findControllerClientReceiverTextArea.setText("");
         getFlowIdButton.setEnabled(false);
-        getOSLevelRouteButton.setEnabled(false);
+        getRouteIDButton.setEnabled(false);
         sendPacketButton.setEnabled(false);
         addDestinationButton.setEnabled(false);
         resetDestinationButton.setEnabled(false);
@@ -1188,7 +1190,7 @@ public class SDNControllerClientJFrame extends JFrame {
         String[] emptyList = {};
         DefaultComboBoxModel emptyDcm = new DefaultComboBoxModel(emptyList);
         getFlowIDDestinationNodeComboBox.setModel(emptyDcm);
-        getOSLevelRouteDestinationNodeComboBox.setModel(emptyDcm);
+        getRouteIDDestinationNodeComboBox.setModel(emptyDcm);
 
         this.repaint();
         this.revalidate();
@@ -1230,8 +1232,7 @@ public class SDNControllerClientJFrame extends JFrame {
 
         if(osRoutingMode) {
             routeIDs = new HashMap<>();
-        }
-        if(routingPolicy == RoutingPolicy.MULTICASTING) {
+        } else if(routingPolicy == RoutingPolicy.MULTICASTING) {
             multicastFlowIDs = new HashMap<>();
         } else {
             unicastFlowIDs = new HashMap<>();
@@ -1264,8 +1265,7 @@ public class SDNControllerClientJFrame extends JFrame {
                     if (!routeIDs.containsKey(key)) {
                         routeIDs.put(key, new ArrayList<>());
                     }
-                }
-                if (routingPolicy != RoutingPolicy.MULTICASTING) {
+                } else if (routingPolicy != RoutingPolicy.MULTICASTING) {
                     serverNodeId = sr.getServerNodeId();
                     if (!unicastFlowIDs.containsKey(serverNodeId)) {
                         unicastFlowIDs.put(serverNodeId, new ArrayList<>());
@@ -1280,12 +1280,10 @@ public class SDNControllerClientJFrame extends JFrame {
             DefaultComboBoxModel dcm2 = new DefaultComboBoxModel(items);
 
             if(osRoutingMode) {
-                getOSLevelRouteDestinationNodeComboBox.setModel(dcm);
-                getOSLevelRouteButton.setEnabled(true);
+                getRouteIDDestinationNodeComboBox.setModel(dcm);
+                getRouteIDButton.setEnabled(true);
                 sendMessageDestinationIDComboBox.setModel(dcm2);
-            }
-
-            if(routingPolicy == RoutingPolicy.MULTICASTING) {
+            } else if(routingPolicy == RoutingPolicy.MULTICASTING) {
                 getFlowIDDestinationNodeComboBox.setModel(dcm);
                 getFlowIdButton.setEnabled(true);
                 if (availableClientsSize > 1) {
@@ -1395,7 +1393,7 @@ public class SDNControllerClientJFrame extends JFrame {
         flowPrioritiesPanel.setVisible(false);
         getFlowIDPanel.setVisible(false);
         additionalDestinationPanel.setVisible(false);
-        getOSLevelRoutePanel.setVisible(false);
+        getRouteIDPanel.setVisible(false);
         sendPacketDestinationIDLabel.setVisible(false);
         sendMessageDestinationIDComboBox.setVisible(false);
         multicastDestinationsPanel.setVisible(false);
@@ -1411,7 +1409,7 @@ public class SDNControllerClientJFrame extends JFrame {
 
         DefaultTableModel dtm;
         if(osRoutingMode) {
-            getOSLevelRoutePanel.setVisible(true);
+            getRouteIDPanel.setVisible(true);
             sendPacketDestinationIDLabel.setVisible(true);
             sendMessageDestinationIDComboBox.setVisible(true);
             sendPacketRouteIDLabel.setVisible(true);

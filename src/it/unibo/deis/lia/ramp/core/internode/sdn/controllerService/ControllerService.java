@@ -1152,7 +1152,7 @@ public class ControllerService extends Thread {
             }
 
             /*
-             * Get Ack from the intermediate node in order to inform the ControllerService that
+             * Get Ack from the client node in order to inform the ControllerService that
              * "ip route add" command has been successfully applied.
              */
             try {

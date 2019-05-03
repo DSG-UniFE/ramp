@@ -186,7 +186,7 @@ public class DataTypesManager implements DataTypesManagerInterface {
         String dataTypeFileName = dataPlaneMessage.getFileName();
         String dataTypeClassName = dataPlaneMessage.getClassName();
 
-        if (containsDataTypeByName(dataTypeClassName)) {
+        if (containsDataType(dataTypeClassName)) {
             System.out.println("DataTypeManager: user defined DataType: " + dataTypeClassName + "already exists.");
             return true;
         }
@@ -218,30 +218,30 @@ public class DataTypesManager implements DataTypesManagerInterface {
         removeDataTypeFromDataBase(dataTypeSimpleClassName);
     }
 
-    public long getDataTypeId(String dataTypeSimpleClassName) {
-        return dataTypesMappingByName.get(dataTypeSimpleClassName);
+    public long getDataTypeId(String dataTypeName) {
+        return dataTypesMappingByName.get(dataTypeName);
     }
 
     public String getDataTypeName(long dataTypeId) {
         return dataTypesMappingById.get(dataTypeId);
     }
 
-    public boolean containsDataTypeById(long dataTypeId) {
+    public boolean containsDataType(long dataTypeId) {
         return this.dataTypesMappingById.containsKey(dataTypeId);
     }
 
-    public boolean containsDataTypeByName(String dataTypeSimpleClassName) {
-        return this.dataTypesMappingByName.containsKey(dataTypeSimpleClassName);
+    public boolean containsDataType(String dataTypeName) {
+        return this.dataTypesMappingByName.containsKey(dataTypeName);
     }
 
     /**
      * Method to use in place of Class.forName for DataType Class object retrieval.
      *
-     * @param dataTypeSimpleClassName simple name of the DataType class
+     * @param dataTypeName simple name of the DataType class
      * @return the Class object of the provided dataType
      */
-    public Class getDataTypeClassObjectByName(String dataTypeSimpleClassName) {
-        return this.dataTypeClassMapping.get(dataTypeSimpleClassName);
+    public Class getDataTypeClassObject(String dataTypeName) {
+        return this.dataTypeClassMapping.get(dataTypeName);
     }
 
     /**
@@ -250,7 +250,7 @@ public class DataTypesManager implements DataTypesManagerInterface {
      * @param dataTypeId serialVersionUID of the DataType class
      * @return the Class object of the provided dataTypeId
      */
-    public Class getDataTypeClassObjectById(long dataTypeId) {
-        return getDataTypeClassObjectByName(getDataTypeName(dataTypeId));
+    public Class getDataTypeClassObjec(long dataTypeId) {
+        return getDataTypeClassObject(getDataTypeName(dataTypeId));
     }
 }

@@ -2,6 +2,9 @@ package it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesMan
 
 import java.io.Serializable;
 
+/**
+ * @author Dmitrij David Padalino Montenero
+ */
 public abstract class AbstractDataType implements Serializable {
     private static final long serialVersionUID = -6368488354603521877L;
 

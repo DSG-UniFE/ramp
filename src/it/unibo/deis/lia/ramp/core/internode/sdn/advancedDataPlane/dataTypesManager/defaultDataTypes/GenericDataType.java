@@ -4,6 +4,9 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesMana
 
 import java.io.Serializable;
 
+/**
+ * @author Dmitrij David Padalino Montenero
+ */
 public class GenericDataType extends AbstractDataType implements Serializable {
     private static final long serialVersionUID = 5906835222202954282L;
 
