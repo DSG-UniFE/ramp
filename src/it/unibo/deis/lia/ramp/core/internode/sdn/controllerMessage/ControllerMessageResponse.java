@@ -19,27 +19,34 @@ public class ControllerMessageResponse extends ControllerMessage {
 
     private String destIP;
 
-    private String viaIP;
+    private String viaIPForward;
+
+    private String viaIPBackward;
 
     private int routeId;
+
+    private int nodeId;
 
     /**
      * PATH_RESPONSE message: messageType, newPaths
      * MULTICAST_CONTROL message: messageType, flowId, newPaths
-     * OS_ROUTING_RESPONSE: messageType, routeId
-     * OS_ROUTING_ADD_ROUTE: messageType, srcIP, destIP, viaIP, routeId
+     * OS_ROUTING_PULL_RESPONSE: messageType, routeId
+     * OS_ROUTING_PUSH_RESPONSE: messageType, routeId, nodeId
+     * OS_ROUTING_ADD_ROUTE: messageType, srcIP, destIP, viaIPForward, routeId
      * OS_ROUTING_DELETE_ROUTE: messageType, routeId
      * TOPOLOGY_GRAPH_RESPONSE: messageType
      */
-    public ControllerMessageResponse(MessageType messageType, int clientPort, Map<String, NodeStats> nodeStats, int flowId, List<PathDescriptor> newPaths, String srcIP, String destIP, String viaIP, int routeId) {
+    public ControllerMessageResponse(MessageType messageType, int clientPort, Map<String, NodeStats> nodeStats, int flowId, List<PathDescriptor> newPaths, String srcIP, String destIP, String viaIPForward, String viaIPBackward, int routeId, int nodeId) {
         super(messageType, clientPort, nodeStats);
 
         this.flowId = flowId;
         this.newPaths = newPaths;
         this.srcIP = srcIP;
         this.destIP = destIP;
-        this.viaIP = viaIP;
+        this.viaIPForward = viaIPForward;
+        this.viaIPBackward = viaIPBackward;
         this.routeId = routeId;
+        this.nodeId = nodeId;
     }
 
     public ControllerMessageResponse(MessageType messageType, int flowId, List<PathDescriptor> newPaths) {
@@ -49,18 +56,22 @@ public class ControllerMessageResponse extends ControllerMessage {
         this.newPaths = newPaths;
         this.srcIP = null;
         this.destIP = null;
-        this.viaIP = null;
+        this.viaIPForward = null;
+        this.viaIPBackward = null;
         this.routeId = ControllerMessage.UNUSED_FIELD;
+        this.nodeId = ControllerMessage.UNUSED_FIELD;
     }
 
-    public ControllerMessageResponse(MessageType messageType, int clientPort, String srcIP, String destIP, String viaIP, int routeId) {
+    public ControllerMessageResponse(MessageType messageType, int clientPort, String srcIP, String destIP, String viaIPForward, String viaIPBackward, int routeId, int nodeId) {
         super(messageType, clientPort);
         this.flowId = ControllerMessage.UNUSED_FIELD;
         this.newPaths = null;
         this.srcIP = srcIP;
         this.destIP = destIP;
-        this.viaIP = viaIP;
+        this.viaIPForward = viaIPForward;
+        this.viaIPBackward = viaIPBackward;
         this.routeId = routeId;
+        this.nodeId = nodeId;
     }
 
     public int getFlowId() {
@@ -87,13 +98,25 @@ public class ControllerMessageResponse extends ControllerMessage {
 
     public void setDestIP(String destIP) { this.destIP = destIP; }
 
-    public String getViaIP() { return this.viaIP; }
+    public String getViaIPForward() { return this.viaIPForward; }
 
-    public void setViaIP(String viaIP) { this.viaIP = viaIP; }
+    public void setViaIPForward(String viaIPForward) { this.viaIPForward = viaIPForward; }
+
+    public String getViaIPBackward() {
+        return this.viaIPBackward;
+    }
+
+    public void setViaIPBackward(String viaIPBackward) {
+        this.viaIPBackward = viaIPBackward;
+    }
 
     public int getRouteId() {return this.routeId; }
 
     public void setRouteId(int routeId) { this.routeId = routeId; }
 
+    public int getNodeId() { return this.nodeId; }
 
+    public void setNodeId(int nodeId) {
+        this.nodeId = nodeId;
+    }
 }

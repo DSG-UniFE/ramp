@@ -159,6 +159,11 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
     private Map<Integer, List<PathDescriptor>> flowMulticastNextHops;
 
     /**
+     *
+     */
+    private Map<Integer, List<Integer>> routeIdsByDestination;
+
+    /**
      * This object will store the topology graph sent by the ControllerService when requested.
      * This graph could be used in case of fat ControllerClient, however the implementation of this ControllerClient
      * is a thin one so for the moment this functionality is used only for test purposes.
@@ -228,6 +233,8 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
 
         this.flowMulticastNextHops = new ConcurrentHashMap<>();
 
+        this.routeIdsByDestination = new ConcurrentHashMap<>();
+
         try {
             this.osRoutingManager = OsRoutingManager.getInstance();
         } catch (Exception e) {
@@ -296,24 +303,6 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
         return getFlowId(applicationRequirements, destNodeIds, destPorts, null);
     }
 
-//    public int getFlowId(ApplicationRequirements applicationRequirements, int[] destNodeIds, int[] destPorts, PathSelectionMetric pathSelectionMetric) {
-//        int flowId;
-//        if (applicationRequirements.getApplicationType() == ApplicationType.DEFAULT)
-//            flowId = DEFAULT_FLOW_ID;
-//        else {
-//            flowId = ThreadLocalRandom.current().nextInt();
-//            while (flowId == GenericPacket.UNUSED_FIELD || flowId == DEFAULT_FLOW_ID || this.flowStartTimes.containsKey(flowId))
-//                flowId = ThreadLocalRandom.current().nextInt();
-//            if (this.trafficEngineeringPolicy == TrafficEngineeringPolicy.REROUTING)
-//                sendNewPathRequest(destNodeIds, applicationRequirements, pathSelectionMetric, flowId);
-//            else if (this.trafficEngineeringPolicy == TrafficEngineeringPolicy.SINGLE_FLOW || this.trafficEngineeringPolicy == TrafficEngineeringPolicy.QUEUES || this.trafficEngineeringPolicy == TrafficEngineeringPolicy.TRAFFIC_SHAPING)
-//                sendNewPriorityValueRequest(applicationRequirements, flowId);
-//            else if (this.trafficEngineeringPolicy == TrafficEngineeringPolicy.MULTICASTING)
-//                sendNewMulticastRequest(destNodeIds, destPorts, applicationRequirements, pathSelectionMetric, flowId);
-//        }
-//        return flowId;
-//    }
-
     public int getFlowId(ApplicationRequirements applicationRequirements, int[] destNodeIds, int[] destPorts, PathSelectionMetric pathSelectionMetric) {
         int flowId;
         if (applicationRequirements.getApplicationType() == ApplicationType.DEFAULT)
@@ -332,6 +321,13 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             }
         }
         return flowId;
+    }
+
+    public List<Integer> getAvailableRouteIds(int destinationNodeId) {
+        if(this.routeIdsByDestination.containsKey(destinationNodeId)) {
+            return this.routeIdsByDestination.get(destinationNodeId);
+        }
+        return new ArrayList<>();
     }
 
     public int getRouteId(int destNodeId, int destPort, ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric) {
@@ -403,7 +399,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
         return (ConcurrentHashMap<Integer, PathDescriptor>) this.defaultFlowPaths;
     }
 
-    public ConcurrentHashMap<Integer, PathDescriptor> getFlowPath() {
+    public ConcurrentHashMap<Integer, PathDescriptor> getFlowPaths() {
         return (ConcurrentHashMap<Integer, PathDescriptor>) this.flowPaths;
     }
 
@@ -630,9 +626,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
         return nextHops;
     }
 
-    //TODO Improve signature
     private int sendOSLevelRoutingRequest(int[] destNodeIds, int[] destPorts, ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric) {
-        //List<PathDescriptor> nextHops = new ArrayList<PathDescriptor>();
         BoundReceiveSocket responseSocket = null;
         int routeId = -1;
         /*
@@ -668,8 +662,15 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             }
             if (payload instanceof ControllerMessageResponse) {
                 ControllerMessageResponse responseMessage = (ControllerMessageResponse) payload;
-                if (responseMessage.getMessageType() == MessageType.OS_ROUTING_RESPONSE) {
+                if (responseMessage.getMessageType() == MessageType.OS_ROUTING_PULL_RESPONSE) {
                     routeId = responseMessage.getRouteId();
+                    if(!this.routeIdsByDestination.containsKey(destNodeIds[0])) {
+                        List<Integer> routeIds = new ArrayList<>();
+                        routeIds.add(routeId);
+                        this.routeIdsByDestination.put(destNodeIds[0], routeIds);
+                    } else {
+                        this.routeIdsByDestination.get(destNodeIds[0]).add(routeId);
+                    }
                 }
             }
         }
@@ -857,6 +858,9 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                         case OS_ROUTING_ADD_ROUTE:
                             handleOsRoutingAddRoute((ControllerMessageResponse) controllerMessage);
                             break;
+                        case OS_ROUTING_PUSH_RESPONSE:
+                            handleOsRoutingPushResponseRoute((ControllerMessageResponse) controllerMessage);
+                            break;
                         case OS_ROUTING_DELETE_ROUTE:
                             handleOsRoutingDeleteRoute((ControllerMessageResponse) controllerMessage);
                             break;
@@ -885,51 +889,6 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             }
         }
 
-//        private void handleTrafficEngineeringPolicyUpdate(ControllerMessageUpdate updateMessage) {
-//            TrafficEngineeringPolicy newTrafficEngineeringPolicy = updateMessage.getTrafficEngineeringPolicy();
-//            if (flowDataPlaneForwarder != null) {
-//                flowDataPlaneForwarder.deactivate();
-//            }
-//
-//            // TODO Improve this
-//            if (trafficEngineeringPolicy == TrafficEngineeringPolicy.OS_ROUTING && newTrafficEngineeringPolicy != trafficEngineeringPolicy && osRoutingManager != null) {
-//                osRoutingManager.deactivate();
-//            }
-//
-//            switch (newTrafficEngineeringPolicy) {
-//                case REROUTING:
-//                    flowDataPlaneForwarder = BestPathForwarder.getInstance();
-//                    break;
-//                case SINGLE_FLOW:
-//                    flowDataPlaneForwarder = SinglePriorityForwarder.getInstance(routingDataPlaneForwarder);
-//                    break;
-//                case QUEUES:
-//                    flowDataPlaneForwarder = MultipleFlowsSinglePriorityForwarder.getInstance(routingDataPlaneForwarder);
-//                    break;
-//                case TRAFFIC_SHAPING:
-//                    flowDataPlaneForwarder = MultipleFlowsMultiplePrioritiesForwarder.getInstance(routingDataPlaneForwarder);
-//                    break;
-//                case MULTICASTING:
-//                    flowDataPlaneForwarder = MulticastingForwarder.getInstance();
-//                    break;
-//                case OS_ROUTING:
-//                    try {
-//                        osRoutingManager = OsRoutingManager.getInstance();
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                    }
-//                    break;
-//                case NO_FLOW_POLICY:
-//                    flowDataPlaneForwarder = null;
-//                    break;
-//                default:
-//                    break;
-//            }
-//
-//            trafficEngineeringPolicy = newTrafficEngineeringPolicy;
-//            System.out.println("ControllerClient: flow policy update (" + trafficEngineeringPolicy + ") received from the controller and successfully applied");
-//        }
-
         private void handleTrafficEngineeringPolicyUpdate(ControllerMessageUpdate updateMessage) {
             TrafficEngineeringPolicy newTrafficEngineeringPolicy = updateMessage.getTrafficEngineeringPolicy();
             if (flowDataPlaneForwarder != null) {
@@ -956,36 +915,6 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             trafficEngineeringPolicy = newTrafficEngineeringPolicy;
             System.out.println("ControllerClient: TrafficEngineeringPolicy update (" + trafficEngineeringPolicy + ") received from the controller and successfully applied");
         }
-
-        //        private void handleRoutingPolicyUpdate(ControllerMessageUpdate updateMessage) {
-//            RoutingPolicy newRoutingPolicy = updateMessage.getRoutingPolicy();
-//            if (routingDataPlaneForwarder != null) {
-//                routingDataPlaneForwarder.deactivate();
-//            }
-//            switch (newRoutingPolicy) {
-//                case REROUTING:
-//                    routingDataPlaneForwarder = BestPathForwarder.getInstance();
-//                    break;
-//                case MULTICASTING:
-//                    routingDataPlaneForwarder = MulticastingForwarder.getInstance();
-//                    break;
-//                case OS_ROUTING:
-//                    try {
-//                        osRoutingManager = OsRoutingManager.getInstance();
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                    }
-//                    break;
-//                case NO_ROUTING_POLICY:
-//                    routingDataPlaneForwarder = null;
-//                    break;
-//                default:
-//                    break;
-//            }
-//
-//            routingPolicy = newRoutingPolicy;
-//            System.out.println("ControllerClient: routing policy update (" + routingPolicy + ") received from the controller and successfully applied");
-//        }
 
         private void handleRoutingPolicyUpdate(ControllerMessageUpdate updateMessage) {
             RoutingPolicy newRoutingPolicy = updateMessage.getRoutingPolicy();
@@ -1041,15 +970,50 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
 
             String sourceIP = responseMessage.getSrcIP();
             String destinationIP = responseMessage.getDestIP();
-            String viaIP = responseMessage.getViaIP();
+            String viaIPForward = responseMessage.getViaIPForward();
+            String viaIPBackward = responseMessage.getViaIPBackward();
             int routeId = responseMessage.getRouteId();
 
             boolean success = false;
-            try {
-                success = osRoutingManager.addRoute(sourceIP, destinationIP, viaIP, routeId);
-            } catch (Exception e) {
-                e.printStackTrace();
+            boolean successForwardPath = false;
+            boolean successBackwardPath = false;
+
+            /*
+             * Both the addRoute commands are performed only by the intermediate nodes.
+             * The sender will perform only the first addRoute command towards the destination
+             * passing the check viaIPForward != null
+             *
+             * The receiver will perform only the second addRoute command towards the source
+             * passing the check viaIPBackward != null
+             */
+            if(viaIPForward != null) {
+                try {
+                    /*
+                     * Add Forward Route
+                     */
+                    successForwardPath = osRoutingManager.addRoute(sourceIP, destinationIP, viaIPForward, routeId);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else {
+                successForwardPath = true;
             }
+            if(successForwardPath && viaIPBackward != null) {
+                try {
+                    /*
+                     * Add Backward Route
+                     */
+                    successBackwardPath = osRoutingManager.addRoute(destinationIP, sourceIP, viaIPBackward, routeId);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else {
+                successBackwardPath = true;
+            }
+            if(successForwardPath && successBackwardPath) {
+                success = true;
+            }
+
             /*
              * Controller service has to be found before sending any message
              */
@@ -1085,6 +1049,18 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                     }
                     System.out.println("ControllerClient: OS_ROUTING_ADD_ROUTE for routeId: " + routeId + " received from the controller but not applied");
                 }
+            }
+        }
+
+        private void handleOsRoutingPushResponseRoute(ControllerMessageResponse responseMessage) {
+            int routeId = responseMessage.getRouteId();
+            int destinationNode = responseMessage.getNodeId();
+            if(!routeIdsByDestination.containsKey(destinationNode)) {
+                List<Integer> routeIds = new ArrayList<>();
+                routeIds.add(routeId);
+                routeIdsByDestination.put(destinationNode, routeIds);
+            } else {
+                routeIdsByDestination.get(destinationNode).add(routeId);
             }
         }
 

@@ -49,7 +49,7 @@ public class SDNControllerService {
         System.out.println("SDNControllerService FINISHED");
     }
 
-    public Iterator<Integer> getActiveClients() {
+    public Set<Integer> getActiveClients() {
         return controllerService.getActiveClients();
     }
 
@@ -86,19 +86,27 @@ public class SDNControllerService {
     }
 
     public boolean addUserDefinedDataType(String dataTypeFileName, File dataTypeFile) {
-        return  controllerService.addUserDefinedDataType(dataTypeFileName, dataTypeFile);
+        return controllerService.addUserDefinedDataType(dataTypeFileName, dataTypeFile);
     }
 
     public boolean addUserDefinedDataPlaneRule(String dataPlaneRuleFileName, File dataPlaneRuleFile) {
-        return  controllerService.addUserDefinedDataPlaneRule(dataPlaneRuleFileName, dataPlaneRuleFile);
+        return controllerService.addUserDefinedDataPlaneRule(dataPlaneRuleFileName, dataPlaneRuleFile);
     }
 
     public boolean addDataPlaneRule(String dataType, String dataPlaneRule) {
         return controllerService.addDataPlaneRule(dataType, dataPlaneRule);
     }
 
+    public boolean addDataPlaneRule(String dataType, String dataPlaneRule, List<Integer> clientsNodeToNotify) {
+        return controllerService.addDataPlaneRule(dataType, dataPlaneRule, clientsNodeToNotify);
+    }
+
     public void removeDataPlaneRule(String dataType, String dataPlaneRule) {
         controllerService.removeDataPlaneRule(dataType, dataPlaneRule);
+    }
+
+    public void removeDataPlaneRule(String dataType, String dataPlaneRule, List<Integer> clientsNodeToNotify) {
+        controllerService.removeDataPlaneRule(dataType, dataPlaneRule, clientsNodeToNotify);
     }
 
     private static void sleep(int sleepFor) {

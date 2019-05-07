@@ -19,16 +19,26 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Dmitrij David Padalino Montenero
  *
  * This component is able to enable static routing according to decisions taken at
- * the middleware level.
+ * the middleware level by using Policy-based routing mechanisms.
  * All the rules added by this manager are ephemeral i.e. they will not survive in case
  * of machine shutdown or restart.
  */
 public class OsRoutingManager {
+    /**
+     * SuperUser password.
+     */
     private static String superuserPassword = null;
 
+    /**
+     * Last timestamp at which the SuperUser privileges were acquired.
+     */
     private static long lastSuperuserPasswordRefresh = -1;
 
-    private static final long TIMEOUT_SU_PASSWORD = 180 * 1000; //Previously 10 * 1000
+    /**
+     * Timeout for SuperUser password validity, every time this timeout
+     * expires the SuperUser privileges are acquired again.
+     */
+    private static final long TIMEOUT_SU_PASSWORD = 180 * 1000;
     /**
      * Data structure to hold current local IP addresses to easily get the src IP address
      * for the "ip route add destIP via hopIP src srcIP".
@@ -51,9 +61,9 @@ public class OsRoutingManager {
      * and by this manager to delete a route when it expires.
      *
      * The key contains the routeId.
-     * The value contains an IpRouteRule object.
+     * The value contains a list of IpRouteRule objects.
      */
-    private Map<Integer, IpRouteRule> currentRoutes;
+    private Map<Integer, List<IpRouteRule>> currentRoutes;
 
     /**
      * Data structure to keep tack of the current ip rule added
@@ -148,7 +158,9 @@ public class OsRoutingManager {
         if (RampEntryPoint.os.startsWith("windows")) {
             System.out.println("OSRoutingManager: remember to activate the IPEnableRouter registry key");
             System.out.println("OSRoutingManager: windows users must be administrators");
-            // TODO Check if it is possible to change the Windows Registry from here
+            /*
+             * Future work: Check if it is possible to change the Windows Registry from here
+             */
         } else if (RampEntryPoint.os.startsWith("linux")) {
             try {
                 sudoCommand("sysctl -w net.ipv4.ip_forward=1");
@@ -208,7 +220,18 @@ public class OsRoutingManager {
 
     public boolean addRoute(String sourceIP, String destinationIP, String viaIP, int routeId) {
         if (RampEntryPoint.os.startsWith("windows")) {
-            // TODO Windows
+            /*
+             * Future Work: implements this feature for Windows. Since iproute2 is not
+             * available for Windows at the moment we should use another Policy-based
+             * routing library.
+             * Tips: remove from here the functions related to sudoCommand and create a factory
+             * that depending on the operating systems returns an object able to perform the Policy-based
+             * routing operations.
+             * So functions like addRoute, deleteRoute and so on will become the methods of an interface or
+             * an abstract class and each os-dependent object returned by the factory will implement
+             * these methods according to the Policy-based routing mechanism available for that
+             * particular operating system.
+             */
             System.out.println("OSRoutingManager: Unsupported Operating System: " + System.getProperty("os.name"));
             return false;
         } else if (RampEntryPoint.os.startsWith("linux")) {
@@ -252,9 +275,10 @@ public class OsRoutingManager {
                 }
 
                 /*
-                 * Check if this destIP has already this srcIP associated, if so
-                 * it is not possible to select this route so let's discover
-                 * if exists another interface to reach the next hop.
+                 * Check if this destIP has already this srcIP associated,
+                 * if the association exists it is not possible to select
+                 * this route so let's discover if exists another interface
+                 * to reach the next hop.
                  */
                 if (this.currentDestinationsSourceIps.containsKey(destinationIP)) {
                     List<String> existingSources = this.currentDestinationsSourceIps.get(destinationIP);
@@ -349,7 +373,9 @@ public class OsRoutingManager {
                     /*
                      * Everything is fine so we can keep track of this routeId.
                      */
-                    this.currentRules.put(routeId, sourceIP);
+                    if(isSender) {
+                        this.currentRules.put(routeId, sourceIP);
+                    }
                 }
 
                 /*
@@ -365,7 +391,13 @@ public class OsRoutingManager {
                     this.currentDestinationsSourceIps.get(destinationIP).add(sourceIP);
                 }
 
-                this.currentRoutes.put(routeId, addRouteRule);
+                if(!this.currentRoutes.containsKey(routeId)) {
+                    List<IpRouteRule> rulesList = new ArrayList<>();
+                    rulesList.add(addRouteRule);
+                    this.currentRoutes.put(routeId, rulesList);
+                } else {
+                    this.currentRoutes.get(routeId).add(addRouteRule);
+                }
 
                 return true;
             } catch (Exception e) {
@@ -385,46 +417,48 @@ public class OsRoutingManager {
      */
     public void deleteRoute(int routeId) {
         if (RampEntryPoint.os.startsWith("windows")) {
-            // TODO Windows
             System.out.println("OSRoutingManager: Unsupported Operating System: " + System.getProperty("os.name"));
         } else if (RampEntryPoint.os.startsWith("linux")) {
-            String sudoCommandResult = "";
             String deleteRouteCommand;
 
             /*
              * Retrieve the info used for the "ip route add" command
              * associated to this routeId.
              */
-            IpRouteRule addRouteRule = this.currentRoutes.get(routeId);
+            List<IpRouteRule> addRouteRules = this.currentRoutes.get(routeId);
 
-            String sourceIP = addRouteRule.getSourceIP();
-            String viaIP = addRouteRule.getViaIP();
-            String destinationIP = addRouteRule.getDestinationIP();
+            for(IpRouteRule ipRouteRule : addRouteRules) {
+                String sourceIP = ipRouteRule.getSourceIP();
+                String viaIP = ipRouteRule.getViaIP();
+                String destinationIP = ipRouteRule.getDestinationIP();
 
-            /*
-             * Retrieve the routing table name containing this route.
-             */
-            String ruleSourceIP = this.currentRules.get(routeId);
-            String localTableName = this.routingLocalTables.get(ruleSourceIP).getTableName();
-
-
-            if(sourceIP != null) {
                 /*
-                 * This node is the sender of this routeId.
+                 * Retrieve the routing table name containing this route.
                  */
-                deleteRouteCommand = "ip route del " + destinationIP + " via " + viaIP + " src " + sourceIP + " table " + localTableName;
-            } else {
-                /*
-                 * This node is an intermediate node for this routeId.
-                 */
-                deleteRouteCommand = "ip route del " + destinationIP + " via " + viaIP + " table " + localTableName;
-            }
+                String ruleSourceIP = this.currentRules.get(routeId);
+                String localTableName = this.routingLocalTables.get(ruleSourceIP).getTableName();
 
-            System.out.println("OSRoutingManager " + deleteRouteCommand);
-            try {
-                sudoCommandResult = sudoCommand(deleteRouteCommand);
-            } catch (Exception e) {
-                e.printStackTrace();
+
+                if(sourceIP != null) {
+                    /*
+                     * This node is the sender of this routeId.
+                     */
+                    deleteRouteCommand = "ip route del " + destinationIP + " via " + viaIP + " src " + sourceIP + " table " + localTableName;
+                } else {
+                    /*
+                     * This node is an intermediate node for this routeId.
+                     */
+                    deleteRouteCommand = "ip route del " + destinationIP + " via " + viaIP + " table " + localTableName;
+                }
+
+                System.out.println("OSRoutingManager " + deleteRouteCommand);
+                try {
+                    sudoCommand(deleteRouteCommand);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                this.currentDestinationsSourceIps.get(destinationIP).remove(sourceIP);
             }
 
             /*
@@ -434,7 +468,7 @@ public class OsRoutingManager {
 
             this.currentRules.remove(routeId);
             this.currentRoutes.remove(routeId);
-            this.currentDestinationsSourceIps.get(destinationIP).remove(sourceIP);
+
 
         } else {
             System.out.println("OSRoutingManager: Unsupported Operating System: " + System.getProperty("os.name"));
@@ -496,7 +530,7 @@ public class OsRoutingManager {
                     e.printStackTrace();
                 }
                 try {
-                    commandResult = sudoCommand(grepCommand);
+                    commandResult = sudoCommand(grepCommand, 1);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -553,8 +587,8 @@ public class OsRoutingManager {
      */
     public String getRouteIdSourceIpAddress(int routeId) {
         String result = null;
-        if (this.currentRoutes.containsKey(routeId)) {
-            result = this.currentRoutes.get(routeId).getSourceIP();
+        if (this.currentRules.containsKey(routeId)) {
+            result = this.currentRules.get(routeId);
         }
         return result;
     }
@@ -568,8 +602,14 @@ public class OsRoutingManager {
      */
     public String getRouteIdDestinationIpAddress(int routeId) {
         String result = null;
-        if (this.currentRoutes.containsKey(routeId)) {
-            result = this.currentRoutes.get(routeId).getDestinationIP();
+        if (this.currentRules.containsKey(routeId)) {
+            String sourceIp = this.currentRules.get(routeId);
+            for(IpRouteRule ipRouteRule : this.currentRoutes.get(routeId)) {
+                if(ipRouteRule.getSourceIP().equals(sourceIp)) {
+                    result = ipRouteRule.getDestinationIP();
+                    break;
+                }
+            }
         }
         return result;
     }
@@ -647,8 +687,11 @@ public class OsRoutingManager {
             setupSuperUserCredentials(superuserPassword);
         }
     }
-
     private static String sudoCommand(String command) {
+        return sudoCommand(command, 0);
+    }
+
+    private static String sudoCommand(String command, int exitValue) {
         refreshSuperUserCredentials();
 
         String sudoCommand = "sudo " + command;
@@ -658,6 +701,9 @@ public class OsRoutingManager {
         ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
 
         DefaultExecutor exec = new DefaultExecutor();
+        if(exitValue != 0) {
+            exec.setExitValue(exitValue);
+        }
         PumpStreamHandler streamHandler = new PumpStreamHandler(stdOut, stdErr);
         exec.setStreamHandler(streamHandler);
         try {

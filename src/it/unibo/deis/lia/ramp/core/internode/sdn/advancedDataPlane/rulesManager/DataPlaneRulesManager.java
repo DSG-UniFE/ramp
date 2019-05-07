@@ -369,9 +369,10 @@ public class DataPlaneRulesManager {
                 rules.add(dataPlaneRuleName);
                 activeDataPlaneRules.put(dataTypeId, rules);
             } else {
-                activeDataPlaneRules.get(dataTypeId).add(dataPlaneRuleName);
+                if(!activeDataPlaneRules.get(dataTypeId).contains(dataPlaneRuleName)) {
+                    activeDataPlaneRules.get(dataTypeId).add(dataPlaneRuleName);
+                }
             }
-
             return true;
         }
         return false;

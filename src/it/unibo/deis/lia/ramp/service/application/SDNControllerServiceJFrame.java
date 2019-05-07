@@ -55,6 +55,11 @@ public class SDNControllerServiceJFrame extends JFrame {
     private JComboBox dataPlaneRulesAvailableDataTypesComboBox;
     private JLabel dataPlaneRulesRuleLabel;
     private JComboBox dataPlaneRulesAvailableRulesComboBox;
+    private Vector<JComboBox> allDataPlaneClientNodesToNotifyComboBox;
+    private JPanel dataPlaneClientNodesToNotifyPanel;
+    private JPanel dataPlaneClientNodesToNotifyComboBoxPanel;
+    private JButton addClientNodesToNotifyButton;
+    private JButton resetClientNodesToNotifyButton;
     private JButton addRuleButton;
     private JButton removeRuleButton;
 
@@ -110,8 +115,8 @@ public class SDNControllerServiceJFrame extends JFrame {
                                 )
                                 .addGap(20)
                                 .addGroup(layout.createParallelGroup()
-                                        .addComponent(dataTypesPanel, GroupLayout.PREFERRED_SIZE, 238, GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(dataPlaneRulesPanel, GroupLayout.PREFERRED_SIZE, 238, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(dataTypesPanel, GroupLayout.PREFERRED_SIZE, 250, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(dataPlaneRulesPanel, GroupLayout.PREFERRED_SIZE, 250, GroupLayout.PREFERRED_SIZE)
                                 )
                                 .addGap(20)
                                 .addGroup(layout.createParallelGroup()
@@ -379,6 +384,8 @@ public class SDNControllerServiceJFrame extends JFrame {
 
         fillDataPlaneRulesComboBoxes();
 
+        initDataPlaneClientNodesToNotifyPanel();
+
         addRuleButton = new JButton("Add Data Plane Rule");
         addRuleButton.addActionListener(new ActionListener() {
             @Override
@@ -405,6 +412,7 @@ public class SDNControllerServiceJFrame extends JFrame {
                 .addComponent(dataPlaneRulesAvailableDataTypesComboBox, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
                 .addComponent(dataPlaneRulesRuleLabel, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
                 .addComponent(dataPlaneRulesAvailableRulesComboBox, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                .addComponent(dataPlaneClientNodesToNotifyPanel, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
                 .addComponent(addRuleButton, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
                 .addComponent(removeRuleButton, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
         );
@@ -422,6 +430,8 @@ public class SDNControllerServiceJFrame extends JFrame {
                 .addComponent(dataPlaneRulesRuleLabel)
                 .addGap(5)
                 .addComponent(dataPlaneRulesAvailableRulesComboBox)
+                .addGap(5)
+                .addComponent(dataPlaneClientNodesToNotifyPanel)
                 .addGap(5)
                 .addComponent(addRuleButton)
                 .addGap(5)
@@ -466,6 +476,100 @@ public class SDNControllerServiceJFrame extends JFrame {
         dataPlaneRulesAvailableRulesComboBox.setModel(rulesDcm);
     }
 
+    private void initDataPlaneClientNodesToNotifyPanel() {
+        this.allDataPlaneClientNodesToNotifyComboBox = new Vector<>(0);
+
+        dataPlaneClientNodesToNotifyPanel = new JPanel();
+        dataPlaneClientNodesToNotifyComboBoxPanel = new JPanel();
+
+        addClientNodesToNotifyButton = new JButton("Add Client");
+        addClientNodesToNotifyButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                jButtonAddClientNodesToNotifyActionPerformed(evt);
+            }
+        });
+
+        resetClientNodesToNotifyButton = new JButton("Reset");
+        resetClientNodesToNotifyButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                jButtonResetClientNodesToNotifyActionPerformed(evt);
+            }
+        });
+
+        GroupLayout layout = new GroupLayout(dataPlaneClientNodesToNotifyPanel);
+        dataPlaneClientNodesToNotifyPanel.setLayout(layout);
+        layout.setHorizontalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addComponent(dataPlaneClientNodesToNotifyComboBoxPanel, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                .addGroup(layout.createSequentialGroup()
+                        .addComponent(addClientNodesToNotifyButton, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                        .addComponent(resetClientNodesToNotifyButton, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE)
+                )
+        );
+        layout.setVerticalGroup(layout.createSequentialGroup()
+                .addComponent(dataPlaneClientNodesToNotifyComboBoxPanel)
+                .addGap(5)
+                .addGroup(layout.createParallelGroup()
+                        .addComponent(addClientNodesToNotifyButton)
+                        .addComponent(resetClientNodesToNotifyButton)
+                )
+        );
+
+        refreshAdditionalComboBoxPanel();
+    }
+
+    private void jButtonAddClientNodesToNotifyActionPerformed(ActionEvent evt) {
+        JComboBox comboBox = new JComboBox();
+        Set<Integer> availableClients = SDNControllerService.getActiveClients();
+        int availableClientsSize = availableClients.size();
+        if(availableClientsSize > 0) {
+            String[] items = new String[availableClientsSize];
+            int i = 0;
+            for (Integer clientNodeId : availableClients) {
+                items[i] = "" + clientNodeId;
+                i++;
+            }
+            comboBox.setModel(new DefaultComboBoxModel(items));
+            allDataPlaneClientNodesToNotifyComboBox.add(comboBox);
+            refreshAdditionalComboBoxPanel();
+        }
+
+    }
+
+    private void refreshAdditionalComboBoxPanel() {
+        GroupLayout layout = new GroupLayout(dataPlaneClientNodesToNotifyComboBoxPanel);
+        dataPlaneClientNodesToNotifyComboBoxPanel.setLayout(layout);
+
+        if (allDataPlaneClientNodesToNotifyComboBox.size() > 0) {
+            layout = new GroupLayout(dataPlaneClientNodesToNotifyComboBoxPanel);
+            dataPlaneClientNodesToNotifyComboBoxPanel.setLayout(layout);
+            GroupLayout.ParallelGroup parallelGroup = layout.createParallelGroup(GroupLayout.Alignment.LEADING);
+            GroupLayout.SequentialGroup sequentialGroup = layout.createSequentialGroup();
+            for (int i = 0; i < allDataPlaneClientNodesToNotifyComboBox.size(); i++) {
+                JComboBox element = allDataPlaneClientNodesToNotifyComboBox.get(i);
+                parallelGroup.addComponent(element, GroupLayout.DEFAULT_SIZE, 238, Short.MAX_VALUE);
+                sequentialGroup.addGap(5);
+                sequentialGroup.addComponent(element);
+            }
+            layout.setHorizontalGroup(parallelGroup);
+            layout.setVerticalGroup(sequentialGroup);
+
+            resetClientNodesToNotifyButton.setEnabled(true);
+        }
+
+        /*
+         * Print again the JFrame to perform layout recalculation
+         */
+        this.repaint();
+        this.revalidate();
+    }
+
+    private void jButtonResetClientNodesToNotifyActionPerformed(ActionEvent evt) {
+        this.allDataPlaneClientNodesToNotifyComboBox = new Vector<>(0);
+        refreshAdditionalComboBoxPanel();
+    }
+
     private void initDataPlaneActiveRulesPanel() {
         dataPlaneActiveRulesPanel = new JPanel();
         dataPlaneActiveRulesPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Data Plane Active Rules"));
@@ -504,7 +608,7 @@ public class SDNControllerServiceJFrame extends JFrame {
         try {
             String text = "";
             int i = 0;
-            Iterator<Integer> activeClients = this.SDNControllerService.getActiveClients();
+            Iterator<Integer> activeClients = this.SDNControllerService.getActiveClients().iterator();
             while (activeClients.hasNext()) {
                 text = text + i + " " + activeClients.next() + "\n";
                 i++;
@@ -609,7 +713,17 @@ public class SDNControllerServiceJFrame extends JFrame {
         String dataType = dataPlaneRulesAvailableDataTypesComboBox.getSelectedItem().toString();
         String dataPlaneRule = dataPlaneRulesAvailableRulesComboBox.getSelectedItem().toString();
 
-        boolean result = SDNControllerService.addDataPlaneRule(dataType, dataPlaneRule);
+        boolean result;
+        if (allDataPlaneClientNodesToNotifyComboBox.size() > 0) {
+            List<Integer> clientsNodeToNotify = new ArrayList<>();
+            for (int i = 0; i < allDataPlaneClientNodesToNotifyComboBox.size(); i++) {
+                int clientNode = Integer.parseInt(allDataPlaneClientNodesToNotifyComboBox.get(i).getSelectedItem().toString());
+                clientsNodeToNotify.add(clientNode);
+            }
+            result = SDNControllerService.addDataPlaneRule(dataType, dataPlaneRule, clientsNodeToNotify);
+        } else {
+            result = SDNControllerService.addDataPlaneRule(dataType, dataPlaneRule);
+        }
 
         if (!result) {
             JOptionPane.showMessageDialog(null, "It is not possible to add the data plane rule for this data type.");
@@ -620,7 +734,16 @@ public class SDNControllerServiceJFrame extends JFrame {
         String dataType = dataPlaneRulesAvailableDataTypesComboBox.getSelectedItem().toString();
         String dataPlaneRule = dataPlaneRulesAvailableRulesComboBox.getSelectedItem().toString();
 
-        SDNControllerService.removeDataPlaneRule(dataType, dataPlaneRule);
+        if (allDataPlaneClientNodesToNotifyComboBox.size() > 0) {
+            List<Integer> clientsNodeToNotify = new ArrayList<>();
+            for (int i = 0; i < allDataPlaneClientNodesToNotifyComboBox.size(); i++) {
+                int clientNode = Integer.parseInt(allDataPlaneClientNodesToNotifyComboBox.get(i).getSelectedItem().toString());
+                clientsNodeToNotify.add(clientNode);
+            }
+            SDNControllerService.removeDataPlaneRule(dataType, dataPlaneRule, clientsNodeToNotify);
+        } else {
+            SDNControllerService.removeDataPlaneRule(dataType, dataPlaneRule);
+        }
     }
 
     private void jButtonRefreshActiveRulesActionPerformed(ActionEvent evt) {

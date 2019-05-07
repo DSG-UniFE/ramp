@@ -39,12 +39,15 @@ public class ControllerMessageUpdate extends ControllerMessage {
 
     private String dataPlaneRule;
 
+    // TODO Change OS_ROUTING_ADD_ROUTE and OS_ROUTING_DELETE_ROUTE
     /**
      * TOPOLOGY_UPDATE message: messageType, neighborNodes, nodeStats
      * TRAFFIC_ENGINEERING_POLICY_UPDATE message: messageType, trafficEngineeringPolicy
      * ROUTING_POLICY_UPDATE: messageType, routingPolicy
      * DEFAULT_FLOW_PATHS_UPDATE message: messageType, newPathMappings
      * FLOW_PRIORITIES_UPDATE message: messageType, flowPriorities
+     * OS_ROUTING_ADD_ROUTE: messageType, srcIP, destIP, viaIP, routeId
+     * OS_ROUTING_DELETE_ROUTE: messageType, routeId
      * DATA_PLANE_ADD_DATA_TYPE message: messageType, DataPlaneMessage
      * DATA_PLANE_REMOVE_DATA_TYPE message: messageType, dataType
      * DATA_PLANE_ADD_RULE_FILE message: messageType, DataPlaneMessage

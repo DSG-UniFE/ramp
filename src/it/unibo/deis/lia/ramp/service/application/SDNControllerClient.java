@@ -24,9 +24,9 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.*;
-import java.util.List;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -40,6 +40,9 @@ public class SDNControllerClient {
     private BoundReceiveSocket receiveSocketUDP;
     private DatagramSocket datagramSocketUDP;
     private ServerSocket serverSocketTCP;
+    private BlockingQueue<GenericPacket> rampMessageQueue;
+    private BlockingQueue<DatagramPacket> osRoutingMessageQueueUDP;
+    private BlockingQueue<Socket> osRoutingMessageQueueTCP;
     private Vector<String> receivedMessages;
     private int seqNumber = 0;
     private Vector<ServiceResponse> availableServices;
@@ -83,7 +86,7 @@ public class SDNControllerClient {
         ServiceManager.getInstance(false).registerService("SDNControllerClientReceiverUDP", receiveSocketUDP.getLocalPort(), UDP);
 
         try {
-            this.serverSocketTCP = new ServerSocket();
+            this.serverSocketTCP = new ServerSocket(0);
             this.serverSocketTCP.setReuseAddress(true);
         } catch (IOException e) {
             e.printStackTrace();
@@ -92,7 +95,7 @@ public class SDNControllerClient {
         ServiceManager.getInstance(false).registerService("SDNControllerClientReceiverServerSocketTCP", serverSocketTCP.getLocalPort(), TCP);
 
         try {
-            this.datagramSocketUDP = new DatagramSocket();
+            this.datagramSocketUDP = new DatagramSocket(0);
             this.datagramSocketUDP.setReuseAddress(true);
         } catch (SocketException e) {
             e.printStackTrace();
@@ -100,9 +103,17 @@ public class SDNControllerClient {
 
         ServiceManager.getInstance(false).registerService("SDNControllerClientReceiverDatagramSocketUDP", datagramSocketUDP.getLocalPort(), UDP);
 
+        rampMessageQueue = new ArrayBlockingQueue<>(1200);
+        osRoutingMessageQueueUDP = new ArrayBlockingQueue<>(1200);
+        osRoutingMessageQueueTCP = new ArrayBlockingQueue<>(1200);
         receivedMessages = new Vector<>();
+
+        new BoundReceiveSocketMessageHandler(rampMessageQueue).start();
         new SDNControllerClient.BoundReceiveSocketListener(receiveSocketTCP, "TCP").start();
         new SDNControllerClient.BoundReceiveSocketListener(receiveSocketUDP, "UDP").start();
+
+        new DatagramSocketMessageHandler(osRoutingMessageQueueUDP).start();
+        new ServiceSocketMessageHandler(osRoutingMessageQueueTCP).start();
         new ServerSocketListener(serverSocketTCP, "TCP").start();
         new DatagramSocketListener(datagramSocketUDP, "UDP").start();
         ccjf = new SDNControllerClientJFrame(this);
@@ -178,6 +189,10 @@ public class SDNControllerClient {
         return controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts, pathSelectionMetric);
     }
 
+    public List<Integer> getAvailableRouteIds(int destinationNodeId) {
+        return controllerClient.getAvailableRouteIds(destinationNodeId);
+    }
+
     public int getRouteId(int destNodeId, int destPort, ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric) {
         return controllerClient.getRouteId(destNodeId, destPort, applicationRequirements, pathSelectionMetric);
     }
@@ -187,7 +202,7 @@ public class SDNControllerClient {
     }
 
     public ConcurrentHashMap<Integer, PathDescriptor> getFlowPath() {
-        return controllerClient.getFlowPath();
+        return controllerClient.getFlowPaths();
     }
 
     public ConcurrentHashMap<Integer, Integer> getFlowPriorities() {
@@ -229,10 +244,10 @@ public class SDNControllerClient {
 
     private int getServicePortByIpAddress(String serviceIp) {
         int servicePort = -1;
-        for(ServiceResponse serviceResponse : availableServices) {
+        for (ServiceResponse serviceResponse : availableServices) {
             int getServerDestLen = serviceResponse.getServerDest().length;
             String destinationIP = serviceResponse.getServerDest()[getServerDestLen - 1];
-            if(destinationIP.equals(serviceIp)) {
+            if (destinationIP.equals(serviceIp)) {
                 servicePort = serviceResponse.getServerPort();
                 break;
             }
@@ -269,7 +284,7 @@ public class SDNControllerClient {
             paramInt[0] = Integer.TYPE;
             Method method = null;
 
-            if(!this.dataType.equals("Default Message")) {
+            if (!this.dataType.equals("Default Message")) {
                 try {
                     cls = dataTypesManager.getDataTypeClassObject(this.dataType);
                     packet = cls.getDeclaredConstructor().newInstance();
@@ -300,7 +315,7 @@ public class SDNControllerClient {
 
             for (int i = 0; i < repetitions; i++) {
                 int seqNumber = getNextSeqNumber();
-                if(!this.dataType.equals("Default Message")) {
+                if (!this.dataType.equals("Default Message")) {
                     try {
                         method = cls.getMethod("setSeqNumber", paramInt);
                         method.invoke(packet, seqNumber);
@@ -334,6 +349,13 @@ public class SDNControllerClient {
                             E2EComm.serialize(packet)
                     );
                 } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                // Wait 2 ms before sending the next message
+                try {
+                    Thread.sleep(2);
+                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
@@ -398,6 +420,12 @@ public class SDNControllerClient {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+                // Wait 2 ms before sending the next message
+                try {
+                    Thread.sleep(2);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
             System.out.println("SDNControllerClient.MulticastPacketSender: multicast message sent to the receivers");
         }
@@ -440,7 +468,7 @@ public class SDNControllerClient {
             }
 
             for (int i = 0; i < repetitions; i++) {
-                SDNControllerMessage packet = new SDNControllerMessage(getNextSeqNumber(), payload);
+                SDNControllerMessage packet = new SDNControllerMessage(getNextSeqNumber(), this.payload);
                 System.out.println("SDNControllerClient.DatagramSocketPacketSender: sending Packet \""
                         + packet.getSeqNumber() + "\" to the receiver (nodeId: " + serviceResponse.getServerNodeId() + "), IP: " + destinationIP + ", Protocol: TCP");
 
@@ -462,6 +490,12 @@ public class SDNControllerClient {
                 try {
                     this.socket.send(dp);
                 } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                // Wait 2 ms before sending the next message
+                try {
+                    Thread.sleep(2);
+                } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
@@ -498,29 +532,28 @@ public class SDNControllerClient {
             String destinationIP = controllerClient.getRouteIdDestinationIpAddress(this.routeId);
             int port = getServicePortByIpAddress(destinationIP);
 
-            try {
-                this.socket = new Socket(InetAddress.getByName(destinationIP), port, sourceIpAddress, 0);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
             OutputStream outputStream = null;
             ObjectOutputStream objectOutputStream = null;
-            try {
-                outputStream = this.socket.getOutputStream();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            try {
-                objectOutputStream = new ObjectOutputStream(outputStream);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
 
             for (int i = 0; i < repetitions; i++) {
-                SDNControllerMessage packet = new SDNControllerMessage(getNextSeqNumber(), payload);
+                try {
+                    this.socket = new Socket(InetAddress.getByName(destinationIP), port, sourceIpAddress, 0);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    outputStream = this.socket.getOutputStream();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    objectOutputStream = new ObjectOutputStream(outputStream);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                SDNControllerMessage packet = new SDNControllerMessage(getNextSeqNumber(), this.payload);
                 System.out.println("SDNControllerClient.ServerSocketPacketSender: sending Packet \""
                         + packet.getSeqNumber() + "\" to the receiver (nodeId: " + serviceResponse.getServerNodeId() + "), IP: " + destinationIP + ", Protocol: TCP");
                 if (objectOutputStream != null) {
@@ -530,13 +563,18 @@ public class SDNControllerClient {
                         e.printStackTrace();
                     }
                 }
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                // Wait 2 ms before sending the next message
+                try {
+                    Thread.sleep(2);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
             System.out.println("SDNControllerClient.ServerSocketPacketSender: packet/s sent to the receiver");
         }
     }
@@ -563,7 +601,7 @@ public class SDNControllerClient {
                      */
                     gp = E2EComm.receive(socket, 5 * 1000);
                     System.out.println("SDNControllerClient" + protocol + ": new message arrived");
-                    new SDNControllerClient.BoundReceiveSocketMessageHandler(gp).start();
+                    rampMessageQueue.put(gp);
                 } catch (SocketTimeoutException ste) {
                     //
                 } catch (IOException e) {
@@ -580,57 +618,70 @@ public class SDNControllerClient {
         }
     }
 
-    private class BoundReceiveSocketMessageHandler extends Thread {
-        private GenericPacket gp;
+    public class BoundReceiveSocketMessageHandler extends Thread {
 
-        private BoundReceiveSocketMessageHandler(GenericPacket gp) {
-            this.gp = gp;
+        private final BlockingQueue<GenericPacket> messageQueue;
+
+        public BoundReceiveSocketMessageHandler(BlockingQueue<GenericPacket> messageQueue) {
+            this.messageQueue = messageQueue;
         }
 
         @Override
         public void run() {
-            try {
-                /*
-                 * Check packet type
-                 */
-                if (gp instanceof UnicastPacket) {
-                    /*
-                     * Check payload
-                     */
-                    UnicastPacket up = (UnicastPacket) gp;
-                    Object payload = E2EComm.deserialize(up.getBytePayload());
-                    if (payload instanceof SDNControllerMessage) {
-                        int seqNumber = ((SDNControllerMessage) payload).getSeqNumber();
-                        int payloadSize = ((SDNControllerMessage) payload).getPayloadSize();
-                        String packetInfo = "BoundReceiveSocketMessageHandler: Default Message: " + seqNumber + ", payloadSize " + payloadSize + ", from " + up.getSourceNodeId();
-                        receivedMessages.addElement(packetInfo);
-                        System.out.println("SDNControllerClient.BoundReceiveSocketMessageHandler message: " + packetInfo);
-                    } else if(dataTypesManager.containsDataType(payload.getClass().getSimpleName())) {
-                        String dataType = payload.getClass().getSimpleName();
-                        Class cls = dataTypesManager.getDataTypeClassObject(dataType);
-                        Class noparams[] = {};
-                        Method method =  cls.getMethod("getSeqNumber", noparams);
-                        int seqNumber = (int) method.invoke(payload, null);
-                        method = cls.getMethod("getPayloadSize", noparams);
-                        int payloadSize = (int) method.invoke(payload, null);
-                        String packetInfo = "BoundReceiveSocketMessageHandler: " + dataType + ": " + seqNumber + ", payloadSize " + payloadSize + ", from " + up.getSourceNodeId();
-                        receivedMessages.addElement(packetInfo);
-                        System.out.println("SDNControllerClient.BoundReceiveSocketMessageHandler message: " + packetInfo);
-                    } else {
+            while (active) {
+                try {
+                    GenericPacket gp = this.messageQueue.take();
+                    try {
                         /*
-                         * Received payload is not SDNControllerMessage: do nothing...
+                         * Check packet type
                          */
-                        System.out.println("SDNControllerClient.BoundReceiveSocketMessageHandler wrong payload: " + payload);
-                    }
-                } else {
-                    /*
-                     * Received packet is not UnicastPacket: do nothing...
-                     */
-                    System.out.println("SDNControllerClient.BoundReceiveSocketMessageHandler wrong packet: " + gp.getClass().getName());
-                }
+                        if (gp instanceof UnicastPacket) {
+                            /*
+                             * Check payload
+                             */
+                            UnicastPacket up = (UnicastPacket) gp;
+                            Object payload = E2EComm.deserialize(up.getBytePayload());
+                            if (payload instanceof SDNControllerMessage) {
+                                int seqNumber = ((SDNControllerMessage) payload).getSeqNumber();
+                                int payloadSize = ((SDNControllerMessage) payload).getPayloadSize();
+                                String packetInfo = "BoundReceiveSocketMessageHandler: Default Message: " + seqNumber + ", payloadSize " + payloadSize + ", from " + up.getSourceNodeId();
+                                receivedMessages.addElement(packetInfo);
+                                System.out.println("SDNControllerClient.BoundReceiveSocketMessageHandler message: " + packetInfo);
+                            } else if (dataTypesManager.containsDataType(payload.getClass().getSimpleName())) {
+                                String dataType = payload.getClass().getSimpleName();
+                                Class cls = dataTypesManager.getDataTypeClassObject(dataType);
+                                Class noparams[] = {};
+                                Method method = cls.getMethod("getSeqNumber", noparams);
+                                int seqNumber = (int) method.invoke(payload, null);
+                                method = cls.getMethod("getPayloadSize", noparams);
+                                int payloadSize = (int) method.invoke(payload, null);
+                                String packetInfo = "BoundReceiveSocketMessageHandler: " + dataType + ": " + seqNumber + ", payloadSize " + payloadSize + ", from " + up.getSourceNodeId();
+                                receivedMessages.addElement(packetInfo);
+                                System.out.println("SDNControllerClient.BoundReceiveSocketMessageHandler message: " + packetInfo);
+                            } else {
+                                /*
+                                 * Received payload is not SDNControllerMessage: do nothing...
+                                 */
+                                System.out.println("SDNControllerClient.BoundReceiveSocketMessageHandler wrong payload: " + payload);
+                            }
+                        } else {
+                            /*
+                             * Received packet is not UnicastPacket: do nothing...
+                             */
+                            System.out.println("SDNControllerClient.BoundReceiveSocketMessageHandler wrong packet: " + gp.getClass().getName());
+                        }
 
-            } catch (Exception e) {
-                e.printStackTrace();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    /*
+                     * Simulate a 3 ms delay
+                     */
+                    Thread.sleep(3);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -657,7 +708,7 @@ public class SDNControllerClient {
                     socket.setSoTimeout(5 * 1000);
                     Socket clientSocket = socket.accept();
                     System.out.println("SDNControllerClient" + protocol + ": ServerSocket new message arrived");
-                    new ServiceSocketMessageHandler(clientSocket).start();
+                    osRoutingMessageQueueTCP.put(clientSocket);
                 } catch (SocketTimeoutException ste) {
                     //
                 } catch (IOException e) {
@@ -674,35 +725,49 @@ public class SDNControllerClient {
         }
     }
 
-    private class ServiceSocketMessageHandler extends Thread {
-        private Socket s;
+    public class ServiceSocketMessageHandler extends Thread {
 
-        private ServiceSocketMessageHandler(Socket s) {
-            this.s = s;
+        private final BlockingQueue<Socket> messageQueue;
+
+        public ServiceSocketMessageHandler(BlockingQueue<Socket> messageQueue) {
+            this.messageQueue = messageQueue;
         }
 
         @Override
         public void run() {
-            try {
-                InputStream inputStream = s.getInputStream();
-                ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
-                Object payload = objectInputStream.readObject();
-                if (payload instanceof SDNControllerMessage) {
-                    int seqNumber = ((SDNControllerMessage) payload).getSeqNumber();
-                    int payloadSize = ((SDNControllerMessage) payload).getPayloadSize();
-                    String packetInfo = "ServiceSocketMessageHandler Packet " + seqNumber + ", via " + ", payloadSize " + payloadSize + ", from " + s.getRemoteSocketAddress().toString();
-                    receivedMessages.addElement(packetInfo);
-                    System.out.println("SDNControllerClient.ServiceSocketMessageHandler message: " + packetInfo);
-                } else {
-                    /*
-                     * Received payload is not SDNControllerMessage: do nothing...
-                     */
-                    System.out.println("SDNControllerClient.ServiceSocketMessageHandler wrong payload: " + payload);
-                }
+            while (active) {
+                try {
+                    Socket s = this.messageQueue.take();
+                    try {
+                        InputStream inputStream = s.getInputStream();
 
-                s.close();
-            } catch (Exception e) {
-                e.printStackTrace();
+                        ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+                        Object payload = objectInputStream.readObject();
+                        if (payload instanceof SDNControllerMessage) {
+                            int seqNumber = ((SDNControllerMessage) payload).getSeqNumber();
+                            int payloadSize = ((SDNControllerMessage) payload).getPayloadSize();
+                            String packetInfo = "ServiceSocketMessageHandler Packet " + seqNumber + ", via " + ", payloadSize " + payloadSize + ", from " + s.getRemoteSocketAddress().toString();
+                            receivedMessages.addElement(packetInfo);
+                            System.out.println("SDNControllerClient.ServiceSocketMessageHandler message: " + packetInfo);
+                            /*
+                             * Simulate a 3 ms delay
+                             */
+                            Thread.sleep(3);
+                        } else {
+                            /*
+                             * Received payload is not SDNControllerMessage: do nothing...
+                             */
+                            System.out.println("SDNControllerClient.ServiceSocketMessageHandler wrong payload: " + payload);
+                        }
+                        s.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -721,56 +786,67 @@ public class SDNControllerClient {
         public void run() {
             System.out.println("SDNControllerClient: DatagramSocket receiving " + protocol + " messages from the sender (port: " + socket.getLocalPort() + ")");
 
-
-            byte[] udpBuffer = new byte[GenericPacket.MAX_UDP_PACKET];
-            DatagramPacket dp = new DatagramPacket(udpBuffer, udpBuffer.length);
-
             while (active) {
                 try {
                     /*
                      * Receive
                      */
+                    byte[] udpBuffer = new byte[GenericPacket.MAX_UDP_PACKET];
+                    DatagramPacket dp = new DatagramPacket(udpBuffer, udpBuffer.length);
+
                     socket.setSoTimeout(5 * 1000);
                     socket.receive(dp);
                     System.out.println("SDNControllerClient" + protocol + ": DatagramSocket new message arrived");
-                    new DatagramSocketMessageHandler(dp).start();
+                    osRoutingMessageQueueUDP.put(dp);
                 } catch (SocketTimeoutException ste) {
-                    //
+
                 } catch (IOException e) {
-                    //
+
                 } catch (Exception e) {
-                    //
+
                 }
             }
             socket.close();
         }
     }
 
-    private class DatagramSocketMessageHandler extends Thread {
-        private DatagramPacket dp;
+    public class DatagramSocketMessageHandler extends Thread {
+        private final BlockingQueue<DatagramPacket> messageQueue;
 
-        private DatagramSocketMessageHandler(DatagramPacket dp) {
-            this.dp = dp;
+        public DatagramSocketMessageHandler(BlockingQueue<DatagramPacket> messageQueue) {
+            this.messageQueue = messageQueue;
         }
 
         @Override
         public void run() {
-            try {
-                Object payload = E2EComm.deserialize(dp.getData());
-                if (payload instanceof SDNControllerMessage) {
-                    int seqNumber = ((SDNControllerMessage) payload).getSeqNumber();
-                    int payloadSize = ((SDNControllerMessage) payload).getPayloadSize();
-                    String packetInfo = "DatagramSocketMessageHandler Packet " + seqNumber + ", via " + ", payloadSize " + payloadSize + ", from " + dp.getSocketAddress().toString();
-                    receivedMessages.addElement(packetInfo);
-                    System.out.println("SDNControllerClient.DatagramSocketMessageHandler message: " + packetInfo);
-                } else {
+            while (active) {
+                try {
+                    DatagramPacket dp = this.messageQueue.take();
+                    Object payload = null;
+                    try {
+                        payload = E2EComm.deserialize(dp.getData());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    if (payload instanceof SDNControllerMessage) {
+                        int seqNumber = ((SDNControllerMessage) payload).getSeqNumber();
+                        int payloadSize = ((SDNControllerMessage) payload).getPayloadSize();
+                        String packetInfo = "DatagramSocketMessageHandler Packet " + seqNumber + ", via " + ", payloadSize " + payloadSize + ", from " + dp.getSocketAddress().toString();
+                        receivedMessages.addElement(packetInfo);
+                        System.out.println("SDNControllerClient.DatagramSocketMessageHandler message: " + packetInfo);
+                    } else {
+                        /*
+                         * Received payload is not SDNControllerMessage: do nothing...
+                         */
+                        System.out.println("SDNControllerClient.DatagramSocketMessageHandler wrong payload: " + payload);
+                    }
                     /*
-                     * Received payload is not SDNControllerMessage: do nothing...
+                     * Simulate a 3 ms delay
                      */
-                    System.out.println("SDNControllerClient.DatagramSocketMessageHandler wrong payload: " + payload);
+                    Thread.sleep(3);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
         }
     }

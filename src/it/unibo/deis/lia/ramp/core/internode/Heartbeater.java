@@ -29,10 +29,11 @@ import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 public class Heartbeater extends Thread {
 
 	private Hashtable<InetAddress, NeighborData> neighbors = new Hashtable<InetAddress, NeighborData>();
-	private Hashtable<Integer, List<InetAddress>> neighborsAvailableAddresses = new Hashtable<>();
 	/*
-	 * Added by Dmitrij for testing purposes.
+	 * Added by Dmitrij for OsRoutingManager.
 	 */
+	private Hashtable<Integer, List<InetAddress>> neighborsAvailableAddresses = new Hashtable<>();
+
 	private HashSet<InetAddress> neighborsBlackList = new HashSet<InetAddress>();
 
 	private int heartbeatPeriod = 60 * 1000; // millis
@@ -480,7 +481,7 @@ public class Heartbeater extends Thread {
 							)
 					);
 			/*
-			 * Added by Dmitrij for testing purposes.
+			 * Added by Dmitrij for for OsRoutingManager.
 			 */
 			if(!neighborsAvailableAddresses.containsKey(nodeId)) {
 				List<InetAddress> inetAddressesList = new ArrayList<>();
@@ -514,7 +515,7 @@ public class Heartbeater extends Thread {
 						neighbors.remove(address);
 						int nodeId = getNodeId(address);
 						/*
-						 * Added by Dmitrij for testing purposes.
+						 * Added by Dmitrij for for OsRoutingManager.
 						 */
 						neighborsAvailableAddresses.get(nodeId).remove(address);
 					}
