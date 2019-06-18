@@ -10,7 +10,6 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.PathSelectionMetr
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.PathDescriptor;
 import it.unibo.deis.lia.ramp.service.management.ServiceResponse;
 
-import javax.print.attribute.IntegerSyntax;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionEvent;
@@ -105,6 +104,7 @@ public class SDNControllerClientJFrame extends JFrame {
     private JButton addDestinationButton;
     private JButton resetDestinationButton;
     private JButton getFlowIdButton;
+    private JButton computeLocalPathButton;
 
     private JPanel getRouteIDPanel;
     private JLabel getRouteIDLabel;
@@ -145,6 +145,10 @@ public class SDNControllerClientJFrame extends JFrame {
     private JTextField sendPacketPayloadTextField;
     private JLabel sendPacketRepetitionLabel;
     private JTextField sendPacketRepetitionTextField;
+    private JLabel sendPacketTrafficGeneratorLabel;
+    private JTextField sendPacketTrafficGeneratorTextField;
+    private JButton startTrafficButton;
+    private JButton stopTrafficButton;
 
     private JPanel receivePacketPanel;
     private JButton receivePacketButton;
@@ -318,7 +322,7 @@ public class SDNControllerClientJFrame extends JFrame {
         osRoutingModeCheckbox = new JCheckBox("Enable");
         osRoutingModeCheckbox.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
-                if(e.getStateChange() == 1) {
+                if (e.getStateChange() == 1) {
                     osRoutingMode = true;
                 } else {
                     osRoutingMode = false;
@@ -484,7 +488,7 @@ public class SDNControllerClientJFrame extends JFrame {
         findControllerClientTimeoutTextField = new JTextField("2500");
 
         findControllerClientServiceAmountLabel = new JLabel("Amount:");
-        findControllerClientServiceAmountTextField = new JTextField("6");
+        findControllerClientServiceAmountTextField = new JTextField("30");
 
         findControllerClientReceiverTextArea = new JTextArea();
         findControllerClientReceiverTextArea.setColumns(20);
@@ -554,6 +558,15 @@ public class SDNControllerClientJFrame extends JFrame {
         });
         getFlowIdButton.setEnabled(false);
 
+        computeLocalPathButton = new JButton("Compute Path Locally");
+        computeLocalPathButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                jButtonComputeLocalPathActionPerformed(evt);
+            }
+        });
+        computeLocalPathButton.setEnabled(false);
+
         GroupLayout getFlowIdLayout = new GroupLayout(getFlowIDPanel);
         getFlowIDPanel.setLayout(getFlowIdLayout);
         getFlowIdLayout.setHorizontalGroup(getFlowIdLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
@@ -561,6 +574,7 @@ public class SDNControllerClientJFrame extends JFrame {
                 .addComponent(getFlowIDDestinationNodeComboBox, GroupLayout.DEFAULT_SIZE, 220, Short.MAX_VALUE)
                 .addComponent(additionalDestinationPanel, GroupLayout.DEFAULT_SIZE, 220, Short.MAX_VALUE)
                 .addComponent(getFlowIdButton, GroupLayout.DEFAULT_SIZE, 220, Short.MAX_VALUE)
+                .addComponent(computeLocalPathButton, GroupLayout.DEFAULT_SIZE, 220, Short.MAX_VALUE)
         );
         getFlowIdLayout.setVerticalGroup(getFlowIdLayout.createSequentialGroup()
                 .addComponent(getFlowIDLabel)
@@ -569,6 +583,8 @@ public class SDNControllerClientJFrame extends JFrame {
                 .addComponent(additionalDestinationPanel)
                 .addGap(5)
                 .addComponent(getFlowIdButton)
+                .addGap(5)
+                .addComponent(computeLocalPathButton)
         );
     }
 
@@ -760,15 +776,6 @@ public class SDNControllerClientJFrame extends JFrame {
         sendPacketPanel = new JPanel();
         sendPacketPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Send Packet"));
 
-        sendPacketButton = new JButton("Send Packet");
-        sendPacketButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                jButtonSendPacketActionPerformed(evt);
-            }
-        });
-        sendPacketButton.setEnabled(false);
-
         sendPacketDestinationIDLabel = new JLabel("Destination ID");
         sendMessageDestinationIDComboBox = new JComboBox();
 
@@ -785,11 +792,41 @@ public class SDNControllerClientJFrame extends JFrame {
 
         initMulticastDestinationsPanel();
 
-        sendPacketPayloadLabel = new JLabel("Payload kb");
-        sendPacketPayloadTextField = new JTextField("500");
+        sendPacketPayloadLabel = new JLabel("Payload in byte (max 65Kb)");
+        sendPacketPayloadTextField = new JTextField("100");
 
         sendPacketRepetitionLabel = new JLabel("Repeat");
         sendPacketRepetitionTextField = new JTextField("1");
+
+        sendPacketTrafficGeneratorLabel = new JLabel("Packets per second (Traffic Gen.)");
+        sendPacketTrafficGeneratorTextField = new JTextField("1");
+
+        sendPacketButton = new JButton("Send Packet");
+        sendPacketButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                jButtonSendPacketActionPerformed(evt);
+            }
+        });
+        sendPacketButton.setEnabled(false);
+
+        startTrafficButton = new JButton("Start Traffic");
+        startTrafficButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                jButtonStartTrafficActionPerformed(evt);
+            }
+        });
+        startTrafficButton.setEnabled(false);
+
+        stopTrafficButton = new JButton("Stop Traffic");
+        stopTrafficButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                jButtonStopTrafficActionPerformed(evt);
+            }
+        });
+        stopTrafficButton.setEnabled(false);
 
         GroupLayout sendMessageClientLayout = new GroupLayout(sendPacketPanel);
         sendPacketPanel.setLayout(sendMessageClientLayout);
@@ -808,7 +845,14 @@ public class SDNControllerClientJFrame extends JFrame {
                 .addComponent(sendPacketPayloadTextField, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
                 .addComponent(sendPacketRepetitionLabel, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
                 .addComponent(sendPacketRepetitionTextField, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+                .addComponent(sendPacketTrafficGeneratorLabel, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+                .addComponent(sendPacketTrafficGeneratorTextField, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
                 .addComponent(sendPacketButton, GroupLayout.DEFAULT_SIZE, 120, 120)
+                .addGroup(sendMessageClientLayout.createSequentialGroup()
+                        .addComponent(startTrafficButton, GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE)
+                        .addGap(20)
+                        .addComponent(stopTrafficButton, GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE)
+                )
         );
         sendMessageClientLayout.setVerticalGroup(sendMessageClientLayout.createSequentialGroup()
                 .addComponent(sendPacketDestinationIDLabel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -835,16 +879,25 @@ public class SDNControllerClientJFrame extends JFrame {
                 .addGap(5)
                 .addComponent(sendPacketRepetitionTextField, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                 .addGap(5)
+                .addComponent(sendPacketTrafficGeneratorLabel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addGap(5)
+                .addComponent(sendPacketTrafficGeneratorTextField, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addGap(5)
                 .addComponent(sendPacketButton, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+                .addGap(5)
+                .addGroup(sendMessageClientLayout.createParallelGroup()
+                        .addComponent(startTrafficButton, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                        .addComponent(stopTrafficButton, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                )
         );
     }
 
     private void fillDataTypeComboBox() {
         Set<String> currentDataTypes = SDNcontrollerClient.getDataTypesAvailable();
-        String[] dataTypeItems = new String[currentDataTypes.size()+1];
+        String[] dataTypeItems = new String[currentDataTypes.size() + 1];
         dataTypeItems[0] = "Default Message";
         int count = 1;
-        for(String dataType : currentDataTypes) {
+        for (String dataType : currentDataTypes) {
             dataTypeItems[count] = "" + dataType;
             count++;
         }
@@ -1120,6 +1173,24 @@ public class SDNControllerClientJFrame extends JFrame {
         }
 
         sendPacketButton.setEnabled(true);
+        startTrafficButton.setEnabled(true);
+    }
+
+    private void jButtonComputeLocalPathActionPerformed(ActionEvent evt) {
+        String destinationNode = getFlowIDDestinationNodeComboBox.getSelectedItem().toString();
+        int destinationNodeId = availableClients.get(destinationNode).getServerNodeId();
+        String selectedPathSelectionMetric = availablePathSelectionMetricComboBox.getSelectedItem().toString();
+        PathSelectionMetric pathSelectionMetric = PathSelectionMetric.valueOf(selectedPathSelectionMetric);
+
+        PathDescriptor result = SDNcontrollerClient.computeUnicastPathLocally(localNodeID, destinationNodeId, pathSelectionMetric);
+
+        String message;
+        if(result != null) {
+            message = "Path Calculated";
+        } else {
+            message = "It was not possible to compute the path";
+        }
+        JOptionPane.showMessageDialog(null, message);
     }
 
     private void jButtonGetRouteIDActionPerformed(ActionEvent evt) {
@@ -1170,6 +1241,7 @@ public class SDNControllerClientJFrame extends JFrame {
         }
 
         sendPacketButton.setEnabled(true);
+        startTrafficButton.setEnabled(true);
     }
 
     private void jButtonGetAvailableRouteIDsActionPerformed(ActionEvent evt) {
@@ -1178,8 +1250,8 @@ public class SDNControllerClientJFrame extends JFrame {
 
         List<Integer> availableRouteIds = SDNcontrollerClient.getAvailableRouteIds(destinationNodeId);
 
-        if(availableRouteIds.size() > 0) {
-            for(int availableRouteId : availableRouteIds) {
+        if (availableRouteIds.size() > 0) {
+            for (int availableRouteId : availableRouteIds) {
                 if (!routeIDs.get(destinationNode).contains(availableRouteId)) {
                     routeIDs.get(destinationNode).add(availableRouteId);
                 }
@@ -1212,11 +1284,12 @@ public class SDNControllerClientJFrame extends JFrame {
              * for the current destination node id if it is already selected.
              */
             jComboBoxSendMessageRouteIDActionPerformed(null);
+
+            sendPacketButton.setEnabled(true);
+            startTrafficButton.setEnabled(true);
         } else {
             JOptionPane.showMessageDialog(null, "There are no routeIds already available for this destination.");
         }
-
-        sendPacketButton.setEnabled(true);
     }
 
     private void fillMulticastFlowIdComboBox() {
@@ -1239,9 +1312,11 @@ public class SDNControllerClientJFrame extends JFrame {
          */
         findControllerClientReceiverTextArea.setText("");
         getFlowIdButton.setEnabled(false);
+        computeLocalPathButton.setEnabled(false);
         getRouteIDButton.setEnabled(false);
         getAvailableRouteIDsButton.setEnabled(false);
         sendPacketButton.setEnabled(false);
+        startTrafficButton.setEnabled(false);
         addDestinationButton.setEnabled(false);
         resetDestinationButton.setEnabled(false);
 
@@ -1291,9 +1366,9 @@ public class SDNControllerClientJFrame extends JFrame {
             }
         }
 
-        if(osRoutingMode) {
+        if (osRoutingMode) {
             routeIDs = new HashMap<>();
-        } else if(routingPolicy == RoutingPolicy.MULTICASTING) {
+        } else if (routingPolicy == RoutingPolicy.MULTICASTING) {
             multicastFlowIDs = new HashMap<>();
         } else {
             unicastFlowIDs = new HashMap<>();
@@ -1330,18 +1405,21 @@ public class SDNControllerClientJFrame extends JFrame {
             DefaultComboBoxModel dcm = new DefaultComboBoxModel(items);
             DefaultComboBoxModel dcm2 = new DefaultComboBoxModel(items);
 
-            if(osRoutingMode) {
+            if (osRoutingMode) {
                 getRouteIDDestinationNodeComboBox.setModel(dcm);
                 getRouteIDButton.setEnabled(true);
                 getAvailableRouteIDsButton.setEnabled(true);
                 sendMessageDestinationIDComboBox.setModel(dcm2);
-            } else if(routingPolicy == RoutingPolicy.MULTICASTING) {
+            } else if (routingPolicy == RoutingPolicy.MULTICASTING) {
                 getFlowIDDestinationNodeComboBox.setModel(dcm);
                 getFlowIdButton.setEnabled(true);
                 if (availableClientsSize > 1) {
                     addDestinationButton.setEnabled(true);
                 }
             } else {
+                if (routingPolicy == RoutingPolicy.REROUTING) {
+                    computeLocalPathButton.setEnabled(true);
+                }
                 getFlowIDDestinationNodeComboBox.setModel(dcm);
                 getFlowIdButton.setEnabled(true);
                 sendMessageDestinationIDComboBox.setModel(dcm2);
@@ -1365,17 +1443,17 @@ public class SDNControllerClientJFrame extends JFrame {
         int routeId;
         String dataType = sendPacketDataTypeComboBox.getSelectedItem().toString();
 
-        if(osRoutingMode) {
+        if (osRoutingMode) {
             routeId = Integer.parseInt(sendPacketRouteIDComboBox.getSelectedItem().toString());
             destinationNode = sendMessageDestinationIDComboBox.getSelectedItem().toString();
             destinationNodeServiceResponse = availableClients.get(destinationNode);
             String selectedProtocol = protocolComboBox.getSelectedItem().toString();
             if (selectedProtocol.equals("UDP")) {
-                SDNcontrollerClient.sendDatagramSocketMessage(destinationNodeServiceResponse, payload, routeId, repetitions);
+                SDNcontrollerClient.sendDatagramSocketMessage(destinationNodeServiceResponse, payload, routeId, repetitions, -1);
             } else {
-                SDNcontrollerClient.sendServiceSocketMessage(destinationNodeServiceResponse, payload, routeId, repetitions);
+                SDNcontrollerClient.sendServiceSocketMessage(destinationNodeServiceResponse, payload, routeId, repetitions, -1);
             }
-        } else if(routingPolicy == RoutingPolicy.MULTICASTING) {
+        } else if (routingPolicy == RoutingPolicy.MULTICASTING) {
             flowId = Integer.parseInt(sendPacketFlowIDComboBox.getSelectedItem().toString());
             // TODO improve protocol retrieval
             String genericDestination = multicastFlowIDs.get(flowId).get(0).toString();
@@ -1385,8 +1463,58 @@ public class SDNControllerClientJFrame extends JFrame {
             flowId = Integer.parseInt(sendPacketFlowIDComboBox.getSelectedItem().toString());
             destinationNode = sendMessageDestinationIDComboBox.getSelectedItem().toString();
             destinationNodeServiceResponse = availableClients.get(destinationNode);
-            SDNcontrollerClient.sendUnicastMessage(destinationNodeServiceResponse, dataType, payload, flowId, repetitions);
+            SDNcontrollerClient.sendUnicastMessage(destinationNodeServiceResponse, dataType, payload, flowId, repetitions, -1);
         }
+    }
+
+    private void jButtonStartTrafficActionPerformed(ActionEvent evt) {
+        sendPacketButton.setEnabled(false);
+        startTrafficButton.setEnabled(false);
+        stopTrafficButton.setEnabled(true);
+
+        RoutingPolicy routingPolicy = SDNcontrollerClient.getRoutingPolicy();
+        int packetsPerSecond = Integer.parseInt(sendPacketTrafficGeneratorTextField.getText());
+        int payload = Integer.parseInt(sendPacketPayloadTextField.getText());
+        String destinationNode;
+        ServiceResponse destinationNodeServiceResponse;
+        int flowId;
+        int routeId;
+        String dataType = sendPacketDataTypeComboBox.getSelectedItem().toString();
+
+        if (osRoutingMode) {
+            routeId = Integer.parseInt(sendPacketRouteIDComboBox.getSelectedItem().toString());
+            destinationNode = sendMessageDestinationIDComboBox.getSelectedItem().toString();
+            destinationNodeServiceResponse = availableClients.get(destinationNode);
+            String selectedProtocol = protocolComboBox.getSelectedItem().toString();
+            if (selectedProtocol.equals("UDP")) {
+                SDNcontrollerClient.sendDatagramSocketMessage(destinationNodeServiceResponse, payload, routeId, -1, packetsPerSecond);
+            } else {
+                SDNcontrollerClient.sendServiceSocketMessage(destinationNodeServiceResponse, payload, routeId, -1, packetsPerSecond);
+            }
+        } else if (routingPolicy == RoutingPolicy.MULTICASTING) {
+//            flowId = Integer.parseInt(sendPacketFlowIDComboBox.getSelectedItem().toString());
+//            // TODO improve protocol retrieval
+//            String genericDestination = multicastFlowIDs.get(flowId).get(0).toString();
+//            int protocol = availableClients.get(genericDestination).getProtocol();
+//            //SDNcontrollerClient.sendMulticastMessage(multicastFlowIDs.get(flowId), dataType, payload, flowId, protocol, 0, kilobytesPerSecond);
+            JOptionPane.showMessageDialog(null, "Traffic Generator Not Supported for Multicast Comunications");
+            sendPacketButton.setEnabled(true);
+            startTrafficButton.setEnabled(true);
+            stopTrafficButton.setEnabled(false);
+        } else {
+            flowId = Integer.parseInt(sendPacketFlowIDComboBox.getSelectedItem().toString());
+            destinationNode = sendMessageDestinationIDComboBox.getSelectedItem().toString();
+            destinationNodeServiceResponse = availableClients.get(destinationNode);
+            SDNcontrollerClient.sendUnicastMessage(destinationNodeServiceResponse, dataType, payload, flowId, -1, packetsPerSecond);
+        }
+    }
+
+    private void jButtonStopTrafficActionPerformed(ActionEvent evt) {
+        SDNcontrollerClient.stopTrafficGenerator();
+
+        sendPacketButton.setEnabled(true);
+        startTrafficButton.setEnabled(true);
+        stopTrafficButton.setEnabled(false);
     }
 
     private void jButtonReceivePacketActionPerformed(ActionEvent evt) {
@@ -1460,7 +1588,7 @@ public class SDNControllerClientJFrame extends JFrame {
         RoutingPolicy currentRoutingPolicy = SDNcontrollerClient.getRoutingPolicy();
 
         DefaultTableModel dtm;
-        if(osRoutingMode) {
+        if (osRoutingMode) {
             getRouteIDPanel.setVisible(true);
             sendPacketDestinationIDLabel.setVisible(true);
             sendMessageDestinationIDComboBox.setVisible(true);

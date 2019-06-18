@@ -14,7 +14,7 @@ public class ThreadPool<T extends ThreadPool.IThreadPoolCallback<Q>, Q> {
 	// config
 	// TODO tune pool parameters
 	private static final int POOL_SIZE_MIN = 5;
-	private static final int POOL_SIZE_MAX = 20; 
+	private static final int POOL_SIZE_MAX = 20;
 	private static final int QUEUE_CONTROL_PERIOD = 1000; // millis
 	private static final int QUEUE_SIZE_BLOCKING_TIMEOUT = 10000; // millis
 	private static final int QUEUE_SIZE_THRESHOLD = POOL_SIZE_MIN;

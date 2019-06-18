@@ -9,8 +9,6 @@ import java.util.Map;
  */
 public class ControllerMessageAck extends ControllerMessage {
 
-    private String srcIP;
-
     private int routeId;
 
     /**
@@ -21,26 +19,19 @@ public class ControllerMessageAck extends ControllerMessage {
      * DATA_PLANE_RULE_ACK message: messageType
      * DATA_PLANE_RULE_ABORT message: messageType
      */
-    public ControllerMessageAck(MessageType messageType, int clientPort, Map<String, NodeStats> nodeStats, String srcIP, int routeId) {
+    public ControllerMessageAck(MessageType messageType, int clientPort, Map<String, NodeStats> nodeStats, int routeId) {
         super(messageType, clientPort, nodeStats);
-
-        this.srcIP = srcIP;
         this.routeId = routeId;
     }
 
-    public ControllerMessageAck(MessageType messageType, String srcIP, int routeId) {
+    public ControllerMessageAck(MessageType messageType, int routeId) {
         super(messageType);
-        this.srcIP = srcIP;
         this.routeId = routeId;
     }
 
     public ControllerMessageAck(MessageType messageType) {
         super(messageType);
     }
-
-    public String getSrcIP() { return srcIP; }
-
-    public void setSrcIP(String srcIP) { this.srcIP = srcIP; }
 
     public int getRouteId() { return routeId; }
 

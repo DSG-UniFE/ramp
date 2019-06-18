@@ -43,8 +43,8 @@ public class RampGUIJFrame extends javax.swing.JFrame {
     public RampGUIJFrame(RampEntryPoint rampEntryPoint) throws Exception {
         // rampLogo and vectorLogo initialization must be before initComponents()
         // Dmitrij new logo
-        //rampLogo = new ImageIcon("./images/ramp_logo.png").getImage();
-        rampLogo = new ImageIcon("./images/ramp_logo.jpg").getImage();
+        rampLogo = new ImageIcon("./images/ramp_logo.png").getImage();
+        //rampLogo = new ImageIcon("./images/ramp_logo.jpg").getImage();
         vectorLogo = new java.util.Vector<java.awt.Image>();
         vectorLogo.addElement(rampLogo);
 

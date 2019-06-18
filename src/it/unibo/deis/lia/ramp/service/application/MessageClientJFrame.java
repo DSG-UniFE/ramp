@@ -115,7 +115,8 @@ public class MessageClientJFrame extends javax.swing.JFrame {
 
     private void jButtonSendMessageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSendMessageActionPerformed
         String mess = this.jTextAreaMessage.getText();
-        int destNodeId = this.jTextFieldDestNodeId.getText().hashCode();
+        //int destNodeId = this.jTextFieldDestNodeId.getText().hashCode();
+        int destNodeId = Integer.parseInt(this.jTextFieldDestNodeId.getText());
         int timeout = Integer.parseInt(this.jTextFieldPacketDeliveryTimeout.getText());
 
         mc.sendMessage(destNodeId, mess, timeout);

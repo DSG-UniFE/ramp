@@ -70,6 +70,7 @@ public class SDNControllerServiceJFrame extends JFrame {
 
     public SDNControllerServiceJFrame(SDNControllerService SDNControllerService) {
         this.SDNControllerService = SDNControllerService;
+
         initComponents();
     }
 
@@ -523,14 +524,15 @@ public class SDNControllerServiceJFrame extends JFrame {
         JComboBox comboBox = new JComboBox();
         Set<Integer> availableClients = SDNControllerService.getActiveClients();
         int availableClientsSize = availableClients.size();
-        if(availableClientsSize > 0) {
+        if (availableClientsSize > 0) {
             String[] items = new String[availableClientsSize];
             int i = 0;
             for (Integer clientNodeId : availableClients) {
                 items[i] = "" + clientNodeId;
                 i++;
             }
-            comboBox.setModel(new DefaultComboBoxModel(items));
+            DefaultComboBoxModel clientNodes = new DefaultComboBoxModel(items);
+            comboBox.setModel(clientNodes);
             allDataPlaneClientNodesToNotifyComboBox.add(comboBox);
             refreshAdditionalComboBoxPanel();
         }
@@ -672,6 +674,7 @@ public class SDNControllerServiceJFrame extends JFrame {
         } else {
             System.out.println("File access cancelled by user.");
         }
+
         boolean result = SDNControllerService.addUserDefinedDataType(fileName, dataTypeFile);
 
         if (result) {
@@ -700,6 +703,7 @@ public class SDNControllerServiceJFrame extends JFrame {
         } else {
             System.out.println("File access cancelled by user.");
         }
+
         boolean result = SDNControllerService.addUserDefinedDataPlaneRule(fileName, dataPlaneRuleFile);
 
         if (result) {
@@ -717,9 +721,14 @@ public class SDNControllerServiceJFrame extends JFrame {
         if (allDataPlaneClientNodesToNotifyComboBox.size() > 0) {
             List<Integer> clientsNodeToNotify = new ArrayList<>();
             for (int i = 0; i < allDataPlaneClientNodesToNotifyComboBox.size(); i++) {
+                /*
+                 * TODO Needs to be fixed, it works only the first time. If the comboBox is reinitialized
+                 *  it just selects the first one.
+                 */
                 int clientNode = Integer.parseInt(allDataPlaneClientNodesToNotifyComboBox.get(i).getSelectedItem().toString());
                 clientsNodeToNotify.add(clientNode);
             }
+
             result = SDNControllerService.addDataPlaneRule(dataType, dataPlaneRule, clientsNodeToNotify);
         } else {
             result = SDNControllerService.addDataPlaneRule(dataType, dataPlaneRule);

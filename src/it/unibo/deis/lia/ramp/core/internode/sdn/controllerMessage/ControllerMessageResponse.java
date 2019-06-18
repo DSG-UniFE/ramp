@@ -1,5 +1,6 @@
 package it.unibo.deis.lia.ramp.core.internode.sdn.controllerMessage;
 
+import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.OsRoutingPathDescriptor;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.PathDescriptor;
 import it.unibo.deis.lia.ramp.util.NodeStats;
 
@@ -15,38 +16,27 @@ public class ControllerMessageResponse extends ControllerMessage {
 
     private List<PathDescriptor> newPaths;
 
-    private String srcIP;
-
-    private String destIP;
-
-    private String viaIPForward;
-
-    private String viaIPBackward;
-
     private int routeId;
 
-    private int nodeId;
+    private OsRoutingPathDescriptor osRoutingPath;
+
+    private int osROutingPathDuration;
 
     /**
      * PATH_RESPONSE message: messageType, newPaths
      * MULTICAST_CONTROL message: messageType, flowId, newPaths
-     * OS_ROUTING_PULL_RESPONSE: messageType, routeId
-     * OS_ROUTING_PUSH_RESPONSE: messageType, routeId, nodeId
-     * OS_ROUTING_ADD_ROUTE: messageType, srcIP, destIP, viaIPForward, routeId
-     * OS_ROUTING_DELETE_ROUTE: messageType, routeId
+     * OS_ROUTING_PULL_RESPONSE: messageType, routeId, osRoutingPath
+     * OS_ROUTING_PUSH_RESPONSE: messageType, routeId, osRoutingPath
      * TOPOLOGY_GRAPH_RESPONSE: messageType
      */
-    public ControllerMessageResponse(MessageType messageType, int clientPort, Map<String, NodeStats> nodeStats, int flowId, List<PathDescriptor> newPaths, String srcIP, String destIP, String viaIPForward, String viaIPBackward, int routeId, int nodeId) {
+    public ControllerMessageResponse(MessageType messageType, int clientPort, Map<String, NodeStats> nodeStats, int flowId, List<PathDescriptor> newPaths) {
         super(messageType, clientPort, nodeStats);
 
         this.flowId = flowId;
         this.newPaths = newPaths;
-        this.srcIP = srcIP;
-        this.destIP = destIP;
-        this.viaIPForward = viaIPForward;
-        this.viaIPBackward = viaIPBackward;
-        this.routeId = routeId;
-        this.nodeId = nodeId;
+        this.routeId = ControllerMessage.UNUSED_FIELD;
+        this.osRoutingPath = null;
+        this.osROutingPathDuration = ControllerMessage.UNUSED_FIELD;
     }
 
     public ControllerMessageResponse(MessageType messageType, int flowId, List<PathDescriptor> newPaths) {
@@ -54,24 +44,18 @@ public class ControllerMessageResponse extends ControllerMessage {
 
         this.flowId = flowId;
         this.newPaths = newPaths;
-        this.srcIP = null;
-        this.destIP = null;
-        this.viaIPForward = null;
-        this.viaIPBackward = null;
         this.routeId = ControllerMessage.UNUSED_FIELD;
-        this.nodeId = ControllerMessage.UNUSED_FIELD;
+        this.osRoutingPath = null;
+        this.osROutingPathDuration = ControllerMessage.UNUSED_FIELD;
     }
 
-    public ControllerMessageResponse(MessageType messageType, int clientPort, String srcIP, String destIP, String viaIPForward, String viaIPBackward, int routeId, int nodeId) {
+    public ControllerMessageResponse(MessageType messageType, int clientPort, int routeId, OsRoutingPathDescriptor osRoutingPath, int osROutingPathDuration) {
         super(messageType, clientPort);
         this.flowId = ControllerMessage.UNUSED_FIELD;
         this.newPaths = null;
-        this.srcIP = srcIP;
-        this.destIP = destIP;
-        this.viaIPForward = viaIPForward;
-        this.viaIPBackward = viaIPBackward;
         this.routeId = routeId;
-        this.nodeId = nodeId;
+        this.osRoutingPath = osRoutingPath;
+        this.osROutingPathDuration = osROutingPathDuration;
     }
 
     public int getFlowId() {
@@ -90,33 +74,23 @@ public class ControllerMessageResponse extends ControllerMessage {
         this.newPaths = newPaths;
     }
 
-    public String getSrcIP() { return srcIP; }
-
-    public void setSrcIP(String srcIP) { this.srcIP = srcIP; }
-
-    public String getDestIP() { return this.destIP; }
-
-    public void setDestIP(String destIP) { this.destIP = destIP; }
-
-    public String getViaIPForward() { return this.viaIPForward; }
-
-    public void setViaIPForward(String viaIPForward) { this.viaIPForward = viaIPForward; }
-
-    public String getViaIPBackward() {
-        return this.viaIPBackward;
-    }
-
-    public void setViaIPBackward(String viaIPBackward) {
-        this.viaIPBackward = viaIPBackward;
-    }
-
     public int getRouteId() {return this.routeId; }
 
     public void setRouteId(int routeId) { this.routeId = routeId; }
 
-    public int getNodeId() { return this.nodeId; }
+    public OsRoutingPathDescriptor getOsRoutingPath() {
+        return this.osRoutingPath;
+    }
 
-    public void setNodeId(int nodeId) {
-        this.nodeId = nodeId;
+    public void setOsRoutingPath(OsRoutingPathDescriptor osRoutingPath) {
+        this.osRoutingPath = osRoutingPath;
+    }
+
+    public int getOsROutingPathDuration() {
+        return this.osROutingPathDuration;
+    }
+
+    public void setOsROutingPathDuration(int osROutingPathDuration) {
+        this.osROutingPathDuration = osROutingPathDuration;
     }
 }

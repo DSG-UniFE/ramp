@@ -23,16 +23,11 @@ import it.unibo.deis.lia.ramp.RampEntryPoint;
 import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 
 /**
- *
  * @author Carlo Giannelli
  */
 public class Heartbeater extends Thread {
 
 	private Hashtable<InetAddress, NeighborData> neighbors = new Hashtable<InetAddress, NeighborData>();
-	/*
-	 * Added by Dmitrij for OsRoutingManager.
-	 */
-	private Hashtable<Integer, List<InetAddress>> neighborsAvailableAddresses = new Hashtable<>();
 
 	private HashSet<InetAddress> neighborsBlackList = new HashSet<InetAddress>();
 
@@ -53,16 +48,25 @@ public class Heartbeater extends Thread {
 	}
 
 	private Heartbeater() {
+		List<String> neighborsAddressesBlackList = new ArrayList<>();
+		String neighborsBlackListPropertyValue = RampEntryPoint.getRampProperty("neighborsBlackList");
+		if(neighborsBlackListPropertyValue != null && !neighborsBlackListPropertyValue.equals("")) {
+			neighborsAddressesBlackList = Arrays.asList(neighborsBlackListPropertyValue.split("\\s*,\\s*"));
+		}
+
 		try {
-			neighborsBlackList.add(InetAddress.getByName("137.204.56.113")); // desktop Stefano
-			neighborsBlackList.add(InetAddress.getByName("137.204.57.31"));  // jacopo
-			neighborsBlackList.add(InetAddress.getByName("137.204.57.170")); // relay server
-			neighborsBlackList.add(InetAddress.getByName("137.204.57.172")); // portatile carlo, vm studente
-			neighborsBlackList.add(InetAddress.getByName("137.204.57.183")); // desktop Carlo
-			neighborsBlackList.add(InetAddress.getByName("137.204.57.192")); // Qnap
-			neighborsBlackList.add(InetAddress.getByName("137.204.57.155")); // Macchina di prova
-			neighborsBlackList.add(InetAddress.getByName("137.204.57.156")); // Macchina di prova
-			neighborsBlackList.add(InetAddress.getByName("137.204.57.157")); // Macchina di prova
+			for(String blacklistAddress : neighborsAddressesBlackList) {
+				neighborsBlackList.add(InetAddress.getByName(blacklistAddress));
+			}
+//			neighborsBlackList.add(InetAddress.getByName("137.204.56.113")); // desktop Stefano
+//			neighborsBlackList.add(InetAddress.getByName("137.204.57.31"));  // jacopo
+//			neighborsBlackList.add(InetAddress.getByName("137.204.57.170")); // relay server
+//			neighborsBlackList.add(InetAddress.getByName("137.204.57.172")); // portatile carlo, vm studente
+//			neighborsBlackList.add(InetAddress.getByName("137.204.57.183")); // desktop Carlo
+//			neighborsBlackList.add(InetAddress.getByName("137.204.57.192")); // Qnap
+//			neighborsBlackList.add(InetAddress.getByName("137.204.57.155")); // Macchina di prova
+//			neighborsBlackList.add(InetAddress.getByName("137.204.57.156")); // Macchina di prova
+//			neighborsBlackList.add(InetAddress.getByName("137.204.57.157")); // Macchina di prova
 		} catch (UnknownHostException e1) {
 			e1.printStackTrace();
 		}
@@ -480,18 +484,6 @@ public class Heartbeater extends Thread {
 							neighborAddressNetworkPrefixLength
 							)
 					);
-			/*
-			 * Added by Dmitrij for for OsRoutingManager.
-			 */
-			if(!neighborsAvailableAddresses.containsKey(nodeId)) {
-				List<InetAddress> inetAddressesList = new ArrayList<>();
-				inetAddressesList.add(neighborInetAddress);
-				neighborsAvailableAddresses.put(nodeId, inetAddressesList);
-			} else {
-				if(!neighborsAvailableAddresses.get(nodeId).contains(neighborInetAddress)) {
-					neighborsAvailableAddresses.get(nodeId).add(neighborInetAddress);
-				}
-			}
 		}
 	}
 
@@ -513,11 +505,6 @@ public class Heartbeater extends Thread {
 				if (lastUpdate != null) {
 					if (System.currentTimeMillis() - lastUpdate > heartbeatPeriod + (heartbeatPeriod / 2)) {
 						neighbors.remove(address);
-						int nodeId = getNodeId(address);
-						/*
-						 * Added by Dmitrij for for OsRoutingManager.
-						 */
-						neighborsAvailableAddresses.get(nodeId).remove(address);
 					}
 					else {
 						res.addElement(address);
@@ -537,15 +524,6 @@ public class Heartbeater extends Thread {
 		return res;
 	}
 
-	public List<InetAddress> getNeighborAvailableAddressesById(int nodeId) {
-		return neighborsAvailableAddresses.get(nodeId);
-	}
-
-	public List<InetAddress> getNeighborAvailableAddressesByInetAddress(InetAddress address) {
-		int nodeId = getNodeId(address);
-		return getNeighborAvailableAddressesById(nodeId);
-	}
-	
 	// Alessandro Dolci
 	public short getNetworkPrefixLength(InetAddress address) {
 		short res = -1;

@@ -140,6 +140,7 @@ public class DataTypesManager implements DataTypesManagerInterface {
             dataTypesMappingById = null;
             dataTypeClassMapping = null;
             rampClassLoader = null;
+            dataTypesManager = null;
         }
     }
 

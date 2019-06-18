@@ -1,9 +1,6 @@
 package it.unibo.deis.lia.ramp.core.internode.sdn.controllerService;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,8 +12,14 @@ import it.unibo.deis.lia.ramp.core.internode.Resolver;
 import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataPlaneMessage.DataPlaneMessage;
 import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.DataTypesManager;
 import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.rulesManager.DataPlaneRulesManager;
+import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClient;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerMessage.*;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.graphUtils.GraphUtils;
+import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.osRoutingPathSelectors.BreadthFirstOsRoutingPathSelector;
+import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.osRoutingPathSelectors.FewestIntersectionsOsRoutingPathSelector;
+import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.osRoutingPathSelectors.MinimumNetworkLoadOsRoutingPathSelector;
+import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.osRoutingPathSelectors.OsRoutingTopologyGraphSelector;
+import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.OsRoutingPathDescriptor;
 import it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy.TrafficEngineeringPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.routingPolicy.RoutingPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.TopologyGraphSelector;
@@ -79,7 +82,7 @@ public class ControllerService extends Thread {
     /**
      * Boolean value that reports if the ControllerController is currently active.
      */
-    private boolean active;
+    private static boolean active;
 
     /**
      * This component is responsible to periodically send updates
@@ -124,9 +127,14 @@ public class ControllerService extends Thread {
     private TopologyGraphSelector defaultPathSelector;
 
     /**
-     * Path selector to be used when the controller client specifies the one to be used
+     * Path selector to be used for flow-based communication when the controller client specifies the one to be used
      */
     private TopologyGraphSelector flowPathSelector;
+
+    /**
+     * Path selector to be used for oSRouting-based communication when the controller client specifies the one to be used
+     */
+    private OsRoutingTopologyGraphSelector osRoutingPathSelector;
 
     /**
      * Data structure to hold current paths for the existing flows (flowId, path)
@@ -148,12 +156,30 @@ public class ControllerService extends Thread {
      */
     private Map<Integer, Integer> flowPriorities;
 
+    /**
+     *
+     */
     private PrioritySelector flowPrioritySelector;
 
     /**
-     * Data structure to hold current paths for the existing flows (routeId, path)
+     * Data structure to hold current forward paths for the existing os routing paths (routeId, path)
      */
-    private Map<Integer, PathDescriptor> osRoutes;
+    private Map<Integer, OsRoutingPathDescriptor> forwardOsRoutingPaths;
+
+    /**
+     * Data structure to hold current backward paths for the existing os routing paths (routeId, path)
+     */
+    private Map<Integer, OsRoutingPathDescriptor> backwardOsRoutingPaths;
+
+    /**
+     * Data structure to hold start times of the existing os routing paths (routeId, startTime)
+     */
+    private Map<Integer, Long> osRoutesStartTimes;
+
+    /**
+     * Data structure to hold application requirements for the existing os routing paths (routeId, applicationRequirements)
+     */
+    private Map<Integer, ApplicationRequirements> osRoutesApplicationRequirements;
 
     /**
      * This String specifies the directory the ControllerService must use in order to store files sent
@@ -165,7 +191,7 @@ public class ControllerService extends Thread {
     private ControllerService() throws Exception {
         this.serviceSocket = E2EComm.bindPreReceive(PROTOCOL);
         ServiceManager.getInstance(false).registerService("SDNController", this.serviceSocket.getLocalPort(), PROTOCOL);
-        this.active = true;
+        active = true;
         this.updateManager = new UpdateManager();
 
         this.trafficEngineeringPolicy = TrafficEngineeringPolicy.SINGLE_FLOW;
@@ -176,6 +202,7 @@ public class ControllerService extends Thread {
         //this.activeClients.add(Dispatcher.getLocalRampId());
         this.topologyGraph = new MultiGraph("TopologyGraph");
         this.flowPathSelector = new MinimumNetworkLoadFlowPathSelector(this.topologyGraph);
+        this.osRoutingPathSelector = new MinimumNetworkLoadOsRoutingPathSelector(this.topologyGraph);
         this.defaultPathSelector = new BreadthFirstFlowPathSelector(this.topologyGraph);
         this.flowPaths = new ConcurrentHashMap<>();
         this.flowStartTimes = new ConcurrentHashMap<>();
@@ -184,11 +211,16 @@ public class ControllerService extends Thread {
         this.flowPriorities = new ConcurrentHashMap<>();
         this.flowPrioritySelector = new ApplicationTypeFlowPrioritySelector();
 
-        this.osRoutes = new ConcurrentHashMap<>();
+        this.forwardOsRoutingPaths = new ConcurrentHashMap<>();
+        this.backwardOsRoutingPaths = new ConcurrentHashMap<>();
+
+        this.osRoutesStartTimes = new ConcurrentHashMap<>();
+        this.osRoutesApplicationRequirements = new ConcurrentHashMap<>();
 
         this.dataTypesManager = DataTypesManager.getInstance();
 
         this.dataPlaneRulesManager = DataPlaneRulesManager.getInstance();
+        this.setName("ControllerServiceThread");
 
         File dir = new File(sdnControllerDirectory);
         if (!dir.exists()) {
@@ -212,16 +244,30 @@ public class ControllerService extends Thread {
         return controllerService;
     }
 
+    public synchronized static boolean isActive() {
+        return active;
+    }
+
+
     public void stopService() {
         System.out.println("ControllerService STOP");
         ServiceManager.getInstance(false).removeService("SDNController");
-        this.active = false;
+        active = false;
         try {
             this.serviceSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
         this.updateManager.stopUpdateManager();
+
+        if (!ControllerClient.isActive()) {
+            this.dataPlaneRulesManager.deactivate();
+            this.dataPlaneRulesManager = null;
+            this.dataTypesManager.deactivate();
+            this.dataTypesManager = null;
+        }
+
+        controllerService = null;
     }
 
     /**
@@ -351,6 +397,7 @@ public class ControllerService extends Thread {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
             /*
              * Get Ack from each node in order to inform the ControllerService that
              * the user defined DataType class has been successfully added.
@@ -360,6 +407,7 @@ public class ControllerService extends Thread {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
             if (gp instanceof UnicastPacket) {
                 UnicastPacket up = (UnicastPacket) gp;
                 Object payload = null;
@@ -368,6 +416,7 @@ public class ControllerService extends Thread {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+
                 if (payload instanceof ControllerMessageAck) {
                     ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
                     switch (ackMessage.getMessageType()) {
@@ -459,6 +508,7 @@ public class ControllerService extends Thread {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
             /*
              * Get Ack from each node in order to inform the ControllerService that
              * the user defined DataPlaneRule class has been successfully added.
@@ -468,6 +518,7 @@ public class ControllerService extends Thread {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
             if (gp instanceof UnicastPacket) {
                 UnicastPacket up = (UnicastPacket) gp;
                 Object payload = null;
@@ -476,6 +527,7 @@ public class ControllerService extends Thread {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+
                 if (payload instanceof ControllerMessageAck) {
                     ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
                     switch (ackMessage.getMessageType()) {
@@ -537,11 +589,11 @@ public class ControllerService extends Thread {
          * is applied for all the clients nodes.
          * Otherwise are notified only the clientNodes specified.
          */
-        if(clientsNodeToNotify == null) {
+        if (clientsNodeToNotify == null) {
             nodeSet = this.topologyGraph.getNodeSet();
         } else {
             nodeSet = new ArrayList<>();
-            for(Integer clientNode : clientsNodeToNotify) {
+            for (Integer clientNode : clientsNodeToNotify) {
                 nodeSet.add(this.topologyGraph.getNode(clientNode.toString()));
             }
         }
@@ -567,6 +619,7 @@ public class ControllerService extends Thread {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
             /*
              * Get Ack from the each node in order to inform the ControllerService that
              * the data plane rule has been successfully added.
@@ -576,6 +629,7 @@ public class ControllerService extends Thread {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
             if (gp instanceof UnicastPacket) {
                 UnicastPacket up = (UnicastPacket) gp;
                 Object payload = null;
@@ -584,6 +638,7 @@ public class ControllerService extends Thread {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+
                 if (payload instanceof ControllerMessageAck) {
                     ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
                     switch (ackMessage.getMessageType()) {
@@ -635,11 +690,11 @@ public class ControllerService extends Thread {
          * is applied for all the clients nodes.
          * Otherwise are notified only the clientNodes specified.
          */
-        if(clientsNodeToNotify == null) {
+        if (clientsNodeToNotify == null) {
             nodeSet = this.topologyGraph.getNodeSet();
         } else {
             nodeSet = new ArrayList<>();
-            for(Integer clientNode : clientsNodeToNotify) {
+            for (Integer clientNode : clientsNodeToNotify) {
                 nodeSet.add(this.topologyGraph.getNode(clientNode.toString()));
             }
         }
@@ -693,10 +748,6 @@ public class ControllerService extends Thread {
 
         @Override
         public void run() {
-            // int packetSize = E2EComm.objectSizePacket(gp);
-            // LocalDateTime localDateTime = LocalDateTime.now();
-            // String timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
-
             if (this.gp instanceof UnicastPacket) {
                 UnicastPacket up = (UnicastPacket) gp;
                 Object payload = null;
@@ -737,7 +788,7 @@ public class ControllerService extends Thread {
                         case OS_ROUTING_REQUEST:
                             handleOsRoutingRequest((ControllerMessageRequest) controllerMessage, clientNodeId, clientDest);
                             break;
-                            default:
+                        default:
                             break;
                     }
                 }
@@ -838,6 +889,7 @@ public class ControllerService extends Thread {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
             System.out.println("ControllerService: path request for flow " + flowId + " from client " + clientNodeId + ", response message successfully sent");
         }
 
@@ -1183,15 +1235,15 @@ public class ControllerService extends Thread {
             BoundReceiveSocket ackSocket = null;
 
             ApplicationRequirements applicationRequirements = requestMessage.getApplicationRequirements();
-            TopologyGraphSelector pathSelector = defaultPathSelector;
+            OsRoutingTopologyGraphSelector pathSelector = osRoutingPathSelector;
             PathSelectionMetric pathSelectionMetric = requestMessage.getPathSelectionMetric();
             if (pathSelectionMetric != null) {
                 if (pathSelectionMetric == PathSelectionMetric.BREADTH_FIRST)
-                    pathSelector = new BreadthFirstFlowPathSelector(topologyGraph);
+                    pathSelector = new BreadthFirstOsRoutingPathSelector(topologyGraph);
                 else if (pathSelectionMetric == PathSelectionMetric.FEWEST_INTERSECTIONS)
-                    pathSelector = new FewestIntersectionsFlowPathSelector(topologyGraph);
+                    pathSelector = new FewestIntersectionsOsRoutingPathSelector(topologyGraph);
                 else if (pathSelectionMetric == PathSelectionMetric.MINIMUM_NETWORK_LOAD)
-                    pathSelector = new MinimumNetworkLoadFlowPathSelector(topologyGraph);
+                    pathSelector = new MinimumNetworkLoadOsRoutingPathSelector(topologyGraph);
             }
 
             System.out.println("ControllerService: first OS routing path request for node ID" + clientNodeId + ", selecting a path");
@@ -1200,26 +1252,61 @@ public class ControllerService extends Thread {
              * Generating the routeID
              */
             int routeId = ThreadLocalRandom.current().nextInt();
-            while (routeId == GenericPacket.UNUSED_FIELD || osRoutes.containsKey(routeId)) {
+            while (routeId == GenericPacket.UNUSED_FIELD || forwardOsRoutingPaths.containsKey(routeId)) {
                 routeId = ThreadLocalRandom.current().nextInt();
             }
 
+            boolean aborted = false;
+
             /*
-             * TODO Generalize the pathSelector
+             * TODO Improve the pathSelector
              * At the moment the TopologyGraphSelector interface is designed with flowId in mind.
-             * For the os level routing it would be nice to generalize this interface with the possibility
-             * to return a List<PathDescriptor> instead of just one PathDescriptor.
-             * For example, let's say we want at maximum 3 paths the usage will be something like
-             * List<PathDescriptor> newOSRoutingPaths = pathSelector.selectPath(clientNodeId, destNodeId, applicationRequirements, flowPaths, 3);
+             * For this reason has been created a new interface called OsRoutingTopologyGraphSelector.
+             * The algorithms implementing this interface need to be improved, especially
+             * FewestIntersectionsOsRoutingPathSelector and MinimumNetworkLoadOsRoutingPathSelector that
+             * don't work well with multiple edges connecting two nodes. These issues are inherited from
+             * the original algorithms FewestIntersectionsFlowPathSelector and MinimumNetworkLoadFlowPathSelector.
+             * So it is necessary to fix them first.
              */
-            PathDescriptor oSRoutingPathForward = pathSelector.selectPath(clientNodeId, destNodeId, applicationRequirements, flowPaths);
-            PathDescriptor oSRoutingPathBackward = pathSelector.selectPath(destNodeId, clientNodeId, applicationRequirements, flowPaths);
+            OsRoutingPathDescriptor oSRoutingForwardPath = pathSelector.selectPath(clientNodeId, destNodeId, applicationRequirements, forwardOsRoutingPaths);
 
-            int hopCount = oSRoutingPathForward.getPathNodeIds().size();
-            String candidateDestinationIP = oSRoutingPathForward.getPath()[hopCount - 1];
+            OsRoutingPathDescriptor oSRoutingBackwardPath = null;
+            if (pathSelectionMetric == PathSelectionMetric.FEWEST_INTERSECTIONS) {
+                OsRoutingPathDescriptor reversePath = pathSelector.reversePath(oSRoutingForwardPath);
+                Map<Integer, OsRoutingPathDescriptor> candidateBackwardOsRoutingPaths = new ConcurrentHashMap<>(backwardOsRoutingPaths);
+                candidateBackwardOsRoutingPaths.put(routeId, reversePath);
+                oSRoutingBackwardPath = pathSelector.selectPath(destNodeId, clientNodeId, applicationRequirements, candidateBackwardOsRoutingPaths);
+            } else {
+                if(oSRoutingForwardPath != null) {
+                    oSRoutingBackwardPath = pathSelector.reversePath(oSRoutingForwardPath);
+                }
+            }
 
-            String destinationIP = "";
+            int forwardPathHopCount = 0;
+            String forwardPathSourceIp = null;
+            String forwardPathDestinationIp = null;
 
+            int backwardPathHopCount = 0;
+            String backwardPathSourceIp = null;
+            String backwardPathDestinationIp = null;
+
+            /*
+             * Sometimes happens that no path is found because the Controller has not
+             * received yet the info about the ControllerClient that has just joined the network.
+             */
+            if (oSRoutingForwardPath == null || oSRoutingBackwardPath == null) {
+                aborted = true;
+            } else {
+                forwardPathSourceIp = oSRoutingForwardPath.getSourceIp();
+                forwardPathDestinationIp = oSRoutingForwardPath.getDestinationIP();
+                forwardPathHopCount = oSRoutingForwardPath.getPath().length;
+
+                backwardPathSourceIp = oSRoutingBackwardPath.getSourceIp();
+                backwardPathDestinationIp = oSRoutingBackwardPath.getDestinationIP();
+                backwardPathHopCount = oSRoutingBackwardPath.getPath().length;
+            }
+
+            ControllerMessageUpdate updateMessage;
             ControllerMessageResponse responseMessage;
 
             try {
@@ -1230,136 +1317,160 @@ public class ControllerService extends Thread {
 
             /*
              * Index to keep track of the intermediate nodes to contact
-             * in case of OS_ROUTING_ABORT.
+             * in case of OS_ROUTING_ABORT for the forward path.
              */
-            int intermediateNodesToNotifyAbort = 0;
-            boolean aborted = false;
+            int forwardPathIntermediateNodesToNotifyAbort = 0;
+            int backwardPathIntermediateNodesToNotifyAbort = 0;
             GenericPacket gp = null;
-            String sourceIP = null;
+            String[] sourceDest = null;
+            int sourcePort = -1;
+            String[] destDest = null;
+            int destPort = -1;
 
             /*
-             * Send an OS_ROUTING_ADD_ROUTE message to the destination node (the receiver) in order to update
-             * the routing tables and to discover which source IP the destination will use
-             * in case of multiple interfaces for the backward path. For this reason the srcIP value in
+             * The first part of the protocol is a negotiation between source and the destination
+             * to find the interfaces to use during the communication
+             */
+
+            /*
+             * Send an OS_ROUTING_ADD_ROUTE message to the client node (the sender) in order to update
+             * the routing tables and to discover which source IP the source will use
+             * in case of multiple interfaces for the forward path. For this reason the srcIP value in
              * OS_ROUTING_ADD_ROUTE is null.
              */
-            MultiNode sourceNode = topologyGraph.getNode(Integer.toString(clientNodeId));
-            String[] sourceDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
-            int sourcePort = sourceNode.getAttribute("port");
+            if (!aborted) {
+                MultiNode sourceNode = topologyGraph.getNode(Integer.toString(clientNodeId));
+                sourceDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
+                sourcePort = sourceNode.getAttribute("port");
 
-            responseMessage = new ControllerMessageResponse(MessageType.OS_ROUTING_ADD_ROUTE, ackSocket.getLocalPort(), null, candidateDestinationIP, oSRoutingPathForward.getPath()[0], null, routeId, ControllerMessage.UNUSED_FIELD);
-            try {
-                E2EComm.sendUnicast(sourceDest, sourcePort, PROTOCOL, E2EComm.serialize(responseMessage));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            /*
-             * Get Ack from the client node in order to inform the ControllerService that
-             * "ip route add" command has been successfully applied.
-             */
-            try {
-                gp = E2EComm.receive(ackSocket);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            if (gp instanceof UnicastPacket) {
-                UnicastPacket up = (UnicastPacket) gp;
-                Object payload = null;
+                updateMessage = new ControllerMessageUpdate(MessageType.OS_ROUTING_ADD_ROUTE, ackSocket.getLocalPort(), forwardPathSourceIp, forwardPathDestinationIp, oSRoutingForwardPath.getPath()[0], routeId);
                 try {
-                    payload = E2EComm.deserialize(up.getBytePayload());
+                    E2EComm.sendUnicast(sourceDest, sourcePort, PROTOCOL, E2EComm.serialize(updateMessage));
                 } catch (Exception e) {
+                    aborted = true;
                     e.printStackTrace();
                 }
-                if (payload instanceof ControllerMessageAck) {
-                    ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
-                    if (ackMessage.getRouteId() == routeId) {
-                        switch (ackMessage.getMessageType()) {
-                            case OS_ROUTING_ACK:
-                                sourceIP = ackMessage.getSrcIP();
-                                break;
-                            case OS_ROUTING_ABORT:
-                                /*
-                                 * The client node was not able to add the route.
-                                 * So we don't need to send a OS_ROUTING_DELETE_ROUTE
-                                 * message since the route does not exist.
-                                 */
-                                aborted = true;
-                                break;
-                            default:
-                                break;
+
+                /*
+                 * Get Ack from the client node in order to inform the ControllerService that
+                 * "ip route add" command has been successfully applied.
+                 */
+                try {
+                    gp = E2EComm.receive(ackSocket);
+                } catch (Exception e) {
+                    aborted = true;
+                    e.printStackTrace();
+                }
+
+                if (gp instanceof UnicastPacket) {
+                    UnicastPacket up = (UnicastPacket) gp;
+                    Object payload = null;
+                    try {
+                        payload = E2EComm.deserialize(up.getBytePayload());
+                    } catch (Exception e) {
+                        aborted = true;
+                        e.printStackTrace();
+                    }
+
+                    if (payload instanceof ControllerMessageAck) {
+                        ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
+                        if (ackMessage.getRouteId() == routeId) {
+                            switch (ackMessage.getMessageType()) {
+                                case OS_ROUTING_ACK:
+                                    System.out.println("ControllerService: OS_ROUTING_ACK received");
+                                    break;
+                                case OS_ROUTING_ABORT:
+                                    /*
+                                     * The client node was not able to add the route for the specified destination.
+                                     * So we don't need to send a OS_ROUTING_DELETE_ROUTE
+                                     * message since the route does not exist. The path computation is not aborted yet
+                                     * because there may be another IP available for the destination.
+                                     */
+                                    aborted = true;
+                                    break;
+                                default:
+                                    break;
+                            }
                         }
                     }
                 }
-            }
-
-            MultiNode destinationNode = topologyGraph.getNode(Integer.toString(destNodeId));
-            String[] destDest = Resolver.getInstance(false).resolveBlocking(destNodeId, 5 * 1000).get(0).getPath();
-            int destPort = destinationNode.getAttribute("port");
-
-            responseMessage = new ControllerMessageResponse(MessageType.OS_ROUTING_ADD_ROUTE, ackSocket.getLocalPort(), null, sourceIP, oSRoutingPathBackward.getPath()[0], null, routeId, ControllerMessage.UNUSED_FIELD);
-            try {
-                E2EComm.sendUnicast(destDest, destPort, PROTOCOL, E2EComm.serialize(responseMessage));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            /*
-             * Get Ack from the destination node in order to inform the ControllerService that
-             * "ip route add" command has been successfully applied.
-             */
-            try {
-                gp = E2EComm.receive(ackSocket);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            if (gp instanceof UnicastPacket) {
-                UnicastPacket up = (UnicastPacket) gp;
-                Object payload = null;
-                try {
-                    payload = E2EComm.deserialize(up.getBytePayload());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                if (payload instanceof ControllerMessageAck) {
-                    ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
-                    if (ackMessage.getRouteId() == routeId) {
-                        switch (ackMessage.getMessageType()) {
-                            case OS_ROUTING_ACK:
-                                destinationIP = ackMessage.getSrcIP();
-                                break;
-                            case OS_ROUTING_ABORT:
-                                /*
-                                 * The destination node was not able to add the route.
-                                 * So we don't need to send a OS_ROUTING_DELETE_ROUTE
-                                 * message since the route does not exist.
-                                 */
-                                aborted = true;
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                }
-            }
-
-            if(!aborted) {
-                if(!destinationIP.equals(candidateDestinationIP)) {
-                    // TODO Notify Client that the destinationIP is changed.
-                } else {
-                    destinationIP = candidateDestinationIP;
-                }
-            } else {
-                // TODO Notify Client Node (the sender)
             }
 
             if (!aborted) {
                 /*
-                 * Send an OS_ROUTING_ADD_ROUTE message to all intermediate nodes in order to update
+                 * Send an OS_ROUTING_ADD_ROUTE message to the destination node (the sender of the backward path) in order to update
+                 * the routing tables and to discover which source IP the destination will use
+                 * in case of multiple interfaces for the backward path. For this reason the srcIP value in
+                 * OS_ROUTING_ADD_ROUTE is null.
+                 */
+                MultiNode destinationNode = topologyGraph.getNode(Integer.toString(destNodeId));
+                destDest = Resolver.getInstance(false).resolveBlocking(destNodeId, 5 * 1000).get(0).getPath();
+                destPort = destinationNode.getAttribute("port");
+
+                updateMessage = new ControllerMessageUpdate(MessageType.OS_ROUTING_ADD_ROUTE, ackSocket.getLocalPort(), backwardPathSourceIp, backwardPathDestinationIp, oSRoutingBackwardPath.getPath()[0], routeId);
+                try {
+                    E2EComm.sendUnicast(destDest, destPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                } catch (Exception e) {
+                    aborted = true;
+                    e.printStackTrace();
+                }
+
+                /*
+                 * Get Ack from the destination node in order to inform the ControllerService that
+                 * "ip route add" command has been successfully applied.
+                 */
+                try {
+                    gp = E2EComm.receive(ackSocket);
+                } catch (Exception e) {
+                    aborted = true;
+                    e.printStackTrace();
+                }
+
+                if (gp instanceof UnicastPacket) {
+                    UnicastPacket up = (UnicastPacket) gp;
+                    Object payload = null;
+                    try {
+                        payload = E2EComm.deserialize(up.getBytePayload());
+                    } catch (Exception e) {
+                        aborted = true;
+                        e.printStackTrace();
+                    }
+
+                    if (payload instanceof ControllerMessageAck) {
+                        ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
+                        if (ackMessage.getRouteId() == routeId) {
+                            switch (ackMessage.getMessageType()) {
+                                case OS_ROUTING_ACK:
+                                    System.out.println("ControllerService: OS_ROUTING_ACK received");
+                                    break;
+                                case OS_ROUTING_ABORT:
+                                    /*
+                                     * The destination node was not able to add the route.
+                                     * So we don't need to send a OS_ROUTING_DELETE_ROUTE
+                                     * message since the route does not exist.
+                                     */
+                                    aborted = true;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            /*
+             * Now that both the source and the destination have found an interface available to communicate,
+             * we need to enable it by configuring the routing tables of all intermediates nodes both for
+             * the forward path and the backward path
+             */
+            if (!aborted) {
+                /*
+                 * Send an OS_ROUTING_ADD_ROUTE message to all intermediate nodes of the forward path in order to update
                  * the routing tables.
                  */
-                for (int i = 0; i < hopCount && !aborted; i++) {
-                    int intermediateNodeId = oSRoutingPathForward.getPathNodeIds().get(i);
+                for (int i = 1; i <= forwardPathHopCount && !aborted; i++) {
+                    int intermediateNodeId = oSRoutingForwardPath.getPathNodeIds().get(i);
                     /*
                      * Send an OS_ROUTING_ADD_ROUTE to all intermediate nodes, except the destination.
                      */
@@ -1368,10 +1479,75 @@ public class ControllerService extends Thread {
                         String[] intermediateDest = Resolver.getInstance(false).resolveBlocking(intermediateNodeId, 5 * 1000).get(0).getPath();
                         int intermediatePort = intermediateNode.getAttribute("port");
 
-                        responseMessage = new ControllerMessageResponse(MessageType.OS_ROUTING_ADD_ROUTE, ackSocket.getLocalPort(), sourceIP, destinationIP, oSRoutingPathForward.getPath()[i + 1], oSRoutingPathBackward.getPath()[hopCount - 1 - i], routeId, ControllerMessage.UNUSED_FIELD);
+                        updateMessage = new ControllerMessageUpdate(MessageType.OS_ROUTING_ADD_ROUTE, ackSocket.getLocalPort(), forwardPathSourceIp, forwardPathDestinationIp, oSRoutingForwardPath.getPath()[i], routeId);
                         try {
-                            E2EComm.sendUnicast(intermediateDest, intermediatePort, PROTOCOL, E2EComm.serialize(responseMessage));
+                            E2EComm.sendUnicast(intermediateDest, intermediatePort, PROTOCOL, E2EComm.serialize(updateMessage));
                         } catch (Exception e) {
+                            aborted = true;
+                            e.printStackTrace();
+                        }
+
+                        /*
+                         * Get Ack from the intermediate node in order to inform the ControllerService that
+                         * "ip route add" command has been successfully applied.
+                         */
+                        try {
+                            gp = E2EComm.receive(ackSocket);
+                        } catch (Exception e) {
+                            aborted = true;
+                            e.printStackTrace();
+                        }
+
+                        if (gp instanceof UnicastPacket) {
+                            UnicastPacket up = (UnicastPacket) gp;
+                            Object payload = null;
+                            try {
+                                payload = E2EComm.deserialize(up.getBytePayload());
+                            } catch (Exception e) {
+                                aborted = true;
+                                e.printStackTrace();
+                            }
+
+                            if (payload instanceof ControllerMessageAck) {
+                                ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
+                                if (ackMessage.getRouteId() == routeId) {
+                                    switch (ackMessage.getMessageType()) {
+                                        case OS_ROUTING_ACK:
+                                            forwardPathIntermediateNodesToNotifyAbort++;
+                                            break;
+                                        case OS_ROUTING_ABORT:
+                                            aborted = true;
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!aborted) {
+                /*
+                 * Send an OS_ROUTING_ADD_ROUTE message to all intermediate nodes of the backward path in order to update
+                 * the routing tables.
+                 */
+                for (int j = 1; j <= backwardPathHopCount && !aborted; j++) {
+                    int intermediateNodeId = oSRoutingBackwardPath.getPathNodeIds().get(j);
+                    /*
+                     * Send an OS_ROUTING_ADD_ROUTE to all intermediate nodes, except the destination.
+                     */
+                    if (intermediateNodeId != clientNodeId) {
+                        MultiNode intermediateNode = topologyGraph.getNode(Integer.toString(intermediateNodeId));
+                        String[] intermediateDest = Resolver.getInstance(false).resolveBlocking(intermediateNodeId, 5 * 1000).get(0).getPath();
+                        int intermediatePort = intermediateNode.getAttribute("port");
+
+                        updateMessage = new ControllerMessageUpdate(MessageType.OS_ROUTING_ADD_ROUTE, ackSocket.getLocalPort(), backwardPathSourceIp, backwardPathDestinationIp, oSRoutingBackwardPath.getPath()[j], routeId);
+                        try {
+                            E2EComm.sendUnicast(intermediateDest, intermediatePort, PROTOCOL, E2EComm.serialize(updateMessage));
+                        } catch (Exception e) {
+                            aborted = true;
                             e.printStackTrace();
                         }
                         /*
@@ -1381,8 +1557,10 @@ public class ControllerService extends Thread {
                         try {
                             gp = E2EComm.receive(ackSocket);
                         } catch (Exception e) {
+                            aborted = true;
                             e.printStackTrace();
                         }
+
                         if (gp instanceof UnicastPacket) {
                             UnicastPacket up = (UnicastPacket) gp;
                             Object payload = null;
@@ -1391,12 +1569,13 @@ public class ControllerService extends Thread {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
+
                             if (payload instanceof ControllerMessageAck) {
                                 ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
                                 if (ackMessage.getRouteId() == routeId) {
                                     switch (ackMessage.getMessageType()) {
                                         case OS_ROUTING_ACK:
-                                            intermediateNodesToNotifyAbort++;
+                                            backwardPathIntermediateNodesToNotifyAbort++;
                                             break;
                                         case OS_ROUTING_ABORT:
                                             aborted = true;
@@ -1412,24 +1591,158 @@ public class ControllerService extends Thread {
             }
 
             /*
-             * If some of the intermediate nodes could not add the route
-             * we need to delete the route for that intermediate nodes
-             * that added this route correctly.
+             * Close the ControllerService ackSocket since it is no longer needed.
              */
-            if (aborted && intermediateNodesToNotifyAbort > 0) {
-                for (int j = 0; j < intermediateNodesToNotifyAbort; j++) {
-                    int intermediateNodeId = oSRoutingPathForward.getPathNodeIds().get(j);
+            if (ackSocket != null) {
+                try {
+                    ackSocket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+
+            if (aborted) {
+                updateMessage = new ControllerMessageUpdate(MessageType.OS_ROUTING_DELETE_ROUTE, ControllerMessage.UNUSED_FIELD, null, null, null, routeId);
+
+                /*
+                 * If some of the intermediate nodes could not configure the forward route
+                 * we need to delete the route for that intermediate nodes
+                 * that added this route correctly.
+                 */
+                if (forwardPathIntermediateNodesToNotifyAbort > 0) {
+                    for (int k = 1; k <= forwardPathIntermediateNodesToNotifyAbort; k++) {
+                        int intermediateNodeId = oSRoutingForwardPath.getPathNodeIds().get(k);
+
+                        if ((intermediateNodeId != destNodeId)) {
+                            MultiNode intermediateNode = topologyGraph.getNode(Integer.toString(intermediateNodeId));
+                            String[] intermediateDest = Resolver.getInstance(false).resolveBlocking(intermediateNodeId, 5 * 1000).get(0).getPath();
+                            int intermediatePort = intermediateNode.getAttribute("port");
+
+                            try {
+                                E2EComm.sendUnicast(intermediateDest, intermediatePort, PROTOCOL, E2EComm.serialize(updateMessage));
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+
+                if (forwardPathSourceIp != null) {
+                    try {
+                        E2EComm.sendUnicast(sourceDest, sourcePort, PROTOCOL, E2EComm.serialize(updateMessage));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                /*
+                 * If some of the intermediate nodes could not configure the backward route
+                 * we need to delete the route for that intermediate nodes
+                 * that added this route correctly.
+                 */
+                if (backwardPathIntermediateNodesToNotifyAbort > 0) {
+                    for (int l = 1; l <= backwardPathIntermediateNodesToNotifyAbort; l++) {
+                        int intermediateNodeId = oSRoutingBackwardPath.getPathNodeIds().get(l);
+
+                        if ((intermediateNodeId != clientNodeId)) {
+                            MultiNode intermediateNode = topologyGraph.getNode(Integer.toString(intermediateNodeId));
+                            String[] intermediateDest = Resolver.getInstance(false).resolveBlocking(intermediateNodeId, 5 * 1000).get(0).getPath();
+                            int intermediatePort = intermediateNode.getAttribute("port");
+
+                            try {
+                                E2EComm.sendUnicast(intermediateDest, intermediatePort, PROTOCOL, E2EComm.serialize(updateMessage));
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+
+                if (backwardPathSourceIp != null) {
+                    try {
+                        E2EComm.sendUnicast(destDest, destPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                routeId = -1;
+            } else {
+                long currentTime = System.currentTimeMillis();
+
+                oSRoutingForwardPath.setCreationTime(currentTime);
+                oSRoutingBackwardPath.setCreationTime(currentTime);
+
+                forwardOsRoutingPaths.put(routeId, oSRoutingForwardPath);
+                backwardOsRoutingPaths.put(routeId, oSRoutingBackwardPath);
+                osRoutesStartTimes.put(routeId, currentTime);
+                osRoutesApplicationRequirements.put(routeId, applicationRequirements);
+
+                System.out.println("FORWARD PATH:");
+                for (String p : oSRoutingForwardPath.getPath()) {
+                    System.out.println(p);
+                }
+                System.out.println("BACKWARD PATH:");
+                for (String p : oSRoutingBackwardPath.getPath()) {
+                    System.out.println(p);
+                }
+                /*
+                 * Send an OS_ROUTING_PUSH_RESPONSE message to the destination selected by the source without waiting for any ack since
+                 * all routes have been added.
+                 */
+                responseMessage = new ControllerMessageResponse(MessageType.OS_ROUTING_PUSH_RESPONSE, ControllerMessage.UNUSED_FIELD, routeId, oSRoutingBackwardPath, applicationRequirements.getDuration());
+                Node receiverNode = topologyGraph.getNode(Integer.toString(destNodeId));
+                int receiverPort = receiverNode.getAttribute("port");
+                try {
+                    E2EComm.sendUnicast(destDest, receiverPort, PROTOCOL, E2EComm.serialize(responseMessage));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                /*
+                 * Send an OS_ROUTING_PUSH_RESPONSE message to all the intermediate nodes of the forward path so that
+                 * they can keep track of the existing route when it will expire and locally deleted.
+                 * all routes have been added.
+                 */
+                responseMessage = new ControllerMessageResponse(MessageType.OS_ROUTING_PUSH_RESPONSE, ControllerMessage.UNUSED_FIELD, routeId, null, applicationRequirements.getDuration());
+                for (int m = 1; m <= forwardPathHopCount; m++) {
+                    int intermediateNodeId = oSRoutingForwardPath.getPathNodeIds().get(m);
 
                     if ((intermediateNodeId != destNodeId)) {
                         MultiNode intermediateNode = topologyGraph.getNode(Integer.toString(intermediateNodeId));
                         String[] intermediateDest = Resolver.getInstance(false).resolveBlocking(intermediateNodeId, 5 * 1000).get(0).getPath();
                         int intermediatePort = intermediateNode.getAttribute("port");
 
-                        responseMessage = new ControllerMessageResponse(MessageType.OS_ROUTING_DELETE_ROUTE, ControllerMessage.UNUSED_FIELD, null, null, null,null, routeId, ControllerMessage.UNUSED_FIELD);
                         try {
                             E2EComm.sendUnicast(intermediateDest, intermediatePort, PROTOCOL, E2EComm.serialize(responseMessage));
                         } catch (Exception e) {
                             e.printStackTrace();
+                        }
+                    }
+                }
+
+                /*
+                 * To optimize the overhead due to this confirmation messages we avoid to send
+                 * twice the same message in case of BreadthFirst and Minimum Network Load
+                 * because in these cases the forward path and the backward one contain the same
+                 * intermediate nodes. In case of fewest intersections the intermediate nodes of the
+                 * forward path and the backward path are in most common cases different.
+                 */
+                if(pathSelectionMetric == PathSelectionMetric.FEWEST_INTERSECTIONS) {
+                    for (int n = 1; n <= backwardPathHopCount; n++) {
+                        int intermediateNodeId = oSRoutingBackwardPath.getPathNodeIds().get(n);
+
+                        if ((intermediateNodeId != clientNodeId)) {
+                            MultiNode intermediateNode = topologyGraph.getNode(Integer.toString(intermediateNodeId));
+                            String[] intermediateDest = Resolver.getInstance(false).resolveBlocking(intermediateNodeId, 5 * 1000).get(0).getPath();
+                            int intermediatePort = intermediateNode.getAttribute("port");
+
+                            try {
+                                E2EComm.sendUnicast(intermediateDest, intermediatePort, PROTOCOL, E2EComm.serialize(responseMessage));
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 }
@@ -1440,27 +1753,11 @@ public class ControllerService extends Thread {
              * all routes have been added or removed. If the route has been created correctly we return
              * back the routeId otherwise we return to the client node routeId = -1.
              */
-            if (aborted) {
-                routeId = -1;
-            } else {
-                osRoutes.put(routeId, oSRoutingPathForward);
-            }
-            responseMessage = new ControllerMessageResponse(MessageType.OS_ROUTING_PULL_RESPONSE, ControllerMessage.UNUSED_FIELD, null, null, null, null, routeId, ControllerMessage.UNUSED_FIELD);
+            responseMessage = new ControllerMessageResponse(MessageType.OS_ROUTING_PULL_RESPONSE, ControllerMessage.UNUSED_FIELD, routeId, oSRoutingForwardPath, ControllerMessage.UNUSED_FIELD);
             try {
                 E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(responseMessage));
             } catch (Exception e) {
                 e.printStackTrace();
-            }
-
-            if (!aborted) {
-                responseMessage = new ControllerMessageResponse(MessageType.OS_ROUTING_PUSH_RESPONSE, ControllerMessage.UNUSED_FIELD, null, null, null, null, routeId, clientNodeId);
-                Node receiverNode = topologyGraph.getNode(Integer.toString(destNodeId));
-                int receiverPort = receiverNode.getAttribute("port");
-                try {
-                    E2EComm.sendUnicast(destDest, receiverPort, PROTOCOL, E2EComm.serialize(responseMessage));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
             }
         }
     }
@@ -1516,6 +1813,20 @@ public class ControllerService extends Thread {
             }
         }
 
+        private void updateOsRoutes() {
+            for (Integer routeId : osRoutesStartTimes.keySet()) {
+                long osRouteStartTime = osRoutesStartTimes.get(routeId);
+                int duration = osRoutesApplicationRequirements.get(routeId).getDuration();
+                long elapsed = System.currentTimeMillis() - osRouteStartTime;
+                if (elapsed > (duration + (duration / 4)) * 1000) {
+                    osRoutesStartTimes.remove(routeId);
+                    osRoutesApplicationRequirements.remove(routeId);
+                    forwardOsRoutingPaths.remove(routeId);
+                    backwardOsRoutingPaths.remove(routeId);
+                }
+            }
+        }
+
         private void sendDefaultFlowPathsUpdate() {
             for (Node clientNode : topologyGraph.getNodeSet()) {
                 int clientNodeId = Integer.parseInt(clientNode.getId());
@@ -1557,6 +1868,7 @@ public class ControllerService extends Thread {
                 }
                 updateTopology();
                 updateFlows();
+                updateOsRoutes();
                 if (routingPolicy == RoutingPolicy.REROUTING)
                     sendDefaultFlowPathsUpdate();
                 if (trafficEngineeringPolicy == TrafficEngineeringPolicy.SINGLE_FLOW || trafficEngineeringPolicy == TrafficEngineeringPolicy.QUEUES || trafficEngineeringPolicy == TrafficEngineeringPolicy.TRAFFIC_SHAPING)
@@ -1565,5 +1877,4 @@ public class ControllerService extends Thread {
             System.out.println("ControllerService UpdateManager FINISHED");
         }
     }
-
 }

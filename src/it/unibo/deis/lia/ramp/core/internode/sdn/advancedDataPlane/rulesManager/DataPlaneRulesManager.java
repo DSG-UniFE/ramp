@@ -6,7 +6,6 @@ import it.unibo.deis.lia.ramp.core.e2e.UnicastHeader;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
 import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataPlaneMessage.DataPlaneMessage;
-import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.DataTypesManager;
 import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.DataTypesManagerInterface;
 import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.rulesManager.forwardingListener.DataPlaneForwardingListener;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
@@ -157,19 +156,7 @@ public class DataPlaneRulesManager {
     }
 
     public void deactivate() {
-        /*
-         * Not used at the moment because in the case there is a ControllerClient in the same
-         * machine of the ControllerService, if the ControllerService stops this manager
-         * will become null for the ControllerClient.
-         */
-
-        /*
-         * TODO The best thing to do is before this manager
-         * TODO is deactivated the ControllerService should send a message
-         * TODO to all ControllerClients in order to remove all the rules
-         * TODO currently active.
-         */
-        if(dataPlaneRulesManager != null) {
+        if (dataPlaneRulesManager != null) {
             Dispatcher.getInstance(false).removePacketForwardingListener(forwardingListener);
             forwardingListener = null;
             dataPlaneRulesDatabase = null;
@@ -179,6 +166,8 @@ public class DataPlaneRulesManager {
             rampClassLoader = null;
 
             System.out.println("DataPlaneRulesManager STOP");
+
+            dataPlaneRulesManager = null;
         }
     }
 
@@ -318,6 +307,7 @@ public class DataPlaneRulesManager {
             } catch (InvocationTargetException e) {
                 e.printStackTrace();
             }
+
             System.out.println("DataPlaneRulesManager: unicastPacketDataPlaneRule: " + dataPlaneRuleName + " for DataType: " + dataTypeName + " successfully applied.");
         }
     }
@@ -369,7 +359,7 @@ public class DataPlaneRulesManager {
                 rules.add(dataPlaneRuleName);
                 activeDataPlaneRules.put(dataTypeId, rules);
             } else {
-                if(!activeDataPlaneRules.get(dataTypeId).contains(dataPlaneRuleName)) {
+                if (!activeDataPlaneRules.get(dataTypeId).contains(dataPlaneRuleName)) {
                     activeDataPlaneRules.get(dataTypeId).add(dataPlaneRuleName);
                 }
             }

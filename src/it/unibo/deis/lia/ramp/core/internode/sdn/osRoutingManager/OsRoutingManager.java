@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Dmitrij David Padalino Montenero
- *
+ * <p>
  * This component is able to enable static routing according to decisions taken at
  * the middleware level by using Policy-based routing mechanisms.
  * All the rules added by this manager are ephemeral i.e. they will not survive in case
@@ -46,20 +46,13 @@ public class OsRoutingManager {
      * the key is 192.168.1 representing the subnet
      * the value is 192.168.1.100 representing the local IP of that subnet.
      */
-    private Map<String, String> localIpAddresses;
-
-    /**
-     * Data structure to keep tack of the current ip route added for packets sent from this node
-     * The key contains the destination IP.
-     * The value contains the list of IP sources already used to reach that destination.
-     */
-    private Map<String, List<String>> currentDestinationsSourceIps;
+    private List<String> localIpAddresses;
 
     /**
      * Data structure to keep tack of the "ip route add" commands executed for each routeId.
      * This map will be used by the sender node to retrieve the srcIP to use given a routeId
      * and by this manager to delete a route when it expires.
-     *
+     * <p>
      * The key contains the routeId.
      * The value contains a list of IpRouteRule objects.
      */
@@ -70,7 +63,7 @@ public class OsRoutingManager {
      * The key contains the routeId
      * The value contains the sourceIp associated to the ip rule.
      */
-    private Map<Integer, String> currentRules;
+    private Map<Integer, List<String>> currentRules;
 
     /**
      * Data structure to keep track of the current routing local tables
@@ -92,7 +85,6 @@ public class OsRoutingManager {
     private static OsRoutingManager osRoutingManager = null;
 
     private OsRoutingManager() {
-        this.currentDestinationsSourceIps = new ConcurrentHashMap<>();
         this.currentRoutes = new ConcurrentHashMap<>();
         this.currentRules = new ConcurrentHashMap<>();
         this.routingLocalTables = new ConcurrentHashMap<>();
@@ -143,7 +135,7 @@ public class OsRoutingManager {
             resetSuperUserCredentials();
 
             superuserPassword = null;
-            this.currentDestinationsSourceIps = null;
+
             this.currentRoutes = null;
             this.currentRules = null;
             this.routingLocalTables = null;
@@ -194,6 +186,9 @@ public class OsRoutingManager {
         }
     }
 
+    /*
+     * TODO Improve this
+     */
     private void updateLocalIpAddresses() {
         Vector<String> localInterfaces = null;
         int localInterfacesLength = 0;
@@ -208,13 +203,7 @@ public class OsRoutingManager {
         }
 
         if (localInterfacesLength > 0) {
-            this.localIpAddresses = new ConcurrentHashMap<>();
-            for (int i = 0; i < localInterfacesLength; i++) {
-                String currentLocalInterface = localInterfaces.get(i);
-                String[] splitKey = currentLocalInterface.split("\\.");
-                String key = splitKey[0] + "." + splitKey[1] + "." + splitKey[2];
-                this.localIpAddresses.put(key, currentLocalInterface);
-            }
+            this.localIpAddresses = new ArrayList<>(localInterfaces);
         }
     }
 
@@ -236,12 +225,12 @@ public class OsRoutingManager {
             return false;
         } else if (RampEntryPoint.os.startsWith("linux")) {
             try {
-                boolean isSender = (sourceIP == null);
                 /*
-                 * In case of one hop route if the sender node has to find a new viaIP
-                 * it needs to update also the destinationIP.
+                 * Check if this node is the sender node.
                  */
-                boolean isOneHopRoute = isSender && destinationIP.equals(viaIP);
+                updateLocalIpAddresses();
+
+                boolean isSender = this.localIpAddresses.contains(sourceIP);
 
                 /*
                  * iproute2 has reserved values for these tables
@@ -252,7 +241,7 @@ public class OsRoutingManager {
                  * so the routingLocalTablesIndex must start from 1 and be less than 253.
                  * If this range is exceeded it is not possible to add a new local routing table.
                  */
-                if(this.routingLocalTablesIndex >= 253 ) {
+                if (this.routingLocalTablesIndex >= 253) {
                     return false;
                 }
 
@@ -261,67 +250,6 @@ public class OsRoutingManager {
                 System.out.println("OSRoutingManager " + ipRouteCommand);
                 sudoCommandResult = sudoCommand(ipRouteCommand);
                 System.out.println("OSRoutingManager " + ipRouteCommand + " result: " + sudoCommandResult);
-
-                /*
-                 * if sourceIP is null this node is the sender, so we need
-                 * to identify the srcIP address to use.
-                 */
-                if (isSender) {
-                    updateLocalIpAddresses();
-
-                    String[] splitKey = viaIP.split("\\.");
-                    String key = splitKey[0] + "." + splitKey[1] + "." + splitKey[2];
-                    sourceIP = this.localIpAddresses.get(key);
-                }
-
-                /*
-                 * Check if this destIP has already this srcIP associated,
-                 * if the association exists it is not possible to select
-                 * this route so let's discover if exists another interface
-                 * to reach the next hop.
-                 */
-                if (this.currentDestinationsSourceIps.containsKey(destinationIP)) {
-                    List<String> existingSources = this.currentDestinationsSourceIps.get(destinationIP);
-                    if (existingSources.contains(sourceIP)) {
-                        /*
-                         * There is already an ip route add assigned for this destination.
-                         * Let's check if it is possible to reach the destination by using another
-                         * network interface.
-                         */
-                        boolean foundNewViaIP = false;
-                        List<InetAddress> hopAvailableAddresses = Heartbeater.getInstance(false).getNeighborAvailableAddressesByInetAddress(InetAddress.getByName(viaIP));
-
-                        for (InetAddress a : hopAvailableAddresses) {
-                            String candidateViaIP = a.getHostAddress();
-                            if (!candidateViaIP.equals(viaIP) && !this.currentDestinationsSourceIps.containsKey(candidateViaIP)) {
-                                viaIP = candidateViaIP;
-                                foundNewViaIP = true;
-                                break;
-                            }
-                        }
-                        /*
-                         * If a new interface is not found it is not possible
-                         * to create the route.
-                         */
-                        if (foundNewViaIP) {
-                            /*
-                             * Update the sourceIP if this node is the sender according
-                             * to the new interface discovered to reach next hop.
-                             */
-                            if(isSender) {
-                                String[] splitKey = viaIP.split("\\.");
-                                String key = splitKey[0] + "." + splitKey[1] + "." + splitKey[2];
-                                sourceIP = this.localIpAddresses.get(key);
-
-                                if(isOneHopRoute) {
-                                    destinationIP = viaIP;
-                                }
-                            }
-                        } else {
-                            return false;
-                        }
-                    }
-                }
 
                 /*
                  * Check if a table name for the current sourceIP exists otherwise create it.
@@ -353,7 +281,7 @@ public class OsRoutingManager {
                 IpRouteRule addRouteRule;
                 String localTableName = this.routingLocalTables.get(sourceIP).getTableName();
 
-                if(isSender) {
+                if (isSender) {
                     addRouteCommand = "ip route add " + destinationIP + " via " + viaIP + " src " + sourceIP + " table " + localTableName;
                     addRouteRule = new IpRouteRule(sourceIP, viaIP, destinationIP);
                 } else {
@@ -371,10 +299,14 @@ public class OsRoutingManager {
                     return false;
                 } else {
                     /*
-                     * Everything is fine so we can keep track of this routeId.
+                     * Everything is fine so we can keep track of the rule for this routeId.
                      */
-                    if(isSender) {
-                        this.currentRules.put(routeId, sourceIP);
+                    if(!this.currentRules.containsKey(routeId)) {
+                        List<String> sourceList = new ArrayList<>();
+                        sourceList.add(sourceIP);
+                        this.currentRules.put(routeId, sourceList);
+                    } else {
+                        this.currentRules.get(routeId).add(sourceIP);
                     }
                 }
 
@@ -383,15 +315,7 @@ public class OsRoutingManager {
                  */
                 ipRouteFlushCache();
 
-                if (!this.currentDestinationsSourceIps.containsKey(destinationIP)) {
-                    List<String> srcList = new ArrayList<>();
-                    srcList.add(sourceIP);
-                    this.currentDestinationsSourceIps.put(destinationIP, srcList);
-                } else {
-                    this.currentDestinationsSourceIps.get(destinationIP).add(sourceIP);
-                }
-
-                if(!this.currentRoutes.containsKey(routeId)) {
+                if (!this.currentRoutes.containsKey(routeId)) {
                     List<IpRouteRule> rulesList = new ArrayList<>();
                     rulesList.add(addRouteRule);
                     this.currentRoutes.put(routeId, rulesList);
@@ -426,8 +350,9 @@ public class OsRoutingManager {
              * associated to this routeId.
              */
             List<IpRouteRule> addRouteRules = this.currentRoutes.get(routeId);
+            int srcIndex = 0;
 
-            for(IpRouteRule ipRouteRule : addRouteRules) {
+            for (IpRouteRule ipRouteRule : addRouteRules) {
                 String sourceIP = ipRouteRule.getSourceIP();
                 String viaIP = ipRouteRule.getViaIP();
                 String destinationIP = ipRouteRule.getDestinationIP();
@@ -435,11 +360,11 @@ public class OsRoutingManager {
                 /*
                  * Retrieve the routing table name containing this route.
                  */
-                String ruleSourceIP = this.currentRules.get(routeId);
+                String ruleSourceIP = this.currentRules.get(routeId).get(srcIndex);
                 String localTableName = this.routingLocalTables.get(ruleSourceIP).getTableName();
 
 
-                if(sourceIP != null) {
+                if (sourceIP != null) {
                     /*
                      * This node is the sender of this routeId.
                      */
@@ -458,7 +383,7 @@ public class OsRoutingManager {
                     e.printStackTrace();
                 }
 
-                this.currentDestinationsSourceIps.get(destinationIP).remove(sourceIP);
+                srcIndex++;
             }
 
             /*
@@ -577,43 +502,6 @@ public class OsRoutingManager {
         }
     }
 
-    /**
-     * Given a routeID this method returns the sourceIP to be used
-     * according to routing decisions made by the OsRoutingManager.
-     *
-     * @param routeId given by the client
-     * @return sourceIP to be used by the client. It is different from null
-     * only if this node is the true sender of this route.
-     */
-    public String getRouteIdSourceIpAddress(int routeId) {
-        String result = null;
-        if (this.currentRules.containsKey(routeId)) {
-            result = this.currentRules.get(routeId);
-        }
-        return result;
-    }
-
-    /**
-     * Given a routeID this method returns the destinationIP to be used
-     * according to routing decisions made by the OsRoutingManager.
-     *
-     * @param routeId given by the client
-     * @return destinationIP to be used by the client.
-     */
-    public String getRouteIdDestinationIpAddress(int routeId) {
-        String result = null;
-        if (this.currentRules.containsKey(routeId)) {
-            String sourceIp = this.currentRules.get(routeId);
-            for(IpRouteRule ipRouteRule : this.currentRoutes.get(routeId)) {
-                if(ipRouteRule.getSourceIP().equals(sourceIp)) {
-                    result = ipRouteRule.getDestinationIP();
-                    break;
-                }
-            }
-        }
-        return result;
-    }
-
     private void getSuperUserPassword() {
         if (superuserPassword == null) {
             /*
@@ -625,7 +513,7 @@ public class OsRoutingManager {
              * Get Super User Password
              */
             String candidateSuperUserPassword = showSuperUserPasswordDialog("Insert root password");
-            while(candidateSuperUserPassword == null || !setupSuperUserCredentials(candidateSuperUserPassword)) {
+            while (candidateSuperUserPassword == null || !setupSuperUserCredentials(candidateSuperUserPassword)) {
                 candidateSuperUserPassword = showSuperUserPasswordDialog("Wrong password. Insert root password");
             }
             superuserPassword = candidateSuperUserPassword;
@@ -687,6 +575,7 @@ public class OsRoutingManager {
             setupSuperUserCredentials(superuserPassword);
         }
     }
+
     private static String sudoCommand(String command) {
         return sudoCommand(command, 0);
     }
@@ -701,7 +590,7 @@ public class OsRoutingManager {
         ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
 
         DefaultExecutor exec = new DefaultExecutor();
-        if(exitValue != 0) {
+        if (exitValue != 0) {
             exec.setExitValue(exitValue);
         }
         PumpStreamHandler streamHandler = new PumpStreamHandler(stdOut, stdErr);

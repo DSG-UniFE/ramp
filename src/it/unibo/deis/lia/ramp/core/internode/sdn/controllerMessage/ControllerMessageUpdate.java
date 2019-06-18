@@ -39,6 +39,14 @@ public class ControllerMessageUpdate extends ControllerMessage {
 
     private String dataPlaneRule;
 
+    private String srcIp;
+
+    private String destIp;
+
+    private String viaIp;
+
+    private int routeId;
+
     // TODO Change OS_ROUTING_ADD_ROUTE and OS_ROUTING_DELETE_ROUTE
     /**
      * TOPOLOGY_UPDATE message: messageType, neighborNodes, nodeStats
@@ -66,6 +74,10 @@ public class ControllerMessageUpdate extends ControllerMessage {
         this.dataPlaneMessage = dataPlaneMessage;
         this.dataType = dataType;
         this.dataPlaneRule = dataPlaneRule;
+        this.srcIp = null;
+        this.destIp = null;
+        this.viaIp = null;
+        this.routeId = UNUSED_FIELD;
     }
 
     public ControllerMessageUpdate(MessageType messageType, Map<String, NodeStats> nodeStats, Map<Integer, List<String>> neighborNodes, TrafficEngineeringPolicy trafficEngineeringPolicy, RoutingPolicy routingPolicy, Map<Integer, PathDescriptor> newPathMappings, Map<Integer, Integer> flowPriorities, DataPlaneMessage dataPlaneMessage, String dataType, String dataPlaneRule) {
@@ -79,6 +91,14 @@ public class ControllerMessageUpdate extends ControllerMessage {
         this.dataPlaneMessage = dataPlaneMessage;
         this.dataType = dataType;
         this.dataPlaneRule = dataPlaneRule;
+    }
+
+    public ControllerMessageUpdate(MessageType messageType, int clientPort, String srcIP, String destIP, String viaIP, int routeId) {
+        super(messageType, clientPort);
+        this.srcIp = srcIP;
+        this.destIp = destIP;
+        this.viaIp = viaIP;
+        this.routeId = routeId;
     }
 
     public Map<Integer, List<String>> getNeighborNodes() {
@@ -145,4 +165,20 @@ public class ControllerMessageUpdate extends ControllerMessage {
     public String getDataPlaneRule() {
         return dataPlaneRule;
     }
+
+    public String getSrcIP() { return this.srcIp; }
+
+    public void setSrcIP(String srcIP) { this.srcIp = srcIP; }
+
+    public String getDestIP() { return this.destIp; }
+
+    public void setDestIP(String destIP) { this.destIp = destIP; }
+
+    public String getViaIP() { return this.viaIp; }
+
+    public void setViaIP(String viaIP) { this.viaIp = viaIP; }
+
+    public int getRouteId() {return this.routeId; }
+
+    public void setRouteId(int routeId) { this.routeId = routeId; }
 }
