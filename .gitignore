@@ -1,10 +1,7 @@
-# Properties
-resources/ramp.props
-
-# Compiled class file
+# Compiled class classFile
 *.class
 
-# Log file
+# Log classFile
 logs/
 *.log
 
