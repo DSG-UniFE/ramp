@@ -108,7 +108,7 @@ In the SDNControllerClient GUI on node 3:
 * To view the received message click on the `Update Log` button in the right-bottom.
 
 # Graceful RAMP shut-down
-In order to avoid any kind of inconsistencies, it is recommended to follow these steps in order to shutdown RAMP.
+In order to avoid any kind of inconsistencies, it is recommended to follow these steps to shutdown RAMP.
 * Close the SDNControllerClient and close the RAMP main window on node 3.
 * Close the SDNControllerClient and close the RAMP main window on node 2.
 * Close the SDNControllerClient, close the SDNControllerService and close the RAMP main window on node 1. 
