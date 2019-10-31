@@ -26,6 +26,8 @@ public class MulticastingForwarder implements DataPlaneForwarder {
 
     private static MulticastingForwarder multicastingForwarder = null;
 
+    private ControllerClientInterface controllerClient = null;
+
     /**
      * Data structure for throughput file building
      */
@@ -54,8 +56,9 @@ public class MulticastingForwarder implements DataPlaneForwarder {
     @Override
     public void receivedUdpUnicastPacket(UnicastPacket up) {
         if (up.getFlowId() != GenericPacket.UNUSED_FIELD && up.getDestNodeId() == Dispatcher.getLocalRampId() && up.getDestPort() == 40000) {
-            ControllerClientInterface controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
-            //ControllerClient controllerClient = ControllerClient.getInstance();
+            if(controllerClient == null) {
+                controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
+            }
 
             List<PathDescriptor> nextHops = controllerClient.getFlowMulticastNextHops(up.getFlowId());
             if (nextHops != null) {
@@ -138,8 +141,9 @@ public class MulticastingForwarder implements DataPlaneForwarder {
     @Override
     public void receivedTcpUnicastPacket(UnicastPacket up) {
         if (up.getFlowId() != GenericPacket.UNUSED_FIELD && up.getDestNodeId() == Dispatcher.getLocalRampId() && up.getDestPort() == 40000) {
-            ControllerClientInterface controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
-            //ControllerClient controllerClient = ControllerClient.getInstance();
+            if(controllerClient == null) {
+                controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
+            }
 
             List<PathDescriptor> nextHops = controllerClient.getFlowMulticastNextHops(up.getFlowId());
             if (nextHops != null) {

@@ -57,7 +57,7 @@ public class UnicastPacket extends GenericPacket {
             byte retry,
             int timeWait,
             int expiry,
-            short connectTimeout,
+            int connectTimeout,
             int flowId, // Alessandro Dolci
             byte[] payload
     ) throws Exception {
@@ -93,7 +93,7 @@ public class UnicastPacket extends GenericPacket {
             byte retry,
             int timeWait,
             int expiry,
-            short connectTimeout,
+            int connectTimeout,
             int flowId,
             long dataType, // Dmitrij David Padalino Montenero
             byte[] payload
@@ -208,7 +208,7 @@ public class UnicastPacket extends GenericPacket {
         header.setExpiry(expiry);
     }
 
-    public short getConnectTimeout() {
+    public int getConnectTimeout() {
         return header.getConnectTimeout();
     }
 
@@ -267,7 +267,7 @@ public class UnicastPacket extends GenericPacket {
     	out.writeInt(header.getBufferSize());
     	out.writeByte(header.getRetry());
     	out.writeInt(header.getTimeWait());
-    	out.writeShort(header.getConnectTimeout());
+    	out.writeInt(header.getConnectTimeout());
     	
     	//System.out.println("UnicastPacket.writeObject bytePayload.length="+bytePayload.length);
     	out.writeInt(bytePayload.length);
@@ -294,7 +294,7 @@ public class UnicastPacket extends GenericPacket {
     	int bufferSize = in.readInt();
     	byte retry = in.readByte();
     	int timeWait = in.readInt();
-    	short connectTimeout = in.readShort();
+    	int connectTimeout = in.readInt();
     	
 		this.header = new UnicastHeader(
 				dest,
@@ -341,7 +341,7 @@ public class UnicastPacket extends GenericPacket {
     	int bufferSize = in.readInt();
     	byte retry = in.readByte();
     	int timeWait = in.readInt();
-    	short connectTimeout = in.readShort();
+    	int connectTimeout = in.readInt();
     	
 		this.header = new UnicastHeader(
 				dest,
@@ -384,7 +384,7 @@ public class UnicastPacket extends GenericPacket {
     	out.writeInt(header.getBufferSize());
     	out.writeByte(header.getRetry());
     	out.writeInt(header.getTimeWait());
-    	out.writeShort(header.getConnectTimeout());
+    	out.writeInt(header.getConnectTimeout());
     	
     	out.writeInt(bytePayload.length);
 		//System.out.println("Unicastpacket.writeExternal bytePayload.length="+bytePayload.length);
@@ -471,7 +471,7 @@ public class UnicastPacket extends GenericPacket {
         uh.setRetry((byte) upProtobuf.getRetry());
         uh.setTimeWait(upProtobuf.getTimeWait());
         uh.setExpiry(upProtobuf.getExpiry()); //Stefano Lanzone
-        uh.setConnectTimeout((short) upProtobuf.getConnectTimeout());
+        uh.setConnectTimeout(upProtobuf.getConnectTimeout());
         uh.setFlowId(upProtobuf.getFlowId()); // Alessandro Dolci
         uh.setDataType(upProtobuf.getDataType()); // Dmitrij David Padalino Montenero
 

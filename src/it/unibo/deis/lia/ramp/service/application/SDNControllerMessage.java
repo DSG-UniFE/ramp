@@ -8,6 +8,8 @@ public class SDNControllerMessage implements Serializable {
 
     private int seqNumber;
 
+    private int testRepetition;
+
     private byte[] payload;
 
     public SDNControllerMessage() {
@@ -34,5 +36,13 @@ public class SDNControllerMessage implements Serializable {
 
     public int getSeqNumber() {
         return this.seqNumber;
+    }
+
+    public void setTestRepetition(int testRepetition) {
+        this.testRepetition = testRepetition;
+    }
+
+    public int getTestRepetition() {
+        return this.testRepetition;
     }
 }

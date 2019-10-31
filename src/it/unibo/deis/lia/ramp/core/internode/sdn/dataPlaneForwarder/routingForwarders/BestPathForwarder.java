@@ -18,6 +18,8 @@ public class BestPathForwarder implements DataPlaneForwarder {
 
     private static BestPathForwarder flowPathChanger = null;
 
+    private ControllerClientInterface controllerClient = null;
+
     public synchronized static BestPathForwarder getInstance() {
         if (flowPathChanger == null) {
             flowPathChanger = new BestPathForwarder();
@@ -52,13 +54,15 @@ public class BestPathForwarder implements DataPlaneForwarder {
 
     @Override
     public void receivedTcpUnicastHeader(UnicastHeader uh) {
+        if(controllerClient == null) {
+            controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
+        }
         /*
          * Check if the packet header contains a valid flowId and has to be processed according to the SDN paradigm.
          */
         if (uh.getFlowId() != GenericPacket.UNUSED_FIELD) {
             String[] newPath;
-            //ControllerClient controllerClient = ControllerClient.getInstance();
-            ControllerClientInterface controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
+
             /*
              * If the current node is the sender, check for a new complete path
              */
@@ -73,8 +77,7 @@ public class BestPathForwarder implements DataPlaneForwarder {
                     System.out.println("FlowPathChanger: dest path changed to packet " + uh.getId() + " belonging to flow " + uh.getFlowId());
                     for (int i = 0; i < newPath.length; i++)
                         System.out.println("FlowPathChanger: new flow path address " + i + ", " + newPath[i]);
-                }
-                else
+                } else
                     System.out.println("FlowPathChanger: no changes made to packet " + uh.getId() + " belonging to flow " + uh.getFlowId());
             }
         }

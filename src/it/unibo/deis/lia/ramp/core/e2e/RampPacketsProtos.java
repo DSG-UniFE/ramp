@@ -20,10 +20,12 @@ public final class RampPacketsProtos {
 
     /**
      * <code>required int32 nodeId = 1;</code>
+     * @return Whether the nodeId field is set.
      */
     boolean hasNodeId();
     /**
      * <code>required int32 nodeId = 1;</code>
+     * @return The nodeId.
      */
     int getNodeId();
   }
@@ -38,12 +40,19 @@ public final class RampPacketsProtos {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:HeartbeatRequest)
       HeartbeatRequestOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use HeartbeatRequest.newBuilder() to construct.
     private HeartbeatRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
     }
     private HeartbeatRequest() {
-      nodeId_ = 0;
+    }
+
+    @Override
+    @SuppressWarnings({"unused"})
+    protected Object newInstance(
+        UnusedPrivateParameter unused) {
+      return new HeartbeatRequest();
     }
 
     @Override
@@ -56,6 +65,9 @@ public final class RampPacketsProtos {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -67,16 +79,16 @@ public final class RampPacketsProtos {
             case 0:
               done = true;
               break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
             case 8: {
               bitField0_ |= 0x00000001;
               nodeId_ = input.readInt32();
+              break;
+            }
+            default: {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
               break;
             }
           }
@@ -96,6 +108,7 @@ public final class RampPacketsProtos {
       return RampPacketsProtos.internal_static_HeartbeatRequest_descriptor;
     }
 
+    @Override
     protected FieldAccessorTable
         internalGetFieldAccessorTable() {
       return RampPacketsProtos.internal_static_HeartbeatRequest_fieldAccessorTable
@@ -108,18 +121,21 @@ public final class RampPacketsProtos {
     private int nodeId_;
     /**
      * <code>required int32 nodeId = 1;</code>
+     * @return Whether the nodeId field is set.
      */
     public boolean hasNodeId() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000001) != 0);
     }
     /**
      * <code>required int32 nodeId = 1;</code>
+     * @return The nodeId.
      */
     public int getNodeId() {
       return nodeId_;
     }
 
     private byte memoizedIsInitialized = -1;
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -133,20 +149,22 @@ public final class RampPacketsProtos {
       return true;
     }
 
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         output.writeInt32(1, nodeId_);
       }
       unknownFields.writeTo(output);
     }
 
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(1, nodeId_);
       }
@@ -155,7 +173,6 @@ public final class RampPacketsProtos {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @Override
     public boolean equals(final Object obj) {
       if (obj == this) {
@@ -166,14 +183,13 @@ public final class RampPacketsProtos {
       }
       HeartbeatRequest other = (HeartbeatRequest) obj;
 
-      boolean result = true;
-      result = result && (hasNodeId() == other.hasNodeId());
+      if (hasNodeId() != other.hasNodeId()) return false;
       if (hasNodeId()) {
-        result = result && (getNodeId()
-            == other.getNodeId());
+        if (getNodeId()
+            != other.getNodeId()) return false;
       }
-      result = result && unknownFields.equals(other.unknownFields);
-      return result;
+      if (!unknownFields.equals(other.unknownFields)) return false;
+      return true;
     }
 
     @Override
@@ -182,7 +198,7 @@ public final class RampPacketsProtos {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasNodeId()) {
         hash = (37 * hash) + NODEID_FIELD_NUMBER;
         hash = (53 * hash) + getNodeId();
@@ -192,6 +208,17 @@ public final class RampPacketsProtos {
       return hash;
     }
 
+    public static HeartbeatRequest parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static HeartbeatRequest parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static HeartbeatRequest parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -251,6 +278,7 @@ public final class RampPacketsProtos {
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
@@ -258,6 +286,7 @@ public final class RampPacketsProtos {
     public static Builder newBuilder(HeartbeatRequest prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
@@ -285,6 +314,7 @@ public final class RampPacketsProtos {
         return RampPacketsProtos.internal_static_HeartbeatRequest_descriptor;
       }
 
+      @Override
       protected FieldAccessorTable
           internalGetFieldAccessorTable() {
         return RampPacketsProtos.internal_static_HeartbeatRequest_fieldAccessorTable
@@ -307,6 +337,7 @@ public final class RampPacketsProtos {
                 .alwaysUseFieldBuilders) {
         }
       }
+      @Override
       public Builder clear() {
         super.clear();
         nodeId_ = 0;
@@ -314,15 +345,18 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
         return RampPacketsProtos.internal_static_HeartbeatRequest_descriptor;
       }
 
+      @Override
       public HeartbeatRequest getDefaultInstanceForType() {
         return HeartbeatRequest.getDefaultInstance();
       }
 
+      @Override
       public HeartbeatRequest build() {
         HeartbeatRequest result = buildPartial();
         if (!result.isInitialized()) {
@@ -331,45 +365,53 @@ public final class RampPacketsProtos {
         return result;
       }
 
+      @Override
       public HeartbeatRequest buildPartial() {
         HeartbeatRequest result = new HeartbeatRequest(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.nodeId_ = nodeId_;
           to_bitField0_ |= 0x00000001;
         }
-        result.nodeId_ = nodeId_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
 
+      @Override
       public Builder clone() {
-        return (Builder) super.clone();
+        return super.clone();
       }
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.setField(field, value);
+        return super.setField(field, value);
       }
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return (Builder) super.clearField(field);
+        return super.clearField(field);
       }
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return (Builder) super.clearOneof(oneof);
+        return super.clearOneof(oneof);
       }
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           int index, Object value) {
-        return (Builder) super.setRepeatedField(field, index, value);
+        return super.setRepeatedField(field, index, value);
       }
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.addRepeatedField(field, value);
+        return super.addRepeatedField(field, value);
       }
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof HeartbeatRequest) {
           return mergeFrom((HeartbeatRequest)other);
@@ -389,6 +431,7 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public final boolean isInitialized() {
         if (!hasNodeId()) {
           return false;
@@ -396,6 +439,7 @@ public final class RampPacketsProtos {
         return true;
       }
 
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -418,18 +462,22 @@ public final class RampPacketsProtos {
       private int nodeId_ ;
       /**
        * <code>required int32 nodeId = 1;</code>
+       * @return Whether the nodeId field is set.
        */
       public boolean hasNodeId() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>required int32 nodeId = 1;</code>
+       * @return The nodeId.
        */
       public int getNodeId() {
         return nodeId_;
       }
       /**
        * <code>required int32 nodeId = 1;</code>
+       * @param value The nodeId to set.
+       * @return This builder for chaining.
        */
       public Builder setNodeId(int value) {
         bitField0_ |= 0x00000001;
@@ -439,6 +487,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 nodeId = 1;</code>
+       * @return This builder for chaining.
        */
       public Builder clearNodeId() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -446,11 +495,13 @@ public final class RampPacketsProtos {
         onChanged();
         return this;
       }
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
@@ -472,11 +523,12 @@ public final class RampPacketsProtos {
 
     @Deprecated public static final com.google.protobuf.Parser<HeartbeatRequest>
         PARSER = new com.google.protobuf.AbstractParser<HeartbeatRequest>() {
+      @Override
       public HeartbeatRequest parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new HeartbeatRequest(input, extensionRegistry);
+        return new HeartbeatRequest(input, extensionRegistry);
       }
     };
 
@@ -489,6 +541,7 @@ public final class RampPacketsProtos {
       return PARSER;
     }
 
+    @Override
     public HeartbeatRequest getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
@@ -501,10 +554,12 @@ public final class RampPacketsProtos {
 
     /**
      * <code>required int32 nodeId = 1;</code>
+     * @return Whether the nodeId field is set.
      */
     boolean hasNodeId();
     /**
      * <code>required int32 nodeId = 1;</code>
+     * @return The nodeId.
      */
     int getNodeId();
   }
@@ -519,12 +574,19 @@ public final class RampPacketsProtos {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:HeartbeatResponse)
       HeartbeatResponseOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use HeartbeatResponse.newBuilder() to construct.
     private HeartbeatResponse(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
     }
     private HeartbeatResponse() {
-      nodeId_ = 0;
+    }
+
+    @Override
+    @SuppressWarnings({"unused"})
+    protected Object newInstance(
+        UnusedPrivateParameter unused) {
+      return new HeartbeatResponse();
     }
 
     @Override
@@ -537,6 +599,9 @@ public final class RampPacketsProtos {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -548,16 +613,16 @@ public final class RampPacketsProtos {
             case 0:
               done = true;
               break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
             case 8: {
               bitField0_ |= 0x00000001;
               nodeId_ = input.readInt32();
+              break;
+            }
+            default: {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
               break;
             }
           }
@@ -577,6 +642,7 @@ public final class RampPacketsProtos {
       return RampPacketsProtos.internal_static_HeartbeatResponse_descriptor;
     }
 
+    @Override
     protected FieldAccessorTable
         internalGetFieldAccessorTable() {
       return RampPacketsProtos.internal_static_HeartbeatResponse_fieldAccessorTable
@@ -589,18 +655,21 @@ public final class RampPacketsProtos {
     private int nodeId_;
     /**
      * <code>required int32 nodeId = 1;</code>
+     * @return Whether the nodeId field is set.
      */
     public boolean hasNodeId() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000001) != 0);
     }
     /**
      * <code>required int32 nodeId = 1;</code>
+     * @return The nodeId.
      */
     public int getNodeId() {
       return nodeId_;
     }
 
     private byte memoizedIsInitialized = -1;
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -614,20 +683,22 @@ public final class RampPacketsProtos {
       return true;
     }
 
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         output.writeInt32(1, nodeId_);
       }
       unknownFields.writeTo(output);
     }
 
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(1, nodeId_);
       }
@@ -636,7 +707,6 @@ public final class RampPacketsProtos {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @Override
     public boolean equals(final Object obj) {
       if (obj == this) {
@@ -647,14 +717,13 @@ public final class RampPacketsProtos {
       }
       HeartbeatResponse other = (HeartbeatResponse) obj;
 
-      boolean result = true;
-      result = result && (hasNodeId() == other.hasNodeId());
+      if (hasNodeId() != other.hasNodeId()) return false;
       if (hasNodeId()) {
-        result = result && (getNodeId()
-            == other.getNodeId());
+        if (getNodeId()
+            != other.getNodeId()) return false;
       }
-      result = result && unknownFields.equals(other.unknownFields);
-      return result;
+      if (!unknownFields.equals(other.unknownFields)) return false;
+      return true;
     }
 
     @Override
@@ -663,7 +732,7 @@ public final class RampPacketsProtos {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasNodeId()) {
         hash = (37 * hash) + NODEID_FIELD_NUMBER;
         hash = (53 * hash) + getNodeId();
@@ -673,6 +742,17 @@ public final class RampPacketsProtos {
       return hash;
     }
 
+    public static HeartbeatResponse parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static HeartbeatResponse parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static HeartbeatResponse parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -732,6 +812,7 @@ public final class RampPacketsProtos {
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
@@ -739,6 +820,7 @@ public final class RampPacketsProtos {
     public static Builder newBuilder(HeartbeatResponse prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
@@ -766,6 +848,7 @@ public final class RampPacketsProtos {
         return RampPacketsProtos.internal_static_HeartbeatResponse_descriptor;
       }
 
+      @Override
       protected FieldAccessorTable
           internalGetFieldAccessorTable() {
         return RampPacketsProtos.internal_static_HeartbeatResponse_fieldAccessorTable
@@ -788,6 +871,7 @@ public final class RampPacketsProtos {
                 .alwaysUseFieldBuilders) {
         }
       }
+      @Override
       public Builder clear() {
         super.clear();
         nodeId_ = 0;
@@ -795,15 +879,18 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
         return RampPacketsProtos.internal_static_HeartbeatResponse_descriptor;
       }
 
+      @Override
       public HeartbeatResponse getDefaultInstanceForType() {
         return HeartbeatResponse.getDefaultInstance();
       }
 
+      @Override
       public HeartbeatResponse build() {
         HeartbeatResponse result = buildPartial();
         if (!result.isInitialized()) {
@@ -812,45 +899,53 @@ public final class RampPacketsProtos {
         return result;
       }
 
+      @Override
       public HeartbeatResponse buildPartial() {
         HeartbeatResponse result = new HeartbeatResponse(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.nodeId_ = nodeId_;
           to_bitField0_ |= 0x00000001;
         }
-        result.nodeId_ = nodeId_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
 
+      @Override
       public Builder clone() {
-        return (Builder) super.clone();
+        return super.clone();
       }
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.setField(field, value);
+        return super.setField(field, value);
       }
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return (Builder) super.clearField(field);
+        return super.clearField(field);
       }
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return (Builder) super.clearOneof(oneof);
+        return super.clearOneof(oneof);
       }
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           int index, Object value) {
-        return (Builder) super.setRepeatedField(field, index, value);
+        return super.setRepeatedField(field, index, value);
       }
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.addRepeatedField(field, value);
+        return super.addRepeatedField(field, value);
       }
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof HeartbeatResponse) {
           return mergeFrom((HeartbeatResponse)other);
@@ -870,6 +965,7 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public final boolean isInitialized() {
         if (!hasNodeId()) {
           return false;
@@ -877,6 +973,7 @@ public final class RampPacketsProtos {
         return true;
       }
 
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -899,18 +996,22 @@ public final class RampPacketsProtos {
       private int nodeId_ ;
       /**
        * <code>required int32 nodeId = 1;</code>
+       * @return Whether the nodeId field is set.
        */
       public boolean hasNodeId() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>required int32 nodeId = 1;</code>
+       * @return The nodeId.
        */
       public int getNodeId() {
         return nodeId_;
       }
       /**
        * <code>required int32 nodeId = 1;</code>
+       * @param value The nodeId to set.
+       * @return This builder for chaining.
        */
       public Builder setNodeId(int value) {
         bitField0_ |= 0x00000001;
@@ -920,6 +1021,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 nodeId = 1;</code>
+       * @return This builder for chaining.
        */
       public Builder clearNodeId() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -927,11 +1029,13 @@ public final class RampPacketsProtos {
         onChanged();
         return this;
       }
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
@@ -953,11 +1057,12 @@ public final class RampPacketsProtos {
 
     @Deprecated public static final com.google.protobuf.Parser<HeartbeatResponse>
         PARSER = new com.google.protobuf.AbstractParser<HeartbeatResponse>() {
+      @Override
       public HeartbeatResponse parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new HeartbeatResponse(input, extensionRegistry);
+        return new HeartbeatResponse(input, extensionRegistry);
       }
     };
 
@@ -970,6 +1075,7 @@ public final class RampPacketsProtos {
       return PARSER;
     }
 
+    @Override
     public HeartbeatResponse getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
@@ -982,81 +1088,101 @@ public final class RampPacketsProtos {
 
     /**
      * <code>required int32 id = 1;</code>
+     * @return Whether the id field is set.
      */
     boolean hasId();
     /**
      * <code>required int32 id = 1;</code>
+     * @return The id.
      */
     int getId();
 
     /**
      * <code>repeated int32 dest = 2;</code>
+     * @return A list containing the dest.
      */
     java.util.List<Integer> getDestList();
     /**
      * <code>repeated int32 dest = 2;</code>
+     * @return The count of dest.
      */
     int getDestCount();
     /**
      * <code>repeated int32 dest = 2;</code>
+     * @param index The index of the element to return.
+     * @return The dest at the given index.
      */
     int getDest(int index);
 
     /**
      * <code>repeated int32 source = 3;</code>
+     * @return A list containing the source.
      */
     java.util.List<Integer> getSourceList();
     /**
      * <code>repeated int32 source = 3;</code>
+     * @return The count of source.
      */
     int getSourceCount();
     /**
      * <code>repeated int32 source = 3;</code>
+     * @param index The index of the element to return.
+     * @return The source at the given index.
      */
     int getSource(int index);
 
     /**
      * <code>required int32 destPort = 4;</code>
+     * @return Whether the destPort field is set.
      */
     boolean hasDestPort();
     /**
      * <code>required int32 destPort = 4;</code>
+     * @return The destPort.
      */
     int getDestPort();
 
     /**
      * <code>optional int32 destNodeId = 5 [default = 0];</code>
+     * @return Whether the destNodeId field is set.
      */
     boolean hasDestNodeId();
     /**
      * <code>optional int32 destNodeId = 5 [default = 0];</code>
+     * @return The destNodeId.
      */
     int getDestNodeId();
 
     /**
      * <code>optional int32 sourceNodeId = 6 [default = 0];</code>
+     * @return Whether the sourceNodeId field is set.
      */
     boolean hasSourceNodeId();
     /**
      * <code>optional int32 sourceNodeId = 6 [default = 0];</code>
+     * @return The sourceNodeId.
      */
     int getSourceNodeId();
 
     /**
      * <code>required bool ack = 7;</code>
+     * @return Whether the ack field is set.
      */
     boolean hasAck();
     /**
      * <code>required bool ack = 7;</code>
+     * @return The ack.
      */
     boolean getAck();
 
     /**
      * <code>optional int32 sourcePortAck = 8;</code>
+     * @return Whether the sourcePortAck field is set.
      */
     boolean hasSourcePortAck();
     /**
      * <code>optional int32 sourcePortAck = 8;</code>
+     * @return The sourcePortAck.
      */
     int getSourcePortAck();
 
@@ -1066,6 +1192,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 currentHop = 9;</code>
+     * @return Whether the currentHop field is set.
      */
     boolean hasCurrentHop();
     /**
@@ -1074,6 +1201,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 currentHop = 9;</code>
+     * @return The currentHop.
      */
     int getCurrentHop();
 
@@ -1083,6 +1211,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 bufferSize = 10;</code>
+     * @return Whether the bufferSize field is set.
      */
     boolean hasBufferSize();
     /**
@@ -1091,6 +1220,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 bufferSize = 10;</code>
+     * @return The bufferSize.
      */
     int getBufferSize();
 
@@ -1100,6 +1230,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 retry = 11;</code>
+     * @return Whether the retry field is set.
      */
     boolean hasRetry();
     /**
@@ -1108,24 +1239,29 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 retry = 11;</code>
+     * @return The retry.
      */
     int getRetry();
 
     /**
      * <code>optional int32 timeWait = 12;</code>
+     * @return Whether the timeWait field is set.
      */
     boolean hasTimeWait();
     /**
      * <code>optional int32 timeWait = 12;</code>
+     * @return The timeWait.
      */
     int getTimeWait();
 
     /**
      * <code>optional int32 expiry = 13;</code>
+     * @return Whether the expiry field is set.
      */
     boolean hasExpiry();
     /**
      * <code>optional int32 expiry = 13;</code>
+     * @return The expiry.
      */
     int getExpiry();
 
@@ -1135,6 +1271,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 connectTimeout = 14;</code>
+     * @return Whether the connectTimeout field is set.
      */
     boolean hasConnectTimeout();
     /**
@@ -1143,6 +1280,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 connectTimeout = 14;</code>
+     * @return The connectTimeout.
      */
     int getConnectTimeout();
 
@@ -1152,6 +1290,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 flowId = 15;</code>
+     * @return Whether the flowId field is set.
      */
     boolean hasFlowId();
     /**
@@ -1160,6 +1299,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 flowId = 15;</code>
+     * @return The flowId.
      */
     int getFlowId();
 
@@ -1169,6 +1309,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int64 dataType = 16;</code>
+     * @return Whether the dataType field is set.
      */
     boolean hasDataType();
     /**
@@ -1177,6 +1318,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int64 dataType = 16;</code>
+     * @return The dataType.
      */
     long getDataType();
   }
@@ -1191,27 +1333,21 @@ public final class RampPacketsProtos {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:UnicastHeader)
       UnicastHeaderOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use UnicastHeader.newBuilder() to construct.
     private UnicastHeader(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
     }
     private UnicastHeader() {
-      id_ = 0;
-      dest_ = java.util.Collections.emptyList();
-      source_ = java.util.Collections.emptyList();
-      destPort_ = 0;
-      destNodeId_ = 0;
-      sourceNodeId_ = 0;
-      ack_ = false;
-      sourcePortAck_ = 0;
-      currentHop_ = 0;
-      bufferSize_ = 0;
-      retry_ = 0;
-      timeWait_ = 0;
-      expiry_ = 0;
-      connectTimeout_ = 0;
-      flowId_ = 0;
-      dataType_ = 0L;
+      dest_ = emptyIntList();
+      source_ = emptyIntList();
+    }
+
+    @Override
+    @SuppressWarnings({"unused"})
+    protected Object newInstance(
+        UnusedPrivateParameter unused) {
+      return new UnicastHeader();
     }
 
     @Override
@@ -1224,6 +1360,9 @@ public final class RampPacketsProtos {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -1235,56 +1374,49 @@ public final class RampPacketsProtos {
             case 0:
               done = true;
               break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
             case 8: {
               bitField0_ |= 0x00000001;
               id_ = input.readInt32();
               break;
             }
             case 16: {
-              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-                dest_ = new java.util.ArrayList<Integer>();
+              if (!((mutable_bitField0_ & 0x00000002) != 0)) {
+                dest_ = newIntList();
                 mutable_bitField0_ |= 0x00000002;
               }
-              dest_.add(input.readInt32());
+              dest_.addInt(input.readInt32());
               break;
             }
             case 18: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
-              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002) && input.getBytesUntilLimit() > 0) {
-                dest_ = new java.util.ArrayList<Integer>();
+              if (!((mutable_bitField0_ & 0x00000002) != 0) && input.getBytesUntilLimit() > 0) {
+                dest_ = newIntList();
                 mutable_bitField0_ |= 0x00000002;
               }
               while (input.getBytesUntilLimit() > 0) {
-                dest_.add(input.readInt32());
+                dest_.addInt(input.readInt32());
               }
               input.popLimit(limit);
               break;
             }
             case 24: {
-              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-                source_ = new java.util.ArrayList<Integer>();
+              if (!((mutable_bitField0_ & 0x00000004) != 0)) {
+                source_ = newIntList();
                 mutable_bitField0_ |= 0x00000004;
               }
-              source_.add(input.readInt32());
+              source_.addInt(input.readInt32());
               break;
             }
             case 26: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
-              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004) && input.getBytesUntilLimit() > 0) {
-                source_ = new java.util.ArrayList<Integer>();
+              if (!((mutable_bitField0_ & 0x00000004) != 0) && input.getBytesUntilLimit() > 0) {
+                source_ = newIntList();
                 mutable_bitField0_ |= 0x00000004;
               }
               while (input.getBytesUntilLimit() > 0) {
-                source_.add(input.readInt32());
+                source_.addInt(input.readInt32());
               }
               input.popLimit(limit);
               break;
@@ -1354,6 +1486,13 @@ public final class RampPacketsProtos {
               dataType_ = input.readInt64();
               break;
             }
+            default: {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -1362,11 +1501,11 @@ public final class RampPacketsProtos {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-          dest_ = java.util.Collections.unmodifiableList(dest_);
+        if (((mutable_bitField0_ & 0x00000002) != 0)) {
+          dest_.makeImmutable(); // C
         }
-        if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-          source_ = java.util.Collections.unmodifiableList(source_);
+        if (((mutable_bitField0_ & 0x00000004) != 0)) {
+          source_.makeImmutable(); // C
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -1377,6 +1516,7 @@ public final class RampPacketsProtos {
       return RampPacketsProtos.internal_static_UnicastHeader_descriptor;
     }
 
+    @Override
     protected FieldAccessorTable
         internalGetFieldAccessorTable() {
       return RampPacketsProtos.internal_static_UnicastHeader_fieldAccessorTable
@@ -1389,21 +1529,24 @@ public final class RampPacketsProtos {
     private int id_;
     /**
      * <code>required int32 id = 1;</code>
+     * @return Whether the id field is set.
      */
     public boolean hasId() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000001) != 0);
     }
     /**
      * <code>required int32 id = 1;</code>
+     * @return The id.
      */
     public int getId() {
       return id_;
     }
 
     public static final int DEST_FIELD_NUMBER = 2;
-    private java.util.List<Integer> dest_;
+    private com.google.protobuf.Internal.IntList dest_;
     /**
      * <code>repeated int32 dest = 2;</code>
+     * @return A list containing the dest.
      */
     public java.util.List<Integer>
         getDestList() {
@@ -1411,21 +1554,25 @@ public final class RampPacketsProtos {
     }
     /**
      * <code>repeated int32 dest = 2;</code>
+     * @return The count of dest.
      */
     public int getDestCount() {
       return dest_.size();
     }
     /**
      * <code>repeated int32 dest = 2;</code>
+     * @param index The index of the element to return.
+     * @return The dest at the given index.
      */
     public int getDest(int index) {
-      return dest_.get(index);
+      return dest_.getInt(index);
     }
 
     public static final int SOURCE_FIELD_NUMBER = 3;
-    private java.util.List<Integer> source_;
+    private com.google.protobuf.Internal.IntList source_;
     /**
      * <code>repeated int32 source = 3;</code>
+     * @return A list containing the source.
      */
     public java.util.List<Integer>
         getSourceList() {
@@ -1433,27 +1580,32 @@ public final class RampPacketsProtos {
     }
     /**
      * <code>repeated int32 source = 3;</code>
+     * @return The count of source.
      */
     public int getSourceCount() {
       return source_.size();
     }
     /**
      * <code>repeated int32 source = 3;</code>
+     * @param index The index of the element to return.
+     * @return The source at the given index.
      */
     public int getSource(int index) {
-      return source_.get(index);
+      return source_.getInt(index);
     }
 
     public static final int DESTPORT_FIELD_NUMBER = 4;
     private int destPort_;
     /**
      * <code>required int32 destPort = 4;</code>
+     * @return Whether the destPort field is set.
      */
     public boolean hasDestPort() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
+      return ((bitField0_ & 0x00000002) != 0);
     }
     /**
      * <code>required int32 destPort = 4;</code>
+     * @return The destPort.
      */
     public int getDestPort() {
       return destPort_;
@@ -1463,12 +1615,14 @@ public final class RampPacketsProtos {
     private int destNodeId_;
     /**
      * <code>optional int32 destNodeId = 5 [default = 0];</code>
+     * @return Whether the destNodeId field is set.
      */
     public boolean hasDestNodeId() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+      return ((bitField0_ & 0x00000004) != 0);
     }
     /**
      * <code>optional int32 destNodeId = 5 [default = 0];</code>
+     * @return The destNodeId.
      */
     public int getDestNodeId() {
       return destNodeId_;
@@ -1478,12 +1632,14 @@ public final class RampPacketsProtos {
     private int sourceNodeId_;
     /**
      * <code>optional int32 sourceNodeId = 6 [default = 0];</code>
+     * @return Whether the sourceNodeId field is set.
      */
     public boolean hasSourceNodeId() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
+      return ((bitField0_ & 0x00000008) != 0);
     }
     /**
      * <code>optional int32 sourceNodeId = 6 [default = 0];</code>
+     * @return The sourceNodeId.
      */
     public int getSourceNodeId() {
       return sourceNodeId_;
@@ -1493,12 +1649,14 @@ public final class RampPacketsProtos {
     private boolean ack_;
     /**
      * <code>required bool ack = 7;</code>
+     * @return Whether the ack field is set.
      */
     public boolean hasAck() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
+      return ((bitField0_ & 0x00000010) != 0);
     }
     /**
      * <code>required bool ack = 7;</code>
+     * @return The ack.
      */
     public boolean getAck() {
       return ack_;
@@ -1508,12 +1666,14 @@ public final class RampPacketsProtos {
     private int sourcePortAck_;
     /**
      * <code>optional int32 sourcePortAck = 8;</code>
+     * @return Whether the sourcePortAck field is set.
      */
     public boolean hasSourcePortAck() {
-      return ((bitField0_ & 0x00000020) == 0x00000020);
+      return ((bitField0_ & 0x00000020) != 0);
     }
     /**
      * <code>optional int32 sourcePortAck = 8;</code>
+     * @return The sourcePortAck.
      */
     public int getSourcePortAck() {
       return sourcePortAck_;
@@ -1527,9 +1687,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 currentHop = 9;</code>
+     * @return Whether the currentHop field is set.
      */
     public boolean hasCurrentHop() {
-      return ((bitField0_ & 0x00000040) == 0x00000040);
+      return ((bitField0_ & 0x00000040) != 0);
     }
     /**
      * <pre>
@@ -1537,6 +1698,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 currentHop = 9;</code>
+     * @return The currentHop.
      */
     public int getCurrentHop() {
       return currentHop_;
@@ -1550,9 +1712,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 bufferSize = 10;</code>
+     * @return Whether the bufferSize field is set.
      */
     public boolean hasBufferSize() {
-      return ((bitField0_ & 0x00000080) == 0x00000080);
+      return ((bitField0_ & 0x00000080) != 0);
     }
     /**
      * <pre>
@@ -1560,6 +1723,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 bufferSize = 10;</code>
+     * @return The bufferSize.
      */
     public int getBufferSize() {
       return bufferSize_;
@@ -1573,9 +1737,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 retry = 11;</code>
+     * @return Whether the retry field is set.
      */
     public boolean hasRetry() {
-      return ((bitField0_ & 0x00000100) == 0x00000100);
+      return ((bitField0_ & 0x00000100) != 0);
     }
     /**
      * <pre>
@@ -1583,6 +1748,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 retry = 11;</code>
+     * @return The retry.
      */
     public int getRetry() {
       return retry_;
@@ -1592,12 +1758,14 @@ public final class RampPacketsProtos {
     private int timeWait_;
     /**
      * <code>optional int32 timeWait = 12;</code>
+     * @return Whether the timeWait field is set.
      */
     public boolean hasTimeWait() {
-      return ((bitField0_ & 0x00000200) == 0x00000200);
+      return ((bitField0_ & 0x00000200) != 0);
     }
     /**
      * <code>optional int32 timeWait = 12;</code>
+     * @return The timeWait.
      */
     public int getTimeWait() {
       return timeWait_;
@@ -1607,12 +1775,14 @@ public final class RampPacketsProtos {
     private int expiry_;
     /**
      * <code>optional int32 expiry = 13;</code>
+     * @return Whether the expiry field is set.
      */
     public boolean hasExpiry() {
-      return ((bitField0_ & 0x00000400) == 0x00000400);
+      return ((bitField0_ & 0x00000400) != 0);
     }
     /**
      * <code>optional int32 expiry = 13;</code>
+     * @return The expiry.
      */
     public int getExpiry() {
       return expiry_;
@@ -1626,9 +1796,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 connectTimeout = 14;</code>
+     * @return Whether the connectTimeout field is set.
      */
     public boolean hasConnectTimeout() {
-      return ((bitField0_ & 0x00000800) == 0x00000800);
+      return ((bitField0_ & 0x00000800) != 0);
     }
     /**
      * <pre>
@@ -1636,6 +1807,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 connectTimeout = 14;</code>
+     * @return The connectTimeout.
      */
     public int getConnectTimeout() {
       return connectTimeout_;
@@ -1649,9 +1821,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 flowId = 15;</code>
+     * @return Whether the flowId field is set.
      */
     public boolean hasFlowId() {
-      return ((bitField0_ & 0x00001000) == 0x00001000);
+      return ((bitField0_ & 0x00001000) != 0);
     }
     /**
      * <pre>
@@ -1659,6 +1832,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 flowId = 15;</code>
+     * @return The flowId.
      */
     public int getFlowId() {
       return flowId_;
@@ -1672,9 +1846,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int64 dataType = 16;</code>
+     * @return Whether the dataType field is set.
      */
     public boolean hasDataType() {
-      return ((bitField0_ & 0x00002000) == 0x00002000);
+      return ((bitField0_ & 0x00002000) != 0);
     }
     /**
      * <pre>
@@ -1682,12 +1857,14 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int64 dataType = 16;</code>
+     * @return The dataType.
      */
     public long getDataType() {
       return dataType_;
     }
 
     private byte memoizedIsInitialized = -1;
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -1725,65 +1902,67 @@ public final class RampPacketsProtos {
       return true;
     }
 
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         output.writeInt32(1, id_);
       }
       for (int i = 0; i < dest_.size(); i++) {
-        output.writeInt32(2, dest_.get(i));
+        output.writeInt32(2, dest_.getInt(i));
       }
       for (int i = 0; i < source_.size(); i++) {
-        output.writeInt32(3, source_.get(i));
+        output.writeInt32(3, source_.getInt(i));
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         output.writeInt32(4, destPort_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         output.writeInt32(5, destNodeId_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000008) != 0)) {
         output.writeInt32(6, sourceNodeId_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+      if (((bitField0_ & 0x00000010) != 0)) {
         output.writeBool(7, ack_);
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+      if (((bitField0_ & 0x00000020) != 0)) {
         output.writeInt32(8, sourcePortAck_);
       }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+      if (((bitField0_ & 0x00000040) != 0)) {
         output.writeInt32(9, currentHop_);
       }
-      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+      if (((bitField0_ & 0x00000080) != 0)) {
         output.writeInt32(10, bufferSize_);
       }
-      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+      if (((bitField0_ & 0x00000100) != 0)) {
         output.writeInt32(11, retry_);
       }
-      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+      if (((bitField0_ & 0x00000200) != 0)) {
         output.writeInt32(12, timeWait_);
       }
-      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+      if (((bitField0_ & 0x00000400) != 0)) {
         output.writeInt32(13, expiry_);
       }
-      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+      if (((bitField0_ & 0x00000800) != 0)) {
         output.writeInt32(14, connectTimeout_);
       }
-      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+      if (((bitField0_ & 0x00001000) != 0)) {
         output.writeInt32(15, flowId_);
       }
-      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+      if (((bitField0_ & 0x00002000) != 0)) {
         output.writeInt64(16, dataType_);
       }
       unknownFields.writeTo(output);
     }
 
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(1, id_);
       }
@@ -1791,7 +1970,7 @@ public final class RampPacketsProtos {
         int dataSize = 0;
         for (int i = 0; i < dest_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeInt32SizeNoTag(dest_.get(i));
+            .computeInt32SizeNoTag(dest_.getInt(i));
         }
         size += dataSize;
         size += 1 * getDestList().size();
@@ -1800,60 +1979,60 @@ public final class RampPacketsProtos {
         int dataSize = 0;
         for (int i = 0; i < source_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeInt32SizeNoTag(source_.get(i));
+            .computeInt32SizeNoTag(source_.getInt(i));
         }
         size += dataSize;
         size += 1 * getSourceList().size();
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(4, destPort_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(5, destNodeId_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000008) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(6, sourceNodeId_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+      if (((bitField0_ & 0x00000010) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBoolSize(7, ack_);
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+      if (((bitField0_ & 0x00000020) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(8, sourcePortAck_);
       }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+      if (((bitField0_ & 0x00000040) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(9, currentHop_);
       }
-      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+      if (((bitField0_ & 0x00000080) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(10, bufferSize_);
       }
-      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+      if (((bitField0_ & 0x00000100) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(11, retry_);
       }
-      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+      if (((bitField0_ & 0x00000200) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(12, timeWait_);
       }
-      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+      if (((bitField0_ & 0x00000400) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(13, expiry_);
       }
-      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+      if (((bitField0_ & 0x00000800) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(14, connectTimeout_);
       }
-      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+      if (((bitField0_ & 0x00001000) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(15, flowId_);
       }
-      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+      if (((bitField0_ & 0x00002000) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(16, dataType_);
       }
@@ -1862,7 +2041,6 @@ public final class RampPacketsProtos {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @Override
     public boolean equals(final Object obj) {
       if (obj == this) {
@@ -1873,83 +2051,82 @@ public final class RampPacketsProtos {
       }
       UnicastHeader other = (UnicastHeader) obj;
 
-      boolean result = true;
-      result = result && (hasId() == other.hasId());
+      if (hasId() != other.hasId()) return false;
       if (hasId()) {
-        result = result && (getId()
-            == other.getId());
+        if (getId()
+            != other.getId()) return false;
       }
-      result = result && getDestList()
-          .equals(other.getDestList());
-      result = result && getSourceList()
-          .equals(other.getSourceList());
-      result = result && (hasDestPort() == other.hasDestPort());
+      if (!getDestList()
+          .equals(other.getDestList())) return false;
+      if (!getSourceList()
+          .equals(other.getSourceList())) return false;
+      if (hasDestPort() != other.hasDestPort()) return false;
       if (hasDestPort()) {
-        result = result && (getDestPort()
-            == other.getDestPort());
+        if (getDestPort()
+            != other.getDestPort()) return false;
       }
-      result = result && (hasDestNodeId() == other.hasDestNodeId());
+      if (hasDestNodeId() != other.hasDestNodeId()) return false;
       if (hasDestNodeId()) {
-        result = result && (getDestNodeId()
-            == other.getDestNodeId());
+        if (getDestNodeId()
+            != other.getDestNodeId()) return false;
       }
-      result = result && (hasSourceNodeId() == other.hasSourceNodeId());
+      if (hasSourceNodeId() != other.hasSourceNodeId()) return false;
       if (hasSourceNodeId()) {
-        result = result && (getSourceNodeId()
-            == other.getSourceNodeId());
+        if (getSourceNodeId()
+            != other.getSourceNodeId()) return false;
       }
-      result = result && (hasAck() == other.hasAck());
+      if (hasAck() != other.hasAck()) return false;
       if (hasAck()) {
-        result = result && (getAck()
-            == other.getAck());
+        if (getAck()
+            != other.getAck()) return false;
       }
-      result = result && (hasSourcePortAck() == other.hasSourcePortAck());
+      if (hasSourcePortAck() != other.hasSourcePortAck()) return false;
       if (hasSourcePortAck()) {
-        result = result && (getSourcePortAck()
-            == other.getSourcePortAck());
+        if (getSourcePortAck()
+            != other.getSourcePortAck()) return false;
       }
-      result = result && (hasCurrentHop() == other.hasCurrentHop());
+      if (hasCurrentHop() != other.hasCurrentHop()) return false;
       if (hasCurrentHop()) {
-        result = result && (getCurrentHop()
-            == other.getCurrentHop());
+        if (getCurrentHop()
+            != other.getCurrentHop()) return false;
       }
-      result = result && (hasBufferSize() == other.hasBufferSize());
+      if (hasBufferSize() != other.hasBufferSize()) return false;
       if (hasBufferSize()) {
-        result = result && (getBufferSize()
-            == other.getBufferSize());
+        if (getBufferSize()
+            != other.getBufferSize()) return false;
       }
-      result = result && (hasRetry() == other.hasRetry());
+      if (hasRetry() != other.hasRetry()) return false;
       if (hasRetry()) {
-        result = result && (getRetry()
-            == other.getRetry());
+        if (getRetry()
+            != other.getRetry()) return false;
       }
-      result = result && (hasTimeWait() == other.hasTimeWait());
+      if (hasTimeWait() != other.hasTimeWait()) return false;
       if (hasTimeWait()) {
-        result = result && (getTimeWait()
-            == other.getTimeWait());
+        if (getTimeWait()
+            != other.getTimeWait()) return false;
       }
-      result = result && (hasExpiry() == other.hasExpiry());
+      if (hasExpiry() != other.hasExpiry()) return false;
       if (hasExpiry()) {
-        result = result && (getExpiry()
-            == other.getExpiry());
+        if (getExpiry()
+            != other.getExpiry()) return false;
       }
-      result = result && (hasConnectTimeout() == other.hasConnectTimeout());
+      if (hasConnectTimeout() != other.hasConnectTimeout()) return false;
       if (hasConnectTimeout()) {
-        result = result && (getConnectTimeout()
-            == other.getConnectTimeout());
+        if (getConnectTimeout()
+            != other.getConnectTimeout()) return false;
       }
-      result = result && (hasFlowId() == other.hasFlowId());
+      if (hasFlowId() != other.hasFlowId()) return false;
       if (hasFlowId()) {
-        result = result && (getFlowId()
-            == other.getFlowId());
+        if (getFlowId()
+            != other.getFlowId()) return false;
       }
-      result = result && (hasDataType() == other.hasDataType());
+      if (hasDataType() != other.hasDataType()) return false;
       if (hasDataType()) {
-        result = result && (getDataType()
-            == other.getDataType());
+        if (getDataType()
+            != other.getDataType()) return false;
       }
-      result = result && unknownFields.equals(other.unknownFields);
-      return result;
+      if (!unknownFields.equals(other.unknownFields)) return false;
+      return true;
     }
 
     @Override
@@ -1958,7 +2135,7 @@ public final class RampPacketsProtos {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasId()) {
         hash = (37 * hash) + ID_FIELD_NUMBER;
         hash = (53 * hash) + getId();
@@ -2031,6 +2208,17 @@ public final class RampPacketsProtos {
     }
 
     public static UnicastHeader parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static UnicastHeader parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static UnicastHeader parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
@@ -2089,6 +2277,7 @@ public final class RampPacketsProtos {
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
@@ -2096,6 +2285,7 @@ public final class RampPacketsProtos {
     public static Builder newBuilder(UnicastHeader prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
@@ -2123,6 +2313,7 @@ public final class RampPacketsProtos {
         return RampPacketsProtos.internal_static_UnicastHeader_descriptor;
       }
 
+      @Override
       protected FieldAccessorTable
           internalGetFieldAccessorTable() {
         return RampPacketsProtos.internal_static_UnicastHeader_fieldAccessorTable
@@ -2145,13 +2336,14 @@ public final class RampPacketsProtos {
                 .alwaysUseFieldBuilders) {
         }
       }
+      @Override
       public Builder clear() {
         super.clear();
         id_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
-        dest_ = java.util.Collections.emptyList();
+        dest_ = emptyIntList();
         bitField0_ = (bitField0_ & ~0x00000002);
-        source_ = java.util.Collections.emptyList();
+        source_ = emptyIntList();
         bitField0_ = (bitField0_ & ~0x00000004);
         destPort_ = 0;
         bitField0_ = (bitField0_ & ~0x00000008);
@@ -2182,15 +2374,18 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
         return RampPacketsProtos.internal_static_UnicastHeader_descriptor;
       }
 
+      @Override
       public UnicastHeader getDefaultInstanceForType() {
         return UnicastHeader.getDefaultInstance();
       }
 
+      @Override
       public UnicastHeader build() {
         UnicastHeader result = buildPartial();
         if (!result.isInitialized()) {
@@ -2199,107 +2394,115 @@ public final class RampPacketsProtos {
         return result;
       }
 
+      @Override
       public UnicastHeader buildPartial() {
         UnicastHeader result = new UnicastHeader(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.id_ = id_;
           to_bitField0_ |= 0x00000001;
         }
-        result.id_ = id_;
-        if (((bitField0_ & 0x00000002) == 0x00000002)) {
-          dest_ = java.util.Collections.unmodifiableList(dest_);
+        if (((bitField0_ & 0x00000002) != 0)) {
+          dest_.makeImmutable();
           bitField0_ = (bitField0_ & ~0x00000002);
         }
         result.dest_ = dest_;
-        if (((bitField0_ & 0x00000004) == 0x00000004)) {
-          source_ = java.util.Collections.unmodifiableList(source_);
+        if (((bitField0_ & 0x00000004) != 0)) {
+          source_.makeImmutable();
           bitField0_ = (bitField0_ & ~0x00000004);
         }
         result.source_ = source_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+        if (((from_bitField0_ & 0x00000008) != 0)) {
+          result.destPort_ = destPort_;
           to_bitField0_ |= 0x00000002;
         }
-        result.destPort_ = destPort_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+        if (((from_bitField0_ & 0x00000010) != 0)) {
+          result.destNodeId_ = destNodeId_;
           to_bitField0_ |= 0x00000004;
         }
-        result.destNodeId_ = destNodeId_;
-        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+        if (((from_bitField0_ & 0x00000020) != 0)) {
+          result.sourceNodeId_ = sourceNodeId_;
           to_bitField0_ |= 0x00000008;
         }
-        result.sourceNodeId_ = sourceNodeId_;
-        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+        if (((from_bitField0_ & 0x00000040) != 0)) {
+          result.ack_ = ack_;
           to_bitField0_ |= 0x00000010;
         }
-        result.ack_ = ack_;
-        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+        if (((from_bitField0_ & 0x00000080) != 0)) {
+          result.sourcePortAck_ = sourcePortAck_;
           to_bitField0_ |= 0x00000020;
         }
-        result.sourcePortAck_ = sourcePortAck_;
-        if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
+        if (((from_bitField0_ & 0x00000100) != 0)) {
+          result.currentHop_ = currentHop_;
           to_bitField0_ |= 0x00000040;
         }
-        result.currentHop_ = currentHop_;
-        if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
+        if (((from_bitField0_ & 0x00000200) != 0)) {
+          result.bufferSize_ = bufferSize_;
           to_bitField0_ |= 0x00000080;
         }
-        result.bufferSize_ = bufferSize_;
-        if (((from_bitField0_ & 0x00000400) == 0x00000400)) {
+        if (((from_bitField0_ & 0x00000400) != 0)) {
+          result.retry_ = retry_;
           to_bitField0_ |= 0x00000100;
         }
-        result.retry_ = retry_;
-        if (((from_bitField0_ & 0x00000800) == 0x00000800)) {
+        if (((from_bitField0_ & 0x00000800) != 0)) {
+          result.timeWait_ = timeWait_;
           to_bitField0_ |= 0x00000200;
         }
-        result.timeWait_ = timeWait_;
-        if (((from_bitField0_ & 0x00001000) == 0x00001000)) {
+        if (((from_bitField0_ & 0x00001000) != 0)) {
+          result.expiry_ = expiry_;
           to_bitField0_ |= 0x00000400;
         }
-        result.expiry_ = expiry_;
-        if (((from_bitField0_ & 0x00002000) == 0x00002000)) {
+        if (((from_bitField0_ & 0x00002000) != 0)) {
+          result.connectTimeout_ = connectTimeout_;
           to_bitField0_ |= 0x00000800;
         }
-        result.connectTimeout_ = connectTimeout_;
-        if (((from_bitField0_ & 0x00004000) == 0x00004000)) {
+        if (((from_bitField0_ & 0x00004000) != 0)) {
+          result.flowId_ = flowId_;
           to_bitField0_ |= 0x00001000;
         }
-        result.flowId_ = flowId_;
-        if (((from_bitField0_ & 0x00008000) == 0x00008000)) {
+        if (((from_bitField0_ & 0x00008000) != 0)) {
+          result.dataType_ = dataType_;
           to_bitField0_ |= 0x00002000;
         }
-        result.dataType_ = dataType_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
 
+      @Override
       public Builder clone() {
-        return (Builder) super.clone();
+        return super.clone();
       }
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.setField(field, value);
+        return super.setField(field, value);
       }
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return (Builder) super.clearField(field);
+        return super.clearField(field);
       }
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return (Builder) super.clearOneof(oneof);
+        return super.clearOneof(oneof);
       }
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           int index, Object value) {
-        return (Builder) super.setRepeatedField(field, index, value);
+        return super.setRepeatedField(field, index, value);
       }
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.addRepeatedField(field, value);
+        return super.addRepeatedField(field, value);
       }
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof UnicastHeader) {
           return mergeFrom((UnicastHeader)other);
@@ -2378,6 +2581,7 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public final boolean isInitialized() {
         if (!hasId()) {
           return false;
@@ -2403,6 +2607,7 @@ public final class RampPacketsProtos {
         return true;
       }
 
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -2425,18 +2630,22 @@ public final class RampPacketsProtos {
       private int id_ ;
       /**
        * <code>required int32 id = 1;</code>
+       * @return Whether the id field is set.
        */
       public boolean hasId() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>required int32 id = 1;</code>
+       * @return The id.
        */
       public int getId() {
         return id_;
       }
       /**
        * <code>required int32 id = 1;</code>
+       * @param value The id to set.
+       * @return This builder for chaining.
        */
       public Builder setId(int value) {
         bitField0_ |= 0x00000001;
@@ -2446,6 +2655,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 id = 1;</code>
+       * @return This builder for chaining.
        */
       public Builder clearId() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -2454,53 +2664,65 @@ public final class RampPacketsProtos {
         return this;
       }
 
-      private java.util.List<Integer> dest_ = java.util.Collections.emptyList();
+      private com.google.protobuf.Internal.IntList dest_ = emptyIntList();
       private void ensureDestIsMutable() {
-        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
-          dest_ = new java.util.ArrayList<Integer>(dest_);
+        if (!((bitField0_ & 0x00000002) != 0)) {
+          dest_ = mutableCopy(dest_);
           bitField0_ |= 0x00000002;
          }
       }
       /**
        * <code>repeated int32 dest = 2;</code>
+       * @return A list containing the dest.
        */
       public java.util.List<Integer>
           getDestList() {
-        return java.util.Collections.unmodifiableList(dest_);
+        return ((bitField0_ & 0x00000002) != 0) ?
+                 java.util.Collections.unmodifiableList(dest_) : dest_;
       }
       /**
        * <code>repeated int32 dest = 2;</code>
+       * @return The count of dest.
        */
       public int getDestCount() {
         return dest_.size();
       }
       /**
        * <code>repeated int32 dest = 2;</code>
+       * @param index The index of the element to return.
+       * @return The dest at the given index.
        */
       public int getDest(int index) {
-        return dest_.get(index);
+        return dest_.getInt(index);
       }
       /**
        * <code>repeated int32 dest = 2;</code>
+       * @param index The index to set the value at.
+       * @param value The dest to set.
+       * @return This builder for chaining.
        */
       public Builder setDest(
           int index, int value) {
         ensureDestIsMutable();
-        dest_.set(index, value);
+        dest_.setInt(index, value);
         onChanged();
         return this;
       }
       /**
        * <code>repeated int32 dest = 2;</code>
+       * @param value The dest to add.
+       * @return This builder for chaining.
        */
       public Builder addDest(int value) {
         ensureDestIsMutable();
-        dest_.add(value);
+        dest_.addInt(value);
         onChanged();
         return this;
       }
       /**
        * <code>repeated int32 dest = 2;</code>
+       * @param values The dest to add.
+       * @return This builder for chaining.
        */
       public Builder addAllDest(
           Iterable<? extends Integer> values) {
@@ -2512,61 +2734,74 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>repeated int32 dest = 2;</code>
+       * @return This builder for chaining.
        */
       public Builder clearDest() {
-        dest_ = java.util.Collections.emptyList();
+        dest_ = emptyIntList();
         bitField0_ = (bitField0_ & ~0x00000002);
         onChanged();
         return this;
       }
 
-      private java.util.List<Integer> source_ = java.util.Collections.emptyList();
+      private com.google.protobuf.Internal.IntList source_ = emptyIntList();
       private void ensureSourceIsMutable() {
-        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
-          source_ = new java.util.ArrayList<Integer>(source_);
+        if (!((bitField0_ & 0x00000004) != 0)) {
+          source_ = mutableCopy(source_);
           bitField0_ |= 0x00000004;
          }
       }
       /**
        * <code>repeated int32 source = 3;</code>
+       * @return A list containing the source.
        */
       public java.util.List<Integer>
           getSourceList() {
-        return java.util.Collections.unmodifiableList(source_);
+        return ((bitField0_ & 0x00000004) != 0) ?
+                 java.util.Collections.unmodifiableList(source_) : source_;
       }
       /**
        * <code>repeated int32 source = 3;</code>
+       * @return The count of source.
        */
       public int getSourceCount() {
         return source_.size();
       }
       /**
        * <code>repeated int32 source = 3;</code>
+       * @param index The index of the element to return.
+       * @return The source at the given index.
        */
       public int getSource(int index) {
-        return source_.get(index);
+        return source_.getInt(index);
       }
       /**
        * <code>repeated int32 source = 3;</code>
+       * @param index The index to set the value at.
+       * @param value The source to set.
+       * @return This builder for chaining.
        */
       public Builder setSource(
           int index, int value) {
         ensureSourceIsMutable();
-        source_.set(index, value);
+        source_.setInt(index, value);
         onChanged();
         return this;
       }
       /**
        * <code>repeated int32 source = 3;</code>
+       * @param value The source to add.
+       * @return This builder for chaining.
        */
       public Builder addSource(int value) {
         ensureSourceIsMutable();
-        source_.add(value);
+        source_.addInt(value);
         onChanged();
         return this;
       }
       /**
        * <code>repeated int32 source = 3;</code>
+       * @param values The source to add.
+       * @return This builder for chaining.
        */
       public Builder addAllSource(
           Iterable<? extends Integer> values) {
@@ -2578,9 +2813,10 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>repeated int32 source = 3;</code>
+       * @return This builder for chaining.
        */
       public Builder clearSource() {
-        source_ = java.util.Collections.emptyList();
+        source_ = emptyIntList();
         bitField0_ = (bitField0_ & ~0x00000004);
         onChanged();
         return this;
@@ -2589,18 +2825,22 @@ public final class RampPacketsProtos {
       private int destPort_ ;
       /**
        * <code>required int32 destPort = 4;</code>
+       * @return Whether the destPort field is set.
        */
       public boolean hasDestPort() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
+        return ((bitField0_ & 0x00000008) != 0);
       }
       /**
        * <code>required int32 destPort = 4;</code>
+       * @return The destPort.
        */
       public int getDestPort() {
         return destPort_;
       }
       /**
        * <code>required int32 destPort = 4;</code>
+       * @param value The destPort to set.
+       * @return This builder for chaining.
        */
       public Builder setDestPort(int value) {
         bitField0_ |= 0x00000008;
@@ -2610,6 +2850,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 destPort = 4;</code>
+       * @return This builder for chaining.
        */
       public Builder clearDestPort() {
         bitField0_ = (bitField0_ & ~0x00000008);
@@ -2621,18 +2862,22 @@ public final class RampPacketsProtos {
       private int destNodeId_ ;
       /**
        * <code>optional int32 destNodeId = 5 [default = 0];</code>
+       * @return Whether the destNodeId field is set.
        */
       public boolean hasDestNodeId() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
+        return ((bitField0_ & 0x00000010) != 0);
       }
       /**
        * <code>optional int32 destNodeId = 5 [default = 0];</code>
+       * @return The destNodeId.
        */
       public int getDestNodeId() {
         return destNodeId_;
       }
       /**
        * <code>optional int32 destNodeId = 5 [default = 0];</code>
+       * @param value The destNodeId to set.
+       * @return This builder for chaining.
        */
       public Builder setDestNodeId(int value) {
         bitField0_ |= 0x00000010;
@@ -2642,6 +2887,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>optional int32 destNodeId = 5 [default = 0];</code>
+       * @return This builder for chaining.
        */
       public Builder clearDestNodeId() {
         bitField0_ = (bitField0_ & ~0x00000010);
@@ -2653,18 +2899,22 @@ public final class RampPacketsProtos {
       private int sourceNodeId_ ;
       /**
        * <code>optional int32 sourceNodeId = 6 [default = 0];</code>
+       * @return Whether the sourceNodeId field is set.
        */
       public boolean hasSourceNodeId() {
-        return ((bitField0_ & 0x00000020) == 0x00000020);
+        return ((bitField0_ & 0x00000020) != 0);
       }
       /**
        * <code>optional int32 sourceNodeId = 6 [default = 0];</code>
+       * @return The sourceNodeId.
        */
       public int getSourceNodeId() {
         return sourceNodeId_;
       }
       /**
        * <code>optional int32 sourceNodeId = 6 [default = 0];</code>
+       * @param value The sourceNodeId to set.
+       * @return This builder for chaining.
        */
       public Builder setSourceNodeId(int value) {
         bitField0_ |= 0x00000020;
@@ -2674,6 +2924,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>optional int32 sourceNodeId = 6 [default = 0];</code>
+       * @return This builder for chaining.
        */
       public Builder clearSourceNodeId() {
         bitField0_ = (bitField0_ & ~0x00000020);
@@ -2685,18 +2936,22 @@ public final class RampPacketsProtos {
       private boolean ack_ ;
       /**
        * <code>required bool ack = 7;</code>
+       * @return Whether the ack field is set.
        */
       public boolean hasAck() {
-        return ((bitField0_ & 0x00000040) == 0x00000040);
+        return ((bitField0_ & 0x00000040) != 0);
       }
       /**
        * <code>required bool ack = 7;</code>
+       * @return The ack.
        */
       public boolean getAck() {
         return ack_;
       }
       /**
        * <code>required bool ack = 7;</code>
+       * @param value The ack to set.
+       * @return This builder for chaining.
        */
       public Builder setAck(boolean value) {
         bitField0_ |= 0x00000040;
@@ -2706,6 +2961,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required bool ack = 7;</code>
+       * @return This builder for chaining.
        */
       public Builder clearAck() {
         bitField0_ = (bitField0_ & ~0x00000040);
@@ -2717,18 +2973,22 @@ public final class RampPacketsProtos {
       private int sourcePortAck_ ;
       /**
        * <code>optional int32 sourcePortAck = 8;</code>
+       * @return Whether the sourcePortAck field is set.
        */
       public boolean hasSourcePortAck() {
-        return ((bitField0_ & 0x00000080) == 0x00000080);
+        return ((bitField0_ & 0x00000080) != 0);
       }
       /**
        * <code>optional int32 sourcePortAck = 8;</code>
+       * @return The sourcePortAck.
        */
       public int getSourcePortAck() {
         return sourcePortAck_;
       }
       /**
        * <code>optional int32 sourcePortAck = 8;</code>
+       * @param value The sourcePortAck to set.
+       * @return This builder for chaining.
        */
       public Builder setSourcePortAck(int value) {
         bitField0_ |= 0x00000080;
@@ -2738,6 +2998,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>optional int32 sourcePortAck = 8;</code>
+       * @return This builder for chaining.
        */
       public Builder clearSourcePortAck() {
         bitField0_ = (bitField0_ & ~0x00000080);
@@ -2753,9 +3014,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 currentHop = 9;</code>
+       * @return Whether the currentHop field is set.
        */
       public boolean hasCurrentHop() {
-        return ((bitField0_ & 0x00000100) == 0x00000100);
+        return ((bitField0_ & 0x00000100) != 0);
       }
       /**
        * <pre>
@@ -2763,6 +3025,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 currentHop = 9;</code>
+       * @return The currentHop.
        */
       public int getCurrentHop() {
         return currentHop_;
@@ -2773,6 +3036,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 currentHop = 9;</code>
+       * @param value The currentHop to set.
+       * @return This builder for chaining.
        */
       public Builder setCurrentHop(int value) {
         bitField0_ |= 0x00000100;
@@ -2786,6 +3051,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 currentHop = 9;</code>
+       * @return This builder for chaining.
        */
       public Builder clearCurrentHop() {
         bitField0_ = (bitField0_ & ~0x00000100);
@@ -2801,9 +3067,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 bufferSize = 10;</code>
+       * @return Whether the bufferSize field is set.
        */
       public boolean hasBufferSize() {
-        return ((bitField0_ & 0x00000200) == 0x00000200);
+        return ((bitField0_ & 0x00000200) != 0);
       }
       /**
        * <pre>
@@ -2811,6 +3078,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 bufferSize = 10;</code>
+       * @return The bufferSize.
        */
       public int getBufferSize() {
         return bufferSize_;
@@ -2821,6 +3089,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 bufferSize = 10;</code>
+       * @param value The bufferSize to set.
+       * @return This builder for chaining.
        */
       public Builder setBufferSize(int value) {
         bitField0_ |= 0x00000200;
@@ -2834,6 +3104,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 bufferSize = 10;</code>
+       * @return This builder for chaining.
        */
       public Builder clearBufferSize() {
         bitField0_ = (bitField0_ & ~0x00000200);
@@ -2849,9 +3120,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 retry = 11;</code>
+       * @return Whether the retry field is set.
        */
       public boolean hasRetry() {
-        return ((bitField0_ & 0x00000400) == 0x00000400);
+        return ((bitField0_ & 0x00000400) != 0);
       }
       /**
        * <pre>
@@ -2859,6 +3131,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 retry = 11;</code>
+       * @return The retry.
        */
       public int getRetry() {
         return retry_;
@@ -2869,6 +3142,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 retry = 11;</code>
+       * @param value The retry to set.
+       * @return This builder for chaining.
        */
       public Builder setRetry(int value) {
         bitField0_ |= 0x00000400;
@@ -2882,6 +3157,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 retry = 11;</code>
+       * @return This builder for chaining.
        */
       public Builder clearRetry() {
         bitField0_ = (bitField0_ & ~0x00000400);
@@ -2893,18 +3169,22 @@ public final class RampPacketsProtos {
       private int timeWait_ ;
       /**
        * <code>optional int32 timeWait = 12;</code>
+       * @return Whether the timeWait field is set.
        */
       public boolean hasTimeWait() {
-        return ((bitField0_ & 0x00000800) == 0x00000800);
+        return ((bitField0_ & 0x00000800) != 0);
       }
       /**
        * <code>optional int32 timeWait = 12;</code>
+       * @return The timeWait.
        */
       public int getTimeWait() {
         return timeWait_;
       }
       /**
        * <code>optional int32 timeWait = 12;</code>
+       * @param value The timeWait to set.
+       * @return This builder for chaining.
        */
       public Builder setTimeWait(int value) {
         bitField0_ |= 0x00000800;
@@ -2914,6 +3194,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>optional int32 timeWait = 12;</code>
+       * @return This builder for chaining.
        */
       public Builder clearTimeWait() {
         bitField0_ = (bitField0_ & ~0x00000800);
@@ -2925,18 +3206,22 @@ public final class RampPacketsProtos {
       private int expiry_ ;
       /**
        * <code>optional int32 expiry = 13;</code>
+       * @return Whether the expiry field is set.
        */
       public boolean hasExpiry() {
-        return ((bitField0_ & 0x00001000) == 0x00001000);
+        return ((bitField0_ & 0x00001000) != 0);
       }
       /**
        * <code>optional int32 expiry = 13;</code>
+       * @return The expiry.
        */
       public int getExpiry() {
         return expiry_;
       }
       /**
        * <code>optional int32 expiry = 13;</code>
+       * @param value The expiry to set.
+       * @return This builder for chaining.
        */
       public Builder setExpiry(int value) {
         bitField0_ |= 0x00001000;
@@ -2946,6 +3231,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>optional int32 expiry = 13;</code>
+       * @return This builder for chaining.
        */
       public Builder clearExpiry() {
         bitField0_ = (bitField0_ & ~0x00001000);
@@ -2961,9 +3247,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 connectTimeout = 14;</code>
+       * @return Whether the connectTimeout field is set.
        */
       public boolean hasConnectTimeout() {
-        return ((bitField0_ & 0x00002000) == 0x00002000);
+        return ((bitField0_ & 0x00002000) != 0);
       }
       /**
        * <pre>
@@ -2971,6 +3258,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 connectTimeout = 14;</code>
+       * @return The connectTimeout.
        */
       public int getConnectTimeout() {
         return connectTimeout_;
@@ -2981,6 +3269,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 connectTimeout = 14;</code>
+       * @param value The connectTimeout to set.
+       * @return This builder for chaining.
        */
       public Builder setConnectTimeout(int value) {
         bitField0_ |= 0x00002000;
@@ -2994,6 +3284,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 connectTimeout = 14;</code>
+       * @return This builder for chaining.
        */
       public Builder clearConnectTimeout() {
         bitField0_ = (bitField0_ & ~0x00002000);
@@ -3009,9 +3300,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 flowId = 15;</code>
+       * @return Whether the flowId field is set.
        */
       public boolean hasFlowId() {
-        return ((bitField0_ & 0x00004000) == 0x00004000);
+        return ((bitField0_ & 0x00004000) != 0);
       }
       /**
        * <pre>
@@ -3019,6 +3311,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 flowId = 15;</code>
+       * @return The flowId.
        */
       public int getFlowId() {
         return flowId_;
@@ -3029,6 +3322,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 flowId = 15;</code>
+       * @param value The flowId to set.
+       * @return This builder for chaining.
        */
       public Builder setFlowId(int value) {
         bitField0_ |= 0x00004000;
@@ -3042,6 +3337,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 flowId = 15;</code>
+       * @return This builder for chaining.
        */
       public Builder clearFlowId() {
         bitField0_ = (bitField0_ & ~0x00004000);
@@ -3057,9 +3353,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int64 dataType = 16;</code>
+       * @return Whether the dataType field is set.
        */
       public boolean hasDataType() {
-        return ((bitField0_ & 0x00008000) == 0x00008000);
+        return ((bitField0_ & 0x00008000) != 0);
       }
       /**
        * <pre>
@@ -3067,6 +3364,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int64 dataType = 16;</code>
+       * @return The dataType.
        */
       public long getDataType() {
         return dataType_;
@@ -3077,6 +3375,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int64 dataType = 16;</code>
+       * @param value The dataType to set.
+       * @return This builder for chaining.
        */
       public Builder setDataType(long value) {
         bitField0_ |= 0x00008000;
@@ -3090,6 +3390,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int64 dataType = 16;</code>
+       * @return This builder for chaining.
        */
       public Builder clearDataType() {
         bitField0_ = (bitField0_ & ~0x00008000);
@@ -3097,11 +3398,13 @@ public final class RampPacketsProtos {
         onChanged();
         return this;
       }
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
@@ -3123,11 +3426,12 @@ public final class RampPacketsProtos {
 
     @Deprecated public static final com.google.protobuf.Parser<UnicastHeader>
         PARSER = new com.google.protobuf.AbstractParser<UnicastHeader>() {
+      @Override
       public UnicastHeader parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new UnicastHeader(input, extensionRegistry);
+        return new UnicastHeader(input, extensionRegistry);
       }
     };
 
@@ -3140,6 +3444,7 @@ public final class RampPacketsProtos {
       return PARSER;
     }
 
+    @Override
     public UnicastHeader getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
@@ -3152,45 +3457,57 @@ public final class RampPacketsProtos {
 
     /**
      * <code>required int32 id = 1;</code>
+     * @return Whether the id field is set.
      */
     boolean hasId();
     /**
      * <code>required int32 id = 1;</code>
+     * @return The id.
      */
     int getId();
 
     /**
      * <code>repeated int32 dest = 2;</code>
+     * @return A list containing the dest.
      */
     java.util.List<Integer> getDestList();
     /**
      * <code>repeated int32 dest = 2;</code>
+     * @return The count of dest.
      */
     int getDestCount();
     /**
      * <code>repeated int32 dest = 2;</code>
+     * @param index The index of the element to return.
+     * @return The dest at the given index.
      */
     int getDest(int index);
 
     /**
      * <code>repeated int32 source = 3;</code>
+     * @return A list containing the source.
      */
     java.util.List<Integer> getSourceList();
     /**
      * <code>repeated int32 source = 3;</code>
+     * @return The count of source.
      */
     int getSourceCount();
     /**
      * <code>repeated int32 source = 3;</code>
+     * @param index The index of the element to return.
+     * @return The source at the given index.
      */
     int getSource(int index);
 
     /**
      * <code>required int32 destPort = 4;</code>
+     * @return Whether the destPort field is set.
      */
     boolean hasDestPort();
     /**
      * <code>required int32 destPort = 4;</code>
+     * @return The destPort.
      */
     int getDestPort();
 
@@ -3200,6 +3517,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 destNodeId = 5;</code>
+     * @return Whether the destNodeId field is set.
      */
     boolean hasDestNodeId();
     /**
@@ -3208,6 +3526,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 destNodeId = 5;</code>
+     * @return The destNodeId.
      */
     int getDestNodeId();
 
@@ -3217,6 +3536,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 sourceNodeId = 6;</code>
+     * @return Whether the sourceNodeId field is set.
      */
     boolean hasSourceNodeId();
     /**
@@ -3225,24 +3545,29 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 sourceNodeId = 6;</code>
+     * @return The sourceNodeId.
      */
     int getSourceNodeId();
 
     /**
      * <code>required bool ack = 7;</code>
+     * @return Whether the ack field is set.
      */
     boolean hasAck();
     /**
      * <code>required bool ack = 7;</code>
+     * @return The ack.
      */
     boolean getAck();
 
     /**
      * <code>optional int32 sourcePortAck = 8;</code>
+     * @return Whether the sourcePortAck field is set.
      */
     boolean hasSourcePortAck();
     /**
      * <code>optional int32 sourcePortAck = 8;</code>
+     * @return The sourcePortAck.
      */
     int getSourcePortAck();
 
@@ -3252,6 +3577,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 currentHop = 9;</code>
+     * @return Whether the currentHop field is set.
      */
     boolean hasCurrentHop();
     /**
@@ -3260,6 +3586,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 currentHop = 9;</code>
+     * @return The currentHop.
      */
     int getCurrentHop();
 
@@ -3269,6 +3596,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 bufferSize = 10;</code>
+     * @return Whether the bufferSize field is set.
      */
     boolean hasBufferSize();
     /**
@@ -3277,33 +3605,40 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 bufferSize = 10;</code>
+     * @return The bufferSize.
      */
     int getBufferSize();
 
     /**
      * <code>required int32 retry = 11 [default = 0];</code>
+     * @return Whether the retry field is set.
      */
     boolean hasRetry();
     /**
      * <code>required int32 retry = 11 [default = 0];</code>
+     * @return The retry.
      */
     int getRetry();
 
     /**
      * <code>optional int32 timeWait = 12;</code>
+     * @return Whether the timeWait field is set.
      */
     boolean hasTimeWait();
     /**
      * <code>optional int32 timeWait = 12;</code>
+     * @return The timeWait.
      */
     int getTimeWait();
 
     /**
      * <code>optional int32 expiry = 13;</code>
+     * @return Whether the expiry field is set.
      */
     boolean hasExpiry();
     /**
      * <code>optional int32 expiry = 13;</code>
+     * @return The expiry.
      */
     int getExpiry();
 
@@ -3313,6 +3648,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 connectTimeout = 14;</code>
+     * @return Whether the connectTimeout field is set.
      */
     boolean hasConnectTimeout();
     /**
@@ -3321,6 +3657,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 connectTimeout = 14;</code>
+     * @return The connectTimeout.
      */
     int getConnectTimeout();
 
@@ -3330,6 +3667,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 flowId = 15;</code>
+     * @return Whether the flowId field is set.
      */
     boolean hasFlowId();
     /**
@@ -3338,6 +3676,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 flowId = 15;</code>
+     * @return The flowId.
      */
     int getFlowId();
 
@@ -3347,6 +3686,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int64 dataType = 16;</code>
+     * @return Whether the dataType field is set.
      */
     boolean hasDataType();
     /**
@@ -3355,15 +3695,18 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int64 dataType = 16;</code>
+     * @return The dataType.
      */
     long getDataType();
 
     /**
      * <code>required bytes payload = 99;</code>
+     * @return Whether the payload field is set.
      */
     boolean hasPayload();
     /**
      * <code>required bytes payload = 99;</code>
+     * @return The payload.
      */
     com.google.protobuf.ByteString getPayload();
   }
@@ -3378,28 +3721,22 @@ public final class RampPacketsProtos {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:UnicastPacket)
       UnicastPacketOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use UnicastPacket.newBuilder() to construct.
     private UnicastPacket(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
     }
     private UnicastPacket() {
-      id_ = 0;
-      dest_ = java.util.Collections.emptyList();
-      source_ = java.util.Collections.emptyList();
-      destPort_ = 0;
-      destNodeId_ = 0;
-      sourceNodeId_ = 0;
-      ack_ = false;
-      sourcePortAck_ = 0;
-      currentHop_ = 0;
-      bufferSize_ = 0;
-      retry_ = 0;
-      timeWait_ = 0;
-      expiry_ = 0;
-      connectTimeout_ = 0;
-      flowId_ = 0;
-      dataType_ = 0L;
+      dest_ = emptyIntList();
+      source_ = emptyIntList();
       payload_ = com.google.protobuf.ByteString.EMPTY;
+    }
+
+    @Override
+    @SuppressWarnings({"unused"})
+    protected Object newInstance(
+        UnusedPrivateParameter unused) {
+      return new UnicastPacket();
     }
 
     @Override
@@ -3412,6 +3749,9 @@ public final class RampPacketsProtos {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -3423,56 +3763,49 @@ public final class RampPacketsProtos {
             case 0:
               done = true;
               break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
             case 8: {
               bitField0_ |= 0x00000001;
               id_ = input.readInt32();
               break;
             }
             case 16: {
-              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-                dest_ = new java.util.ArrayList<Integer>();
+              if (!((mutable_bitField0_ & 0x00000002) != 0)) {
+                dest_ = newIntList();
                 mutable_bitField0_ |= 0x00000002;
               }
-              dest_.add(input.readInt32());
+              dest_.addInt(input.readInt32());
               break;
             }
             case 18: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
-              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002) && input.getBytesUntilLimit() > 0) {
-                dest_ = new java.util.ArrayList<Integer>();
+              if (!((mutable_bitField0_ & 0x00000002) != 0) && input.getBytesUntilLimit() > 0) {
+                dest_ = newIntList();
                 mutable_bitField0_ |= 0x00000002;
               }
               while (input.getBytesUntilLimit() > 0) {
-                dest_.add(input.readInt32());
+                dest_.addInt(input.readInt32());
               }
               input.popLimit(limit);
               break;
             }
             case 24: {
-              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-                source_ = new java.util.ArrayList<Integer>();
+              if (!((mutable_bitField0_ & 0x00000004) != 0)) {
+                source_ = newIntList();
                 mutable_bitField0_ |= 0x00000004;
               }
-              source_.add(input.readInt32());
+              source_.addInt(input.readInt32());
               break;
             }
             case 26: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
-              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004) && input.getBytesUntilLimit() > 0) {
-                source_ = new java.util.ArrayList<Integer>();
+              if (!((mutable_bitField0_ & 0x00000004) != 0) && input.getBytesUntilLimit() > 0) {
+                source_ = newIntList();
                 mutable_bitField0_ |= 0x00000004;
               }
               while (input.getBytesUntilLimit() > 0) {
-                source_.add(input.readInt32());
+                source_.addInt(input.readInt32());
               }
               input.popLimit(limit);
               break;
@@ -3547,6 +3880,13 @@ public final class RampPacketsProtos {
               payload_ = input.readBytes();
               break;
             }
+            default: {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -3555,11 +3895,11 @@ public final class RampPacketsProtos {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-          dest_ = java.util.Collections.unmodifiableList(dest_);
+        if (((mutable_bitField0_ & 0x00000002) != 0)) {
+          dest_.makeImmutable(); // C
         }
-        if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-          source_ = java.util.Collections.unmodifiableList(source_);
+        if (((mutable_bitField0_ & 0x00000004) != 0)) {
+          source_.makeImmutable(); // C
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -3570,6 +3910,7 @@ public final class RampPacketsProtos {
       return RampPacketsProtos.internal_static_UnicastPacket_descriptor;
     }
 
+    @Override
     protected FieldAccessorTable
         internalGetFieldAccessorTable() {
       return RampPacketsProtos.internal_static_UnicastPacket_fieldAccessorTable
@@ -3582,21 +3923,24 @@ public final class RampPacketsProtos {
     private int id_;
     /**
      * <code>required int32 id = 1;</code>
+     * @return Whether the id field is set.
      */
     public boolean hasId() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000001) != 0);
     }
     /**
      * <code>required int32 id = 1;</code>
+     * @return The id.
      */
     public int getId() {
       return id_;
     }
 
     public static final int DEST_FIELD_NUMBER = 2;
-    private java.util.List<Integer> dest_;
+    private com.google.protobuf.Internal.IntList dest_;
     /**
      * <code>repeated int32 dest = 2;</code>
+     * @return A list containing the dest.
      */
     public java.util.List<Integer>
         getDestList() {
@@ -3604,21 +3948,25 @@ public final class RampPacketsProtos {
     }
     /**
      * <code>repeated int32 dest = 2;</code>
+     * @return The count of dest.
      */
     public int getDestCount() {
       return dest_.size();
     }
     /**
      * <code>repeated int32 dest = 2;</code>
+     * @param index The index of the element to return.
+     * @return The dest at the given index.
      */
     public int getDest(int index) {
-      return dest_.get(index);
+      return dest_.getInt(index);
     }
 
     public static final int SOURCE_FIELD_NUMBER = 3;
-    private java.util.List<Integer> source_;
+    private com.google.protobuf.Internal.IntList source_;
     /**
      * <code>repeated int32 source = 3;</code>
+     * @return A list containing the source.
      */
     public java.util.List<Integer>
         getSourceList() {
@@ -3626,27 +3974,32 @@ public final class RampPacketsProtos {
     }
     /**
      * <code>repeated int32 source = 3;</code>
+     * @return The count of source.
      */
     public int getSourceCount() {
       return source_.size();
     }
     /**
      * <code>repeated int32 source = 3;</code>
+     * @param index The index of the element to return.
+     * @return The source at the given index.
      */
     public int getSource(int index) {
-      return source_.get(index);
+      return source_.getInt(index);
     }
 
     public static final int DESTPORT_FIELD_NUMBER = 4;
     private int destPort_;
     /**
      * <code>required int32 destPort = 4;</code>
+     * @return Whether the destPort field is set.
      */
     public boolean hasDestPort() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
+      return ((bitField0_ & 0x00000002) != 0);
     }
     /**
      * <code>required int32 destPort = 4;</code>
+     * @return The destPort.
      */
     public int getDestPort() {
       return destPort_;
@@ -3660,9 +4013,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 destNodeId = 5;</code>
+     * @return Whether the destNodeId field is set.
      */
     public boolean hasDestNodeId() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+      return ((bitField0_ & 0x00000004) != 0);
     }
     /**
      * <pre>
@@ -3670,6 +4024,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 destNodeId = 5;</code>
+     * @return The destNodeId.
      */
     public int getDestNodeId() {
       return destNodeId_;
@@ -3683,9 +4038,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 sourceNodeId = 6;</code>
+     * @return Whether the sourceNodeId field is set.
      */
     public boolean hasSourceNodeId() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
+      return ((bitField0_ & 0x00000008) != 0);
     }
     /**
      * <pre>
@@ -3693,6 +4049,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 sourceNodeId = 6;</code>
+     * @return The sourceNodeId.
      */
     public int getSourceNodeId() {
       return sourceNodeId_;
@@ -3702,12 +4059,14 @@ public final class RampPacketsProtos {
     private boolean ack_;
     /**
      * <code>required bool ack = 7;</code>
+     * @return Whether the ack field is set.
      */
     public boolean hasAck() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
+      return ((bitField0_ & 0x00000010) != 0);
     }
     /**
      * <code>required bool ack = 7;</code>
+     * @return The ack.
      */
     public boolean getAck() {
       return ack_;
@@ -3717,12 +4076,14 @@ public final class RampPacketsProtos {
     private int sourcePortAck_;
     /**
      * <code>optional int32 sourcePortAck = 8;</code>
+     * @return Whether the sourcePortAck field is set.
      */
     public boolean hasSourcePortAck() {
-      return ((bitField0_ & 0x00000020) == 0x00000020);
+      return ((bitField0_ & 0x00000020) != 0);
     }
     /**
      * <code>optional int32 sourcePortAck = 8;</code>
+     * @return The sourcePortAck.
      */
     public int getSourcePortAck() {
       return sourcePortAck_;
@@ -3736,9 +4097,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 currentHop = 9;</code>
+     * @return Whether the currentHop field is set.
      */
     public boolean hasCurrentHop() {
-      return ((bitField0_ & 0x00000040) == 0x00000040);
+      return ((bitField0_ & 0x00000040) != 0);
     }
     /**
      * <pre>
@@ -3746,6 +4108,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 currentHop = 9;</code>
+     * @return The currentHop.
      */
     public int getCurrentHop() {
       return currentHop_;
@@ -3759,9 +4122,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 bufferSize = 10;</code>
+     * @return Whether the bufferSize field is set.
      */
     public boolean hasBufferSize() {
-      return ((bitField0_ & 0x00000080) == 0x00000080);
+      return ((bitField0_ & 0x00000080) != 0);
     }
     /**
      * <pre>
@@ -3769,6 +4133,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 bufferSize = 10;</code>
+     * @return The bufferSize.
      */
     public int getBufferSize() {
       return bufferSize_;
@@ -3778,12 +4143,14 @@ public final class RampPacketsProtos {
     private int retry_;
     /**
      * <code>required int32 retry = 11 [default = 0];</code>
+     * @return Whether the retry field is set.
      */
     public boolean hasRetry() {
-      return ((bitField0_ & 0x00000100) == 0x00000100);
+      return ((bitField0_ & 0x00000100) != 0);
     }
     /**
      * <code>required int32 retry = 11 [default = 0];</code>
+     * @return The retry.
      */
     public int getRetry() {
       return retry_;
@@ -3793,12 +4160,14 @@ public final class RampPacketsProtos {
     private int timeWait_;
     /**
      * <code>optional int32 timeWait = 12;</code>
+     * @return Whether the timeWait field is set.
      */
     public boolean hasTimeWait() {
-      return ((bitField0_ & 0x00000200) == 0x00000200);
+      return ((bitField0_ & 0x00000200) != 0);
     }
     /**
      * <code>optional int32 timeWait = 12;</code>
+     * @return The timeWait.
      */
     public int getTimeWait() {
       return timeWait_;
@@ -3808,12 +4177,14 @@ public final class RampPacketsProtos {
     private int expiry_;
     /**
      * <code>optional int32 expiry = 13;</code>
+     * @return Whether the expiry field is set.
      */
     public boolean hasExpiry() {
-      return ((bitField0_ & 0x00000400) == 0x00000400);
+      return ((bitField0_ & 0x00000400) != 0);
     }
     /**
      * <code>optional int32 expiry = 13;</code>
+     * @return The expiry.
      */
     public int getExpiry() {
       return expiry_;
@@ -3827,9 +4198,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 connectTimeout = 14;</code>
+     * @return Whether the connectTimeout field is set.
      */
     public boolean hasConnectTimeout() {
-      return ((bitField0_ & 0x00000800) == 0x00000800);
+      return ((bitField0_ & 0x00000800) != 0);
     }
     /**
      * <pre>
@@ -3837,6 +4209,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>required int32 connectTimeout = 14;</code>
+     * @return The connectTimeout.
      */
     public int getConnectTimeout() {
       return connectTimeout_;
@@ -3850,9 +4223,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 flowId = 15;</code>
+     * @return Whether the flowId field is set.
      */
     public boolean hasFlowId() {
-      return ((bitField0_ & 0x00001000) == 0x00001000);
+      return ((bitField0_ & 0x00001000) != 0);
     }
     /**
      * <pre>
@@ -3860,6 +4234,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 flowId = 15;</code>
+     * @return The flowId.
      */
     public int getFlowId() {
       return flowId_;
@@ -3873,9 +4248,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int64 dataType = 16;</code>
+     * @return Whether the dataType field is set.
      */
     public boolean hasDataType() {
-      return ((bitField0_ & 0x00002000) == 0x00002000);
+      return ((bitField0_ & 0x00002000) != 0);
     }
     /**
      * <pre>
@@ -3883,6 +4259,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int64 dataType = 16;</code>
+     * @return The dataType.
      */
     public long getDataType() {
       return dataType_;
@@ -3892,18 +4269,21 @@ public final class RampPacketsProtos {
     private com.google.protobuf.ByteString payload_;
     /**
      * <code>required bytes payload = 99;</code>
+     * @return Whether the payload field is set.
      */
     public boolean hasPayload() {
-      return ((bitField0_ & 0x00004000) == 0x00004000);
+      return ((bitField0_ & 0x00004000) != 0);
     }
     /**
      * <code>required bytes payload = 99;</code>
+     * @return The payload.
      */
     public com.google.protobuf.ByteString getPayload() {
       return payload_;
     }
 
     private byte memoizedIsInitialized = -1;
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -3945,68 +4325,70 @@ public final class RampPacketsProtos {
       return true;
     }
 
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         output.writeInt32(1, id_);
       }
       for (int i = 0; i < dest_.size(); i++) {
-        output.writeInt32(2, dest_.get(i));
+        output.writeInt32(2, dest_.getInt(i));
       }
       for (int i = 0; i < source_.size(); i++) {
-        output.writeInt32(3, source_.get(i));
+        output.writeInt32(3, source_.getInt(i));
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         output.writeInt32(4, destPort_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         output.writeInt32(5, destNodeId_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000008) != 0)) {
         output.writeInt32(6, sourceNodeId_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+      if (((bitField0_ & 0x00000010) != 0)) {
         output.writeBool(7, ack_);
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+      if (((bitField0_ & 0x00000020) != 0)) {
         output.writeInt32(8, sourcePortAck_);
       }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+      if (((bitField0_ & 0x00000040) != 0)) {
         output.writeInt32(9, currentHop_);
       }
-      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+      if (((bitField0_ & 0x00000080) != 0)) {
         output.writeInt32(10, bufferSize_);
       }
-      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+      if (((bitField0_ & 0x00000100) != 0)) {
         output.writeInt32(11, retry_);
       }
-      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+      if (((bitField0_ & 0x00000200) != 0)) {
         output.writeInt32(12, timeWait_);
       }
-      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+      if (((bitField0_ & 0x00000400) != 0)) {
         output.writeInt32(13, expiry_);
       }
-      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+      if (((bitField0_ & 0x00000800) != 0)) {
         output.writeInt32(14, connectTimeout_);
       }
-      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+      if (((bitField0_ & 0x00001000) != 0)) {
         output.writeInt32(15, flowId_);
       }
-      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+      if (((bitField0_ & 0x00002000) != 0)) {
         output.writeInt64(16, dataType_);
       }
-      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+      if (((bitField0_ & 0x00004000) != 0)) {
         output.writeBytes(99, payload_);
       }
       unknownFields.writeTo(output);
     }
 
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(1, id_);
       }
@@ -4014,7 +4396,7 @@ public final class RampPacketsProtos {
         int dataSize = 0;
         for (int i = 0; i < dest_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeInt32SizeNoTag(dest_.get(i));
+            .computeInt32SizeNoTag(dest_.getInt(i));
         }
         size += dataSize;
         size += 1 * getDestList().size();
@@ -4023,64 +4405,64 @@ public final class RampPacketsProtos {
         int dataSize = 0;
         for (int i = 0; i < source_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeInt32SizeNoTag(source_.get(i));
+            .computeInt32SizeNoTag(source_.getInt(i));
         }
         size += dataSize;
         size += 1 * getSourceList().size();
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(4, destPort_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(5, destNodeId_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000008) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(6, sourceNodeId_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+      if (((bitField0_ & 0x00000010) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBoolSize(7, ack_);
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+      if (((bitField0_ & 0x00000020) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(8, sourcePortAck_);
       }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+      if (((bitField0_ & 0x00000040) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(9, currentHop_);
       }
-      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+      if (((bitField0_ & 0x00000080) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(10, bufferSize_);
       }
-      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+      if (((bitField0_ & 0x00000100) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(11, retry_);
       }
-      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+      if (((bitField0_ & 0x00000200) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(12, timeWait_);
       }
-      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+      if (((bitField0_ & 0x00000400) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(13, expiry_);
       }
-      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+      if (((bitField0_ & 0x00000800) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(14, connectTimeout_);
       }
-      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+      if (((bitField0_ & 0x00001000) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(15, flowId_);
       }
-      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+      if (((bitField0_ & 0x00002000) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(16, dataType_);
       }
-      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+      if (((bitField0_ & 0x00004000) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(99, payload_);
       }
@@ -4089,7 +4471,6 @@ public final class RampPacketsProtos {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @Override
     public boolean equals(final Object obj) {
       if (obj == this) {
@@ -4100,88 +4481,87 @@ public final class RampPacketsProtos {
       }
       UnicastPacket other = (UnicastPacket) obj;
 
-      boolean result = true;
-      result = result && (hasId() == other.hasId());
+      if (hasId() != other.hasId()) return false;
       if (hasId()) {
-        result = result && (getId()
-            == other.getId());
+        if (getId()
+            != other.getId()) return false;
       }
-      result = result && getDestList()
-          .equals(other.getDestList());
-      result = result && getSourceList()
-          .equals(other.getSourceList());
-      result = result && (hasDestPort() == other.hasDestPort());
+      if (!getDestList()
+          .equals(other.getDestList())) return false;
+      if (!getSourceList()
+          .equals(other.getSourceList())) return false;
+      if (hasDestPort() != other.hasDestPort()) return false;
       if (hasDestPort()) {
-        result = result && (getDestPort()
-            == other.getDestPort());
+        if (getDestPort()
+            != other.getDestPort()) return false;
       }
-      result = result && (hasDestNodeId() == other.hasDestNodeId());
+      if (hasDestNodeId() != other.hasDestNodeId()) return false;
       if (hasDestNodeId()) {
-        result = result && (getDestNodeId()
-            == other.getDestNodeId());
+        if (getDestNodeId()
+            != other.getDestNodeId()) return false;
       }
-      result = result && (hasSourceNodeId() == other.hasSourceNodeId());
+      if (hasSourceNodeId() != other.hasSourceNodeId()) return false;
       if (hasSourceNodeId()) {
-        result = result && (getSourceNodeId()
-            == other.getSourceNodeId());
+        if (getSourceNodeId()
+            != other.getSourceNodeId()) return false;
       }
-      result = result && (hasAck() == other.hasAck());
+      if (hasAck() != other.hasAck()) return false;
       if (hasAck()) {
-        result = result && (getAck()
-            == other.getAck());
+        if (getAck()
+            != other.getAck()) return false;
       }
-      result = result && (hasSourcePortAck() == other.hasSourcePortAck());
+      if (hasSourcePortAck() != other.hasSourcePortAck()) return false;
       if (hasSourcePortAck()) {
-        result = result && (getSourcePortAck()
-            == other.getSourcePortAck());
+        if (getSourcePortAck()
+            != other.getSourcePortAck()) return false;
       }
-      result = result && (hasCurrentHop() == other.hasCurrentHop());
+      if (hasCurrentHop() != other.hasCurrentHop()) return false;
       if (hasCurrentHop()) {
-        result = result && (getCurrentHop()
-            == other.getCurrentHop());
+        if (getCurrentHop()
+            != other.getCurrentHop()) return false;
       }
-      result = result && (hasBufferSize() == other.hasBufferSize());
+      if (hasBufferSize() != other.hasBufferSize()) return false;
       if (hasBufferSize()) {
-        result = result && (getBufferSize()
-            == other.getBufferSize());
+        if (getBufferSize()
+            != other.getBufferSize()) return false;
       }
-      result = result && (hasRetry() == other.hasRetry());
+      if (hasRetry() != other.hasRetry()) return false;
       if (hasRetry()) {
-        result = result && (getRetry()
-            == other.getRetry());
+        if (getRetry()
+            != other.getRetry()) return false;
       }
-      result = result && (hasTimeWait() == other.hasTimeWait());
+      if (hasTimeWait() != other.hasTimeWait()) return false;
       if (hasTimeWait()) {
-        result = result && (getTimeWait()
-            == other.getTimeWait());
+        if (getTimeWait()
+            != other.getTimeWait()) return false;
       }
-      result = result && (hasExpiry() == other.hasExpiry());
+      if (hasExpiry() != other.hasExpiry()) return false;
       if (hasExpiry()) {
-        result = result && (getExpiry()
-            == other.getExpiry());
+        if (getExpiry()
+            != other.getExpiry()) return false;
       }
-      result = result && (hasConnectTimeout() == other.hasConnectTimeout());
+      if (hasConnectTimeout() != other.hasConnectTimeout()) return false;
       if (hasConnectTimeout()) {
-        result = result && (getConnectTimeout()
-            == other.getConnectTimeout());
+        if (getConnectTimeout()
+            != other.getConnectTimeout()) return false;
       }
-      result = result && (hasFlowId() == other.hasFlowId());
+      if (hasFlowId() != other.hasFlowId()) return false;
       if (hasFlowId()) {
-        result = result && (getFlowId()
-            == other.getFlowId());
+        if (getFlowId()
+            != other.getFlowId()) return false;
       }
-      result = result && (hasDataType() == other.hasDataType());
+      if (hasDataType() != other.hasDataType()) return false;
       if (hasDataType()) {
-        result = result && (getDataType()
-            == other.getDataType());
+        if (getDataType()
+            != other.getDataType()) return false;
       }
-      result = result && (hasPayload() == other.hasPayload());
+      if (hasPayload() != other.hasPayload()) return false;
       if (hasPayload()) {
-        result = result && getPayload()
-            .equals(other.getPayload());
+        if (!getPayload()
+            .equals(other.getPayload())) return false;
       }
-      result = result && unknownFields.equals(other.unknownFields);
-      return result;
+      if (!unknownFields.equals(other.unknownFields)) return false;
+      return true;
     }
 
     @Override
@@ -4190,7 +4570,7 @@ public final class RampPacketsProtos {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasId()) {
         hash = (37 * hash) + ID_FIELD_NUMBER;
         hash = (53 * hash) + getId();
@@ -4267,6 +4647,17 @@ public final class RampPacketsProtos {
     }
 
     public static UnicastPacket parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static UnicastPacket parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static UnicastPacket parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
@@ -4325,6 +4716,7 @@ public final class RampPacketsProtos {
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
@@ -4332,6 +4724,7 @@ public final class RampPacketsProtos {
     public static Builder newBuilder(UnicastPacket prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
@@ -4359,6 +4752,7 @@ public final class RampPacketsProtos {
         return RampPacketsProtos.internal_static_UnicastPacket_descriptor;
       }
 
+      @Override
       protected FieldAccessorTable
           internalGetFieldAccessorTable() {
         return RampPacketsProtos.internal_static_UnicastPacket_fieldAccessorTable
@@ -4381,13 +4775,14 @@ public final class RampPacketsProtos {
                 .alwaysUseFieldBuilders) {
         }
       }
+      @Override
       public Builder clear() {
         super.clear();
         id_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
-        dest_ = java.util.Collections.emptyList();
+        dest_ = emptyIntList();
         bitField0_ = (bitField0_ & ~0x00000002);
-        source_ = java.util.Collections.emptyList();
+        source_ = emptyIntList();
         bitField0_ = (bitField0_ & ~0x00000004);
         destPort_ = 0;
         bitField0_ = (bitField0_ & ~0x00000008);
@@ -4420,15 +4815,18 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
         return RampPacketsProtos.internal_static_UnicastPacket_descriptor;
       }
 
+      @Override
       public UnicastPacket getDefaultInstanceForType() {
         return UnicastPacket.getDefaultInstance();
       }
 
+      @Override
       public UnicastPacket build() {
         UnicastPacket result = buildPartial();
         if (!result.isInitialized()) {
@@ -4437,77 +4835,78 @@ public final class RampPacketsProtos {
         return result;
       }
 
+      @Override
       public UnicastPacket buildPartial() {
         UnicastPacket result = new UnicastPacket(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.id_ = id_;
           to_bitField0_ |= 0x00000001;
         }
-        result.id_ = id_;
-        if (((bitField0_ & 0x00000002) == 0x00000002)) {
-          dest_ = java.util.Collections.unmodifiableList(dest_);
+        if (((bitField0_ & 0x00000002) != 0)) {
+          dest_.makeImmutable();
           bitField0_ = (bitField0_ & ~0x00000002);
         }
         result.dest_ = dest_;
-        if (((bitField0_ & 0x00000004) == 0x00000004)) {
-          source_ = java.util.Collections.unmodifiableList(source_);
+        if (((bitField0_ & 0x00000004) != 0)) {
+          source_.makeImmutable();
           bitField0_ = (bitField0_ & ~0x00000004);
         }
         result.source_ = source_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+        if (((from_bitField0_ & 0x00000008) != 0)) {
+          result.destPort_ = destPort_;
           to_bitField0_ |= 0x00000002;
         }
-        result.destPort_ = destPort_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+        if (((from_bitField0_ & 0x00000010) != 0)) {
+          result.destNodeId_ = destNodeId_;
           to_bitField0_ |= 0x00000004;
         }
-        result.destNodeId_ = destNodeId_;
-        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+        if (((from_bitField0_ & 0x00000020) != 0)) {
+          result.sourceNodeId_ = sourceNodeId_;
           to_bitField0_ |= 0x00000008;
         }
-        result.sourceNodeId_ = sourceNodeId_;
-        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+        if (((from_bitField0_ & 0x00000040) != 0)) {
+          result.ack_ = ack_;
           to_bitField0_ |= 0x00000010;
         }
-        result.ack_ = ack_;
-        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+        if (((from_bitField0_ & 0x00000080) != 0)) {
+          result.sourcePortAck_ = sourcePortAck_;
           to_bitField0_ |= 0x00000020;
         }
-        result.sourcePortAck_ = sourcePortAck_;
-        if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
+        if (((from_bitField0_ & 0x00000100) != 0)) {
+          result.currentHop_ = currentHop_;
           to_bitField0_ |= 0x00000040;
         }
-        result.currentHop_ = currentHop_;
-        if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
+        if (((from_bitField0_ & 0x00000200) != 0)) {
+          result.bufferSize_ = bufferSize_;
           to_bitField0_ |= 0x00000080;
         }
-        result.bufferSize_ = bufferSize_;
-        if (((from_bitField0_ & 0x00000400) == 0x00000400)) {
+        if (((from_bitField0_ & 0x00000400) != 0)) {
+          result.retry_ = retry_;
           to_bitField0_ |= 0x00000100;
         }
-        result.retry_ = retry_;
-        if (((from_bitField0_ & 0x00000800) == 0x00000800)) {
+        if (((from_bitField0_ & 0x00000800) != 0)) {
+          result.timeWait_ = timeWait_;
           to_bitField0_ |= 0x00000200;
         }
-        result.timeWait_ = timeWait_;
-        if (((from_bitField0_ & 0x00001000) == 0x00001000)) {
+        if (((from_bitField0_ & 0x00001000) != 0)) {
+          result.expiry_ = expiry_;
           to_bitField0_ |= 0x00000400;
         }
-        result.expiry_ = expiry_;
-        if (((from_bitField0_ & 0x00002000) == 0x00002000)) {
+        if (((from_bitField0_ & 0x00002000) != 0)) {
+          result.connectTimeout_ = connectTimeout_;
           to_bitField0_ |= 0x00000800;
         }
-        result.connectTimeout_ = connectTimeout_;
-        if (((from_bitField0_ & 0x00004000) == 0x00004000)) {
+        if (((from_bitField0_ & 0x00004000) != 0)) {
+          result.flowId_ = flowId_;
           to_bitField0_ |= 0x00001000;
         }
-        result.flowId_ = flowId_;
-        if (((from_bitField0_ & 0x00008000) == 0x00008000)) {
+        if (((from_bitField0_ & 0x00008000) != 0)) {
+          result.dataType_ = dataType_;
           to_bitField0_ |= 0x00002000;
         }
-        result.dataType_ = dataType_;
-        if (((from_bitField0_ & 0x00010000) == 0x00010000)) {
+        if (((from_bitField0_ & 0x00010000) != 0)) {
           to_bitField0_ |= 0x00004000;
         }
         result.payload_ = payload_;
@@ -4516,32 +4915,39 @@ public final class RampPacketsProtos {
         return result;
       }
 
+      @Override
       public Builder clone() {
-        return (Builder) super.clone();
+        return super.clone();
       }
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.setField(field, value);
+        return super.setField(field, value);
       }
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return (Builder) super.clearField(field);
+        return super.clearField(field);
       }
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return (Builder) super.clearOneof(oneof);
+        return super.clearOneof(oneof);
       }
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           int index, Object value) {
-        return (Builder) super.setRepeatedField(field, index, value);
+        return super.setRepeatedField(field, index, value);
       }
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.addRepeatedField(field, value);
+        return super.addRepeatedField(field, value);
       }
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof UnicastPacket) {
           return mergeFrom((UnicastPacket)other);
@@ -4623,6 +5029,7 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public final boolean isInitialized() {
         if (!hasId()) {
           return false;
@@ -4651,6 +5058,7 @@ public final class RampPacketsProtos {
         return true;
       }
 
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -4673,18 +5081,22 @@ public final class RampPacketsProtos {
       private int id_ ;
       /**
        * <code>required int32 id = 1;</code>
+       * @return Whether the id field is set.
        */
       public boolean hasId() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>required int32 id = 1;</code>
+       * @return The id.
        */
       public int getId() {
         return id_;
       }
       /**
        * <code>required int32 id = 1;</code>
+       * @param value The id to set.
+       * @return This builder for chaining.
        */
       public Builder setId(int value) {
         bitField0_ |= 0x00000001;
@@ -4694,6 +5106,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 id = 1;</code>
+       * @return This builder for chaining.
        */
       public Builder clearId() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -4702,53 +5115,65 @@ public final class RampPacketsProtos {
         return this;
       }
 
-      private java.util.List<Integer> dest_ = java.util.Collections.emptyList();
+      private com.google.protobuf.Internal.IntList dest_ = emptyIntList();
       private void ensureDestIsMutable() {
-        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
-          dest_ = new java.util.ArrayList<Integer>(dest_);
+        if (!((bitField0_ & 0x00000002) != 0)) {
+          dest_ = mutableCopy(dest_);
           bitField0_ |= 0x00000002;
          }
       }
       /**
        * <code>repeated int32 dest = 2;</code>
+       * @return A list containing the dest.
        */
       public java.util.List<Integer>
           getDestList() {
-        return java.util.Collections.unmodifiableList(dest_);
+        return ((bitField0_ & 0x00000002) != 0) ?
+                 java.util.Collections.unmodifiableList(dest_) : dest_;
       }
       /**
        * <code>repeated int32 dest = 2;</code>
+       * @return The count of dest.
        */
       public int getDestCount() {
         return dest_.size();
       }
       /**
        * <code>repeated int32 dest = 2;</code>
+       * @param index The index of the element to return.
+       * @return The dest at the given index.
        */
       public int getDest(int index) {
-        return dest_.get(index);
+        return dest_.getInt(index);
       }
       /**
        * <code>repeated int32 dest = 2;</code>
+       * @param index The index to set the value at.
+       * @param value The dest to set.
+       * @return This builder for chaining.
        */
       public Builder setDest(
           int index, int value) {
         ensureDestIsMutable();
-        dest_.set(index, value);
+        dest_.setInt(index, value);
         onChanged();
         return this;
       }
       /**
        * <code>repeated int32 dest = 2;</code>
+       * @param value The dest to add.
+       * @return This builder for chaining.
        */
       public Builder addDest(int value) {
         ensureDestIsMutable();
-        dest_.add(value);
+        dest_.addInt(value);
         onChanged();
         return this;
       }
       /**
        * <code>repeated int32 dest = 2;</code>
+       * @param values The dest to add.
+       * @return This builder for chaining.
        */
       public Builder addAllDest(
           Iterable<? extends Integer> values) {
@@ -4760,61 +5185,74 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>repeated int32 dest = 2;</code>
+       * @return This builder for chaining.
        */
       public Builder clearDest() {
-        dest_ = java.util.Collections.emptyList();
+        dest_ = emptyIntList();
         bitField0_ = (bitField0_ & ~0x00000002);
         onChanged();
         return this;
       }
 
-      private java.util.List<Integer> source_ = java.util.Collections.emptyList();
+      private com.google.protobuf.Internal.IntList source_ = emptyIntList();
       private void ensureSourceIsMutable() {
-        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
-          source_ = new java.util.ArrayList<Integer>(source_);
+        if (!((bitField0_ & 0x00000004) != 0)) {
+          source_ = mutableCopy(source_);
           bitField0_ |= 0x00000004;
          }
       }
       /**
        * <code>repeated int32 source = 3;</code>
+       * @return A list containing the source.
        */
       public java.util.List<Integer>
           getSourceList() {
-        return java.util.Collections.unmodifiableList(source_);
+        return ((bitField0_ & 0x00000004) != 0) ?
+                 java.util.Collections.unmodifiableList(source_) : source_;
       }
       /**
        * <code>repeated int32 source = 3;</code>
+       * @return The count of source.
        */
       public int getSourceCount() {
         return source_.size();
       }
       /**
        * <code>repeated int32 source = 3;</code>
+       * @param index The index of the element to return.
+       * @return The source at the given index.
        */
       public int getSource(int index) {
-        return source_.get(index);
+        return source_.getInt(index);
       }
       /**
        * <code>repeated int32 source = 3;</code>
+       * @param index The index to set the value at.
+       * @param value The source to set.
+       * @return This builder for chaining.
        */
       public Builder setSource(
           int index, int value) {
         ensureSourceIsMutable();
-        source_.set(index, value);
+        source_.setInt(index, value);
         onChanged();
         return this;
       }
       /**
        * <code>repeated int32 source = 3;</code>
+       * @param value The source to add.
+       * @return This builder for chaining.
        */
       public Builder addSource(int value) {
         ensureSourceIsMutable();
-        source_.add(value);
+        source_.addInt(value);
         onChanged();
         return this;
       }
       /**
        * <code>repeated int32 source = 3;</code>
+       * @param values The source to add.
+       * @return This builder for chaining.
        */
       public Builder addAllSource(
           Iterable<? extends Integer> values) {
@@ -4826,9 +5264,10 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>repeated int32 source = 3;</code>
+       * @return This builder for chaining.
        */
       public Builder clearSource() {
-        source_ = java.util.Collections.emptyList();
+        source_ = emptyIntList();
         bitField0_ = (bitField0_ & ~0x00000004);
         onChanged();
         return this;
@@ -4837,18 +5276,22 @@ public final class RampPacketsProtos {
       private int destPort_ ;
       /**
        * <code>required int32 destPort = 4;</code>
+       * @return Whether the destPort field is set.
        */
       public boolean hasDestPort() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
+        return ((bitField0_ & 0x00000008) != 0);
       }
       /**
        * <code>required int32 destPort = 4;</code>
+       * @return The destPort.
        */
       public int getDestPort() {
         return destPort_;
       }
       /**
        * <code>required int32 destPort = 4;</code>
+       * @param value The destPort to set.
+       * @return This builder for chaining.
        */
       public Builder setDestPort(int value) {
         bitField0_ |= 0x00000008;
@@ -4858,6 +5301,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 destPort = 4;</code>
+       * @return This builder for chaining.
        */
       public Builder clearDestPort() {
         bitField0_ = (bitField0_ & ~0x00000008);
@@ -4873,9 +5317,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 destNodeId = 5;</code>
+       * @return Whether the destNodeId field is set.
        */
       public boolean hasDestNodeId() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
+        return ((bitField0_ & 0x00000010) != 0);
       }
       /**
        * <pre>
@@ -4883,6 +5328,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 destNodeId = 5;</code>
+       * @return The destNodeId.
        */
       public int getDestNodeId() {
         return destNodeId_;
@@ -4893,6 +5339,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 destNodeId = 5;</code>
+       * @param value The destNodeId to set.
+       * @return This builder for chaining.
        */
       public Builder setDestNodeId(int value) {
         bitField0_ |= 0x00000010;
@@ -4906,6 +5354,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 destNodeId = 5;</code>
+       * @return This builder for chaining.
        */
       public Builder clearDestNodeId() {
         bitField0_ = (bitField0_ & ~0x00000010);
@@ -4921,9 +5370,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 sourceNodeId = 6;</code>
+       * @return Whether the sourceNodeId field is set.
        */
       public boolean hasSourceNodeId() {
-        return ((bitField0_ & 0x00000020) == 0x00000020);
+        return ((bitField0_ & 0x00000020) != 0);
       }
       /**
        * <pre>
@@ -4931,6 +5381,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 sourceNodeId = 6;</code>
+       * @return The sourceNodeId.
        */
       public int getSourceNodeId() {
         return sourceNodeId_;
@@ -4941,6 +5392,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 sourceNodeId = 6;</code>
+       * @param value The sourceNodeId to set.
+       * @return This builder for chaining.
        */
       public Builder setSourceNodeId(int value) {
         bitField0_ |= 0x00000020;
@@ -4954,6 +5407,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 sourceNodeId = 6;</code>
+       * @return This builder for chaining.
        */
       public Builder clearSourceNodeId() {
         bitField0_ = (bitField0_ & ~0x00000020);
@@ -4965,18 +5419,22 @@ public final class RampPacketsProtos {
       private boolean ack_ ;
       /**
        * <code>required bool ack = 7;</code>
+       * @return Whether the ack field is set.
        */
       public boolean hasAck() {
-        return ((bitField0_ & 0x00000040) == 0x00000040);
+        return ((bitField0_ & 0x00000040) != 0);
       }
       /**
        * <code>required bool ack = 7;</code>
+       * @return The ack.
        */
       public boolean getAck() {
         return ack_;
       }
       /**
        * <code>required bool ack = 7;</code>
+       * @param value The ack to set.
+       * @return This builder for chaining.
        */
       public Builder setAck(boolean value) {
         bitField0_ |= 0x00000040;
@@ -4986,6 +5444,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required bool ack = 7;</code>
+       * @return This builder for chaining.
        */
       public Builder clearAck() {
         bitField0_ = (bitField0_ & ~0x00000040);
@@ -4997,18 +5456,22 @@ public final class RampPacketsProtos {
       private int sourcePortAck_ ;
       /**
        * <code>optional int32 sourcePortAck = 8;</code>
+       * @return Whether the sourcePortAck field is set.
        */
       public boolean hasSourcePortAck() {
-        return ((bitField0_ & 0x00000080) == 0x00000080);
+        return ((bitField0_ & 0x00000080) != 0);
       }
       /**
        * <code>optional int32 sourcePortAck = 8;</code>
+       * @return The sourcePortAck.
        */
       public int getSourcePortAck() {
         return sourcePortAck_;
       }
       /**
        * <code>optional int32 sourcePortAck = 8;</code>
+       * @param value The sourcePortAck to set.
+       * @return This builder for chaining.
        */
       public Builder setSourcePortAck(int value) {
         bitField0_ |= 0x00000080;
@@ -5018,6 +5481,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>optional int32 sourcePortAck = 8;</code>
+       * @return This builder for chaining.
        */
       public Builder clearSourcePortAck() {
         bitField0_ = (bitField0_ & ~0x00000080);
@@ -5033,9 +5497,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 currentHop = 9;</code>
+       * @return Whether the currentHop field is set.
        */
       public boolean hasCurrentHop() {
-        return ((bitField0_ & 0x00000100) == 0x00000100);
+        return ((bitField0_ & 0x00000100) != 0);
       }
       /**
        * <pre>
@@ -5043,6 +5508,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 currentHop = 9;</code>
+       * @return The currentHop.
        */
       public int getCurrentHop() {
         return currentHop_;
@@ -5053,6 +5519,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 currentHop = 9;</code>
+       * @param value The currentHop to set.
+       * @return This builder for chaining.
        */
       public Builder setCurrentHop(int value) {
         bitField0_ |= 0x00000100;
@@ -5066,6 +5534,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 currentHop = 9;</code>
+       * @return This builder for chaining.
        */
       public Builder clearCurrentHop() {
         bitField0_ = (bitField0_ & ~0x00000100);
@@ -5081,9 +5550,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 bufferSize = 10;</code>
+       * @return Whether the bufferSize field is set.
        */
       public boolean hasBufferSize() {
-        return ((bitField0_ & 0x00000200) == 0x00000200);
+        return ((bitField0_ & 0x00000200) != 0);
       }
       /**
        * <pre>
@@ -5091,6 +5561,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 bufferSize = 10;</code>
+       * @return The bufferSize.
        */
       public int getBufferSize() {
         return bufferSize_;
@@ -5101,6 +5572,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 bufferSize = 10;</code>
+       * @param value The bufferSize to set.
+       * @return This builder for chaining.
        */
       public Builder setBufferSize(int value) {
         bitField0_ |= 0x00000200;
@@ -5114,6 +5587,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 bufferSize = 10;</code>
+       * @return This builder for chaining.
        */
       public Builder clearBufferSize() {
         bitField0_ = (bitField0_ & ~0x00000200);
@@ -5125,18 +5599,22 @@ public final class RampPacketsProtos {
       private int retry_ ;
       /**
        * <code>required int32 retry = 11 [default = 0];</code>
+       * @return Whether the retry field is set.
        */
       public boolean hasRetry() {
-        return ((bitField0_ & 0x00000400) == 0x00000400);
+        return ((bitField0_ & 0x00000400) != 0);
       }
       /**
        * <code>required int32 retry = 11 [default = 0];</code>
+       * @return The retry.
        */
       public int getRetry() {
         return retry_;
       }
       /**
        * <code>required int32 retry = 11 [default = 0];</code>
+       * @param value The retry to set.
+       * @return This builder for chaining.
        */
       public Builder setRetry(int value) {
         bitField0_ |= 0x00000400;
@@ -5146,6 +5624,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 retry = 11 [default = 0];</code>
+       * @return This builder for chaining.
        */
       public Builder clearRetry() {
         bitField0_ = (bitField0_ & ~0x00000400);
@@ -5157,18 +5636,22 @@ public final class RampPacketsProtos {
       private int timeWait_ ;
       /**
        * <code>optional int32 timeWait = 12;</code>
+       * @return Whether the timeWait field is set.
        */
       public boolean hasTimeWait() {
-        return ((bitField0_ & 0x00000800) == 0x00000800);
+        return ((bitField0_ & 0x00000800) != 0);
       }
       /**
        * <code>optional int32 timeWait = 12;</code>
+       * @return The timeWait.
        */
       public int getTimeWait() {
         return timeWait_;
       }
       /**
        * <code>optional int32 timeWait = 12;</code>
+       * @param value The timeWait to set.
+       * @return This builder for chaining.
        */
       public Builder setTimeWait(int value) {
         bitField0_ |= 0x00000800;
@@ -5178,6 +5661,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>optional int32 timeWait = 12;</code>
+       * @return This builder for chaining.
        */
       public Builder clearTimeWait() {
         bitField0_ = (bitField0_ & ~0x00000800);
@@ -5189,18 +5673,22 @@ public final class RampPacketsProtos {
       private int expiry_ ;
       /**
        * <code>optional int32 expiry = 13;</code>
+       * @return Whether the expiry field is set.
        */
       public boolean hasExpiry() {
-        return ((bitField0_ & 0x00001000) == 0x00001000);
+        return ((bitField0_ & 0x00001000) != 0);
       }
       /**
        * <code>optional int32 expiry = 13;</code>
+       * @return The expiry.
        */
       public int getExpiry() {
         return expiry_;
       }
       /**
        * <code>optional int32 expiry = 13;</code>
+       * @param value The expiry to set.
+       * @return This builder for chaining.
        */
       public Builder setExpiry(int value) {
         bitField0_ |= 0x00001000;
@@ -5210,6 +5698,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>optional int32 expiry = 13;</code>
+       * @return This builder for chaining.
        */
       public Builder clearExpiry() {
         bitField0_ = (bitField0_ & ~0x00001000);
@@ -5225,9 +5714,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 connectTimeout = 14;</code>
+       * @return Whether the connectTimeout field is set.
        */
       public boolean hasConnectTimeout() {
-        return ((bitField0_ & 0x00002000) == 0x00002000);
+        return ((bitField0_ & 0x00002000) != 0);
       }
       /**
        * <pre>
@@ -5235,6 +5725,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 connectTimeout = 14;</code>
+       * @return The connectTimeout.
        */
       public int getConnectTimeout() {
         return connectTimeout_;
@@ -5245,6 +5736,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 connectTimeout = 14;</code>
+       * @param value The connectTimeout to set.
+       * @return This builder for chaining.
        */
       public Builder setConnectTimeout(int value) {
         bitField0_ |= 0x00002000;
@@ -5258,6 +5751,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>required int32 connectTimeout = 14;</code>
+       * @return This builder for chaining.
        */
       public Builder clearConnectTimeout() {
         bitField0_ = (bitField0_ & ~0x00002000);
@@ -5273,9 +5767,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 flowId = 15;</code>
+       * @return Whether the flowId field is set.
        */
       public boolean hasFlowId() {
-        return ((bitField0_ & 0x00004000) == 0x00004000);
+        return ((bitField0_ & 0x00004000) != 0);
       }
       /**
        * <pre>
@@ -5283,6 +5778,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 flowId = 15;</code>
+       * @return The flowId.
        */
       public int getFlowId() {
         return flowId_;
@@ -5293,6 +5789,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 flowId = 15;</code>
+       * @param value The flowId to set.
+       * @return This builder for chaining.
        */
       public Builder setFlowId(int value) {
         bitField0_ |= 0x00004000;
@@ -5306,6 +5804,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 flowId = 15;</code>
+       * @return This builder for chaining.
        */
       public Builder clearFlowId() {
         bitField0_ = (bitField0_ & ~0x00004000);
@@ -5321,9 +5820,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int64 dataType = 16;</code>
+       * @return Whether the dataType field is set.
        */
       public boolean hasDataType() {
-        return ((bitField0_ & 0x00008000) == 0x00008000);
+        return ((bitField0_ & 0x00008000) != 0);
       }
       /**
        * <pre>
@@ -5331,6 +5831,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int64 dataType = 16;</code>
+       * @return The dataType.
        */
       public long getDataType() {
         return dataType_;
@@ -5341,6 +5842,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int64 dataType = 16;</code>
+       * @param value The dataType to set.
+       * @return This builder for chaining.
        */
       public Builder setDataType(long value) {
         bitField0_ |= 0x00008000;
@@ -5354,6 +5857,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int64 dataType = 16;</code>
+       * @return This builder for chaining.
        */
       public Builder clearDataType() {
         bitField0_ = (bitField0_ & ~0x00008000);
@@ -5365,18 +5869,22 @@ public final class RampPacketsProtos {
       private com.google.protobuf.ByteString payload_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>required bytes payload = 99;</code>
+       * @return Whether the payload field is set.
        */
       public boolean hasPayload() {
-        return ((bitField0_ & 0x00010000) == 0x00010000);
+        return ((bitField0_ & 0x00010000) != 0);
       }
       /**
        * <code>required bytes payload = 99;</code>
+       * @return The payload.
        */
       public com.google.protobuf.ByteString getPayload() {
         return payload_;
       }
       /**
        * <code>required bytes payload = 99;</code>
+       * @param value The payload to set.
+       * @return This builder for chaining.
        */
       public Builder setPayload(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -5389,6 +5897,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required bytes payload = 99;</code>
+       * @return This builder for chaining.
        */
       public Builder clearPayload() {
         bitField0_ = (bitField0_ & ~0x00010000);
@@ -5396,11 +5905,13 @@ public final class RampPacketsProtos {
         onChanged();
         return this;
       }
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
@@ -5422,11 +5933,12 @@ public final class RampPacketsProtos {
 
     @Deprecated public static final com.google.protobuf.Parser<UnicastPacket>
         PARSER = new com.google.protobuf.AbstractParser<UnicastPacket>() {
+      @Override
       public UnicastPacket parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new UnicastPacket(input, extensionRegistry);
+        return new UnicastPacket(input, extensionRegistry);
       }
     };
 
@@ -5439,6 +5951,7 @@ public final class RampPacketsProtos {
       return PARSER;
     }
 
+    @Override
     public UnicastPacket getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
@@ -5451,36 +5964,46 @@ public final class RampPacketsProtos {
 
     /**
      * <code>required int32 id = 1;</code>
+     * @return Whether the id field is set.
      */
     boolean hasId();
     /**
      * <code>required int32 id = 1;</code>
+     * @return The id.
      */
     int getId();
 
     /**
      * <code>repeated int32 source = 2;</code>
+     * @return A list containing the source.
      */
     java.util.List<Integer> getSourceList();
     /**
      * <code>repeated int32 source = 2;</code>
+     * @return The count of source.
      */
     int getSourceCount();
     /**
      * <code>repeated int32 source = 2;</code>
+     * @param index The index of the element to return.
+     * @return The source at the given index.
      */
     int getSource(int index);
 
     /**
      * <code>repeated int32 traversedIds = 3;</code>
+     * @return A list containing the traversedIds.
      */
     java.util.List<Integer> getTraversedIdsList();
     /**
      * <code>repeated int32 traversedIds = 3;</code>
+     * @return The count of traversedIds.
      */
     int getTraversedIdsCount();
     /**
      * <code>repeated int32 traversedIds = 3;</code>
+     * @param index The index of the element to return.
+     * @return The traversedIds at the given index.
      */
     int getTraversedIds(int index);
 
@@ -5490,6 +6013,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 sourceNodeId = 4;</code>
+     * @return Whether the sourceNodeId field is set.
      */
     boolean hasSourceNodeId();
     /**
@@ -5498,33 +6022,40 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 sourceNodeId = 4;</code>
+     * @return The sourceNodeId.
      */
     int getSourceNodeId();
 
     /**
      * <code>required int32 ttl = 5;</code>
+     * @return Whether the ttl field is set.
      */
     boolean hasTtl();
     /**
      * <code>required int32 ttl = 5;</code>
+     * @return The ttl.
      */
     int getTtl();
 
     /**
      * <code>required int32 destPort = 6;</code>
+     * @return Whether the destPort field is set.
      */
     boolean hasDestPort();
     /**
      * <code>required int32 destPort = 6;</code>
+     * @return The destPort.
      */
     int getDestPort();
 
     /**
      * <code>optional int32 expiry = 7;</code>
+     * @return Whether the expiry field is set.
      */
     boolean hasExpiry();
     /**
      * <code>optional int32 expiry = 7;</code>
+     * @return The expiry.
      */
     int getExpiry();
 
@@ -5534,6 +6065,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int64 dataType = 8;</code>
+     * @return Whether the dataType field is set.
      */
     boolean hasDataType();
     /**
@@ -5542,15 +6074,18 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int64 dataType = 8;</code>
+     * @return The dataType.
      */
     long getDataType();
 
     /**
      * <code>required bytes payload = 99;</code>
+     * @return Whether the payload field is set.
      */
     boolean hasPayload();
     /**
      * <code>required bytes payload = 99;</code>
+     * @return The payload.
      */
     com.google.protobuf.ByteString getPayload();
   }
@@ -5565,20 +6100,22 @@ public final class RampPacketsProtos {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:BroadcastPacket)
       BroadcastPacketOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use BroadcastPacket.newBuilder() to construct.
     private BroadcastPacket(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
     }
     private BroadcastPacket() {
-      id_ = 0;
-      source_ = java.util.Collections.emptyList();
-      traversedIds_ = java.util.Collections.emptyList();
-      sourceNodeId_ = 0;
-      ttl_ = 0;
-      destPort_ = 0;
-      expiry_ = 0;
-      dataType_ = 0L;
+      source_ = emptyIntList();
+      traversedIds_ = emptyIntList();
       payload_ = com.google.protobuf.ByteString.EMPTY;
+    }
+
+    @Override
+    @SuppressWarnings({"unused"})
+    protected Object newInstance(
+        UnusedPrivateParameter unused) {
+      return new BroadcastPacket();
     }
 
     @Override
@@ -5591,6 +6128,9 @@ public final class RampPacketsProtos {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -5602,56 +6142,49 @@ public final class RampPacketsProtos {
             case 0:
               done = true;
               break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
             case 8: {
               bitField0_ |= 0x00000001;
               id_ = input.readInt32();
               break;
             }
             case 16: {
-              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-                source_ = new java.util.ArrayList<Integer>();
+              if (!((mutable_bitField0_ & 0x00000002) != 0)) {
+                source_ = newIntList();
                 mutable_bitField0_ |= 0x00000002;
               }
-              source_.add(input.readInt32());
+              source_.addInt(input.readInt32());
               break;
             }
             case 18: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
-              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002) && input.getBytesUntilLimit() > 0) {
-                source_ = new java.util.ArrayList<Integer>();
+              if (!((mutable_bitField0_ & 0x00000002) != 0) && input.getBytesUntilLimit() > 0) {
+                source_ = newIntList();
                 mutable_bitField0_ |= 0x00000002;
               }
               while (input.getBytesUntilLimit() > 0) {
-                source_.add(input.readInt32());
+                source_.addInt(input.readInt32());
               }
               input.popLimit(limit);
               break;
             }
             case 24: {
-              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-                traversedIds_ = new java.util.ArrayList<Integer>();
+              if (!((mutable_bitField0_ & 0x00000004) != 0)) {
+                traversedIds_ = newIntList();
                 mutable_bitField0_ |= 0x00000004;
               }
-              traversedIds_.add(input.readInt32());
+              traversedIds_.addInt(input.readInt32());
               break;
             }
             case 26: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
-              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004) && input.getBytesUntilLimit() > 0) {
-                traversedIds_ = new java.util.ArrayList<Integer>();
+              if (!((mutable_bitField0_ & 0x00000004) != 0) && input.getBytesUntilLimit() > 0) {
+                traversedIds_ = newIntList();
                 mutable_bitField0_ |= 0x00000004;
               }
               while (input.getBytesUntilLimit() > 0) {
-                traversedIds_.add(input.readInt32());
+                traversedIds_.addInt(input.readInt32());
               }
               input.popLimit(limit);
               break;
@@ -5686,6 +6219,13 @@ public final class RampPacketsProtos {
               payload_ = input.readBytes();
               break;
             }
+            default: {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -5694,11 +6234,11 @@ public final class RampPacketsProtos {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
-          source_ = java.util.Collections.unmodifiableList(source_);
+        if (((mutable_bitField0_ & 0x00000002) != 0)) {
+          source_.makeImmutable(); // C
         }
-        if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
-          traversedIds_ = java.util.Collections.unmodifiableList(traversedIds_);
+        if (((mutable_bitField0_ & 0x00000004) != 0)) {
+          traversedIds_.makeImmutable(); // C
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -5709,6 +6249,7 @@ public final class RampPacketsProtos {
       return RampPacketsProtos.internal_static_BroadcastPacket_descriptor;
     }
 
+    @Override
     protected FieldAccessorTable
         internalGetFieldAccessorTable() {
       return RampPacketsProtos.internal_static_BroadcastPacket_fieldAccessorTable
@@ -5721,21 +6262,24 @@ public final class RampPacketsProtos {
     private int id_;
     /**
      * <code>required int32 id = 1;</code>
+     * @return Whether the id field is set.
      */
     public boolean hasId() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000001) != 0);
     }
     /**
      * <code>required int32 id = 1;</code>
+     * @return The id.
      */
     public int getId() {
       return id_;
     }
 
     public static final int SOURCE_FIELD_NUMBER = 2;
-    private java.util.List<Integer> source_;
+    private com.google.protobuf.Internal.IntList source_;
     /**
      * <code>repeated int32 source = 2;</code>
+     * @return A list containing the source.
      */
     public java.util.List<Integer>
         getSourceList() {
@@ -5743,21 +6287,25 @@ public final class RampPacketsProtos {
     }
     /**
      * <code>repeated int32 source = 2;</code>
+     * @return The count of source.
      */
     public int getSourceCount() {
       return source_.size();
     }
     /**
      * <code>repeated int32 source = 2;</code>
+     * @param index The index of the element to return.
+     * @return The source at the given index.
      */
     public int getSource(int index) {
-      return source_.get(index);
+      return source_.getInt(index);
     }
 
     public static final int TRAVERSEDIDS_FIELD_NUMBER = 3;
-    private java.util.List<Integer> traversedIds_;
+    private com.google.protobuf.Internal.IntList traversedIds_;
     /**
      * <code>repeated int32 traversedIds = 3;</code>
+     * @return A list containing the traversedIds.
      */
     public java.util.List<Integer>
         getTraversedIdsList() {
@@ -5765,15 +6313,18 @@ public final class RampPacketsProtos {
     }
     /**
      * <code>repeated int32 traversedIds = 3;</code>
+     * @return The count of traversedIds.
      */
     public int getTraversedIdsCount() {
       return traversedIds_.size();
     }
     /**
      * <code>repeated int32 traversedIds = 3;</code>
+     * @param index The index of the element to return.
+     * @return The traversedIds at the given index.
      */
     public int getTraversedIds(int index) {
-      return traversedIds_.get(index);
+      return traversedIds_.getInt(index);
     }
 
     public static final int SOURCENODEID_FIELD_NUMBER = 4;
@@ -5784,9 +6335,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 sourceNodeId = 4;</code>
+     * @return Whether the sourceNodeId field is set.
      */
     public boolean hasSourceNodeId() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
+      return ((bitField0_ & 0x00000002) != 0);
     }
     /**
      * <pre>
@@ -5794,6 +6346,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 sourceNodeId = 4;</code>
+     * @return The sourceNodeId.
      */
     public int getSourceNodeId() {
       return sourceNodeId_;
@@ -5803,12 +6356,14 @@ public final class RampPacketsProtos {
     private int ttl_;
     /**
      * <code>required int32 ttl = 5;</code>
+     * @return Whether the ttl field is set.
      */
     public boolean hasTtl() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+      return ((bitField0_ & 0x00000004) != 0);
     }
     /**
      * <code>required int32 ttl = 5;</code>
+     * @return The ttl.
      */
     public int getTtl() {
       return ttl_;
@@ -5818,12 +6373,14 @@ public final class RampPacketsProtos {
     private int destPort_;
     /**
      * <code>required int32 destPort = 6;</code>
+     * @return Whether the destPort field is set.
      */
     public boolean hasDestPort() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
+      return ((bitField0_ & 0x00000008) != 0);
     }
     /**
      * <code>required int32 destPort = 6;</code>
+     * @return The destPort.
      */
     public int getDestPort() {
       return destPort_;
@@ -5833,12 +6390,14 @@ public final class RampPacketsProtos {
     private int expiry_;
     /**
      * <code>optional int32 expiry = 7;</code>
+     * @return Whether the expiry field is set.
      */
     public boolean hasExpiry() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
+      return ((bitField0_ & 0x00000010) != 0);
     }
     /**
      * <code>optional int32 expiry = 7;</code>
+     * @return The expiry.
      */
     public int getExpiry() {
       return expiry_;
@@ -5852,9 +6411,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int64 dataType = 8;</code>
+     * @return Whether the dataType field is set.
      */
     public boolean hasDataType() {
-      return ((bitField0_ & 0x00000020) == 0x00000020);
+      return ((bitField0_ & 0x00000020) != 0);
     }
     /**
      * <pre>
@@ -5862,6 +6422,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int64 dataType = 8;</code>
+     * @return The dataType.
      */
     public long getDataType() {
       return dataType_;
@@ -5871,18 +6432,21 @@ public final class RampPacketsProtos {
     private com.google.protobuf.ByteString payload_;
     /**
      * <code>required bytes payload = 99;</code>
+     * @return Whether the payload field is set.
      */
     public boolean hasPayload() {
-      return ((bitField0_ & 0x00000040) == 0x00000040);
+      return ((bitField0_ & 0x00000040) != 0);
     }
     /**
      * <code>required bytes payload = 99;</code>
+     * @return The payload.
      */
     public com.google.protobuf.ByteString getPayload() {
       return payload_;
     }
 
     private byte memoizedIsInitialized = -1;
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -5908,44 +6472,46 @@ public final class RampPacketsProtos {
       return true;
     }
 
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         output.writeInt32(1, id_);
       }
       for (int i = 0; i < source_.size(); i++) {
-        output.writeInt32(2, source_.get(i));
+        output.writeInt32(2, source_.getInt(i));
       }
       for (int i = 0; i < traversedIds_.size(); i++) {
-        output.writeInt32(3, traversedIds_.get(i));
+        output.writeInt32(3, traversedIds_.getInt(i));
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         output.writeInt32(4, sourceNodeId_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         output.writeInt32(5, ttl_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000008) != 0)) {
         output.writeInt32(6, destPort_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+      if (((bitField0_ & 0x00000010) != 0)) {
         output.writeInt32(7, expiry_);
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+      if (((bitField0_ & 0x00000020) != 0)) {
         output.writeInt64(8, dataType_);
       }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+      if (((bitField0_ & 0x00000040) != 0)) {
         output.writeBytes(99, payload_);
       }
       unknownFields.writeTo(output);
     }
 
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(1, id_);
       }
@@ -5953,7 +6519,7 @@ public final class RampPacketsProtos {
         int dataSize = 0;
         for (int i = 0; i < source_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeInt32SizeNoTag(source_.get(i));
+            .computeInt32SizeNoTag(source_.getInt(i));
         }
         size += dataSize;
         size += 1 * getSourceList().size();
@@ -5962,32 +6528,32 @@ public final class RampPacketsProtos {
         int dataSize = 0;
         for (int i = 0; i < traversedIds_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeInt32SizeNoTag(traversedIds_.get(i));
+            .computeInt32SizeNoTag(traversedIds_.getInt(i));
         }
         size += dataSize;
         size += 1 * getTraversedIdsList().size();
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(4, sourceNodeId_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(5, ttl_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000008) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(6, destPort_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+      if (((bitField0_ & 0x00000010) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(7, expiry_);
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+      if (((bitField0_ & 0x00000020) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(8, dataType_);
       }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+      if (((bitField0_ & 0x00000040) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(99, payload_);
       }
@@ -5996,7 +6562,6 @@ public final class RampPacketsProtos {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @Override
     public boolean equals(final Object obj) {
       if (obj == this) {
@@ -6007,48 +6572,47 @@ public final class RampPacketsProtos {
       }
       BroadcastPacket other = (BroadcastPacket) obj;
 
-      boolean result = true;
-      result = result && (hasId() == other.hasId());
+      if (hasId() != other.hasId()) return false;
       if (hasId()) {
-        result = result && (getId()
-            == other.getId());
+        if (getId()
+            != other.getId()) return false;
       }
-      result = result && getSourceList()
-          .equals(other.getSourceList());
-      result = result && getTraversedIdsList()
-          .equals(other.getTraversedIdsList());
-      result = result && (hasSourceNodeId() == other.hasSourceNodeId());
+      if (!getSourceList()
+          .equals(other.getSourceList())) return false;
+      if (!getTraversedIdsList()
+          .equals(other.getTraversedIdsList())) return false;
+      if (hasSourceNodeId() != other.hasSourceNodeId()) return false;
       if (hasSourceNodeId()) {
-        result = result && (getSourceNodeId()
-            == other.getSourceNodeId());
+        if (getSourceNodeId()
+            != other.getSourceNodeId()) return false;
       }
-      result = result && (hasTtl() == other.hasTtl());
+      if (hasTtl() != other.hasTtl()) return false;
       if (hasTtl()) {
-        result = result && (getTtl()
-            == other.getTtl());
+        if (getTtl()
+            != other.getTtl()) return false;
       }
-      result = result && (hasDestPort() == other.hasDestPort());
+      if (hasDestPort() != other.hasDestPort()) return false;
       if (hasDestPort()) {
-        result = result && (getDestPort()
-            == other.getDestPort());
+        if (getDestPort()
+            != other.getDestPort()) return false;
       }
-      result = result && (hasExpiry() == other.hasExpiry());
+      if (hasExpiry() != other.hasExpiry()) return false;
       if (hasExpiry()) {
-        result = result && (getExpiry()
-            == other.getExpiry());
+        if (getExpiry()
+            != other.getExpiry()) return false;
       }
-      result = result && (hasDataType() == other.hasDataType());
+      if (hasDataType() != other.hasDataType()) return false;
       if (hasDataType()) {
-        result = result && (getDataType()
-            == other.getDataType());
+        if (getDataType()
+            != other.getDataType()) return false;
       }
-      result = result && (hasPayload() == other.hasPayload());
+      if (hasPayload() != other.hasPayload()) return false;
       if (hasPayload()) {
-        result = result && getPayload()
-            .equals(other.getPayload());
+        if (!getPayload()
+            .equals(other.getPayload())) return false;
       }
-      result = result && unknownFields.equals(other.unknownFields);
-      return result;
+      if (!unknownFields.equals(other.unknownFields)) return false;
+      return true;
     }
 
     @Override
@@ -6057,7 +6621,7 @@ public final class RampPacketsProtos {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasId()) {
         hash = (37 * hash) + ID_FIELD_NUMBER;
         hash = (53 * hash) + getId();
@@ -6100,6 +6664,17 @@ public final class RampPacketsProtos {
       return hash;
     }
 
+    public static BroadcastPacket parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static BroadcastPacket parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static BroadcastPacket parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -6159,6 +6734,7 @@ public final class RampPacketsProtos {
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
@@ -6166,6 +6742,7 @@ public final class RampPacketsProtos {
     public static Builder newBuilder(BroadcastPacket prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
@@ -6193,6 +6770,7 @@ public final class RampPacketsProtos {
         return RampPacketsProtos.internal_static_BroadcastPacket_descriptor;
       }
 
+      @Override
       protected FieldAccessorTable
           internalGetFieldAccessorTable() {
         return RampPacketsProtos.internal_static_BroadcastPacket_fieldAccessorTable
@@ -6215,13 +6793,14 @@ public final class RampPacketsProtos {
                 .alwaysUseFieldBuilders) {
         }
       }
+      @Override
       public Builder clear() {
         super.clear();
         id_ = 0;
         bitField0_ = (bitField0_ & ~0x00000001);
-        source_ = java.util.Collections.emptyList();
+        source_ = emptyIntList();
         bitField0_ = (bitField0_ & ~0x00000002);
-        traversedIds_ = java.util.Collections.emptyList();
+        traversedIds_ = emptyIntList();
         bitField0_ = (bitField0_ & ~0x00000004);
         sourceNodeId_ = 0;
         bitField0_ = (bitField0_ & ~0x00000008);
@@ -6238,15 +6817,18 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
         return RampPacketsProtos.internal_static_BroadcastPacket_descriptor;
       }
 
+      @Override
       public BroadcastPacket getDefaultInstanceForType() {
         return BroadcastPacket.getDefaultInstance();
       }
 
+      @Override
       public BroadcastPacket build() {
         BroadcastPacket result = buildPartial();
         if (!result.isInitialized()) {
@@ -6255,45 +6837,46 @@ public final class RampPacketsProtos {
         return result;
       }
 
+      @Override
       public BroadcastPacket buildPartial() {
         BroadcastPacket result = new BroadcastPacket(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.id_ = id_;
           to_bitField0_ |= 0x00000001;
         }
-        result.id_ = id_;
-        if (((bitField0_ & 0x00000002) == 0x00000002)) {
-          source_ = java.util.Collections.unmodifiableList(source_);
+        if (((bitField0_ & 0x00000002) != 0)) {
+          source_.makeImmutable();
           bitField0_ = (bitField0_ & ~0x00000002);
         }
         result.source_ = source_;
-        if (((bitField0_ & 0x00000004) == 0x00000004)) {
-          traversedIds_ = java.util.Collections.unmodifiableList(traversedIds_);
+        if (((bitField0_ & 0x00000004) != 0)) {
+          traversedIds_.makeImmutable();
           bitField0_ = (bitField0_ & ~0x00000004);
         }
         result.traversedIds_ = traversedIds_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+        if (((from_bitField0_ & 0x00000008) != 0)) {
+          result.sourceNodeId_ = sourceNodeId_;
           to_bitField0_ |= 0x00000002;
         }
-        result.sourceNodeId_ = sourceNodeId_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+        if (((from_bitField0_ & 0x00000010) != 0)) {
+          result.ttl_ = ttl_;
           to_bitField0_ |= 0x00000004;
         }
-        result.ttl_ = ttl_;
-        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+        if (((from_bitField0_ & 0x00000020) != 0)) {
+          result.destPort_ = destPort_;
           to_bitField0_ |= 0x00000008;
         }
-        result.destPort_ = destPort_;
-        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+        if (((from_bitField0_ & 0x00000040) != 0)) {
+          result.expiry_ = expiry_;
           to_bitField0_ |= 0x00000010;
         }
-        result.expiry_ = expiry_;
-        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+        if (((from_bitField0_ & 0x00000080) != 0)) {
+          result.dataType_ = dataType_;
           to_bitField0_ |= 0x00000020;
         }
-        result.dataType_ = dataType_;
-        if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
+        if (((from_bitField0_ & 0x00000100) != 0)) {
           to_bitField0_ |= 0x00000040;
         }
         result.payload_ = payload_;
@@ -6302,32 +6885,39 @@ public final class RampPacketsProtos {
         return result;
       }
 
+      @Override
       public Builder clone() {
-        return (Builder) super.clone();
+        return super.clone();
       }
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.setField(field, value);
+        return super.setField(field, value);
       }
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return (Builder) super.clearField(field);
+        return super.clearField(field);
       }
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return (Builder) super.clearOneof(oneof);
+        return super.clearOneof(oneof);
       }
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           int index, Object value) {
-        return (Builder) super.setRepeatedField(field, index, value);
+        return super.setRepeatedField(field, index, value);
       }
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.addRepeatedField(field, value);
+        return super.addRepeatedField(field, value);
       }
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof BroadcastPacket) {
           return mergeFrom((BroadcastPacket)other);
@@ -6385,6 +6975,7 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public final boolean isInitialized() {
         if (!hasId()) {
           return false;
@@ -6401,6 +6992,7 @@ public final class RampPacketsProtos {
         return true;
       }
 
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -6423,18 +7015,22 @@ public final class RampPacketsProtos {
       private int id_ ;
       /**
        * <code>required int32 id = 1;</code>
+       * @return Whether the id field is set.
        */
       public boolean hasId() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>required int32 id = 1;</code>
+       * @return The id.
        */
       public int getId() {
         return id_;
       }
       /**
        * <code>required int32 id = 1;</code>
+       * @param value The id to set.
+       * @return This builder for chaining.
        */
       public Builder setId(int value) {
         bitField0_ |= 0x00000001;
@@ -6444,6 +7040,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 id = 1;</code>
+       * @return This builder for chaining.
        */
       public Builder clearId() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -6452,53 +7049,65 @@ public final class RampPacketsProtos {
         return this;
       }
 
-      private java.util.List<Integer> source_ = java.util.Collections.emptyList();
+      private com.google.protobuf.Internal.IntList source_ = emptyIntList();
       private void ensureSourceIsMutable() {
-        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
-          source_ = new java.util.ArrayList<Integer>(source_);
+        if (!((bitField0_ & 0x00000002) != 0)) {
+          source_ = mutableCopy(source_);
           bitField0_ |= 0x00000002;
          }
       }
       /**
        * <code>repeated int32 source = 2;</code>
+       * @return A list containing the source.
        */
       public java.util.List<Integer>
           getSourceList() {
-        return java.util.Collections.unmodifiableList(source_);
+        return ((bitField0_ & 0x00000002) != 0) ?
+                 java.util.Collections.unmodifiableList(source_) : source_;
       }
       /**
        * <code>repeated int32 source = 2;</code>
+       * @return The count of source.
        */
       public int getSourceCount() {
         return source_.size();
       }
       /**
        * <code>repeated int32 source = 2;</code>
+       * @param index The index of the element to return.
+       * @return The source at the given index.
        */
       public int getSource(int index) {
-        return source_.get(index);
+        return source_.getInt(index);
       }
       /**
        * <code>repeated int32 source = 2;</code>
+       * @param index The index to set the value at.
+       * @param value The source to set.
+       * @return This builder for chaining.
        */
       public Builder setSource(
           int index, int value) {
         ensureSourceIsMutable();
-        source_.set(index, value);
+        source_.setInt(index, value);
         onChanged();
         return this;
       }
       /**
        * <code>repeated int32 source = 2;</code>
+       * @param value The source to add.
+       * @return This builder for chaining.
        */
       public Builder addSource(int value) {
         ensureSourceIsMutable();
-        source_.add(value);
+        source_.addInt(value);
         onChanged();
         return this;
       }
       /**
        * <code>repeated int32 source = 2;</code>
+       * @param values The source to add.
+       * @return This builder for chaining.
        */
       public Builder addAllSource(
           Iterable<? extends Integer> values) {
@@ -6510,61 +7119,74 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>repeated int32 source = 2;</code>
+       * @return This builder for chaining.
        */
       public Builder clearSource() {
-        source_ = java.util.Collections.emptyList();
+        source_ = emptyIntList();
         bitField0_ = (bitField0_ & ~0x00000002);
         onChanged();
         return this;
       }
 
-      private java.util.List<Integer> traversedIds_ = java.util.Collections.emptyList();
+      private com.google.protobuf.Internal.IntList traversedIds_ = emptyIntList();
       private void ensureTraversedIdsIsMutable() {
-        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
-          traversedIds_ = new java.util.ArrayList<Integer>(traversedIds_);
+        if (!((bitField0_ & 0x00000004) != 0)) {
+          traversedIds_ = mutableCopy(traversedIds_);
           bitField0_ |= 0x00000004;
          }
       }
       /**
        * <code>repeated int32 traversedIds = 3;</code>
+       * @return A list containing the traversedIds.
        */
       public java.util.List<Integer>
           getTraversedIdsList() {
-        return java.util.Collections.unmodifiableList(traversedIds_);
+        return ((bitField0_ & 0x00000004) != 0) ?
+                 java.util.Collections.unmodifiableList(traversedIds_) : traversedIds_;
       }
       /**
        * <code>repeated int32 traversedIds = 3;</code>
+       * @return The count of traversedIds.
        */
       public int getTraversedIdsCount() {
         return traversedIds_.size();
       }
       /**
        * <code>repeated int32 traversedIds = 3;</code>
+       * @param index The index of the element to return.
+       * @return The traversedIds at the given index.
        */
       public int getTraversedIds(int index) {
-        return traversedIds_.get(index);
+        return traversedIds_.getInt(index);
       }
       /**
        * <code>repeated int32 traversedIds = 3;</code>
+       * @param index The index to set the value at.
+       * @param value The traversedIds to set.
+       * @return This builder for chaining.
        */
       public Builder setTraversedIds(
           int index, int value) {
         ensureTraversedIdsIsMutable();
-        traversedIds_.set(index, value);
+        traversedIds_.setInt(index, value);
         onChanged();
         return this;
       }
       /**
        * <code>repeated int32 traversedIds = 3;</code>
+       * @param value The traversedIds to add.
+       * @return This builder for chaining.
        */
       public Builder addTraversedIds(int value) {
         ensureTraversedIdsIsMutable();
-        traversedIds_.add(value);
+        traversedIds_.addInt(value);
         onChanged();
         return this;
       }
       /**
        * <code>repeated int32 traversedIds = 3;</code>
+       * @param values The traversedIds to add.
+       * @return This builder for chaining.
        */
       public Builder addAllTraversedIds(
           Iterable<? extends Integer> values) {
@@ -6576,9 +7198,10 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>repeated int32 traversedIds = 3;</code>
+       * @return This builder for chaining.
        */
       public Builder clearTraversedIds() {
-        traversedIds_ = java.util.Collections.emptyList();
+        traversedIds_ = emptyIntList();
         bitField0_ = (bitField0_ & ~0x00000004);
         onChanged();
         return this;
@@ -6591,9 +7214,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 sourceNodeId = 4;</code>
+       * @return Whether the sourceNodeId field is set.
        */
       public boolean hasSourceNodeId() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
+        return ((bitField0_ & 0x00000008) != 0);
       }
       /**
        * <pre>
@@ -6601,6 +7225,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 sourceNodeId = 4;</code>
+       * @return The sourceNodeId.
        */
       public int getSourceNodeId() {
         return sourceNodeId_;
@@ -6611,6 +7236,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 sourceNodeId = 4;</code>
+       * @param value The sourceNodeId to set.
+       * @return This builder for chaining.
        */
       public Builder setSourceNodeId(int value) {
         bitField0_ |= 0x00000008;
@@ -6624,6 +7251,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 sourceNodeId = 4;</code>
+       * @return This builder for chaining.
        */
       public Builder clearSourceNodeId() {
         bitField0_ = (bitField0_ & ~0x00000008);
@@ -6635,18 +7263,22 @@ public final class RampPacketsProtos {
       private int ttl_ ;
       /**
        * <code>required int32 ttl = 5;</code>
+       * @return Whether the ttl field is set.
        */
       public boolean hasTtl() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
+        return ((bitField0_ & 0x00000010) != 0);
       }
       /**
        * <code>required int32 ttl = 5;</code>
+       * @return The ttl.
        */
       public int getTtl() {
         return ttl_;
       }
       /**
        * <code>required int32 ttl = 5;</code>
+       * @param value The ttl to set.
+       * @return This builder for chaining.
        */
       public Builder setTtl(int value) {
         bitField0_ |= 0x00000010;
@@ -6656,6 +7288,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 ttl = 5;</code>
+       * @return This builder for chaining.
        */
       public Builder clearTtl() {
         bitField0_ = (bitField0_ & ~0x00000010);
@@ -6667,18 +7300,22 @@ public final class RampPacketsProtos {
       private int destPort_ ;
       /**
        * <code>required int32 destPort = 6;</code>
+       * @return Whether the destPort field is set.
        */
       public boolean hasDestPort() {
-        return ((bitField0_ & 0x00000020) == 0x00000020);
+        return ((bitField0_ & 0x00000020) != 0);
       }
       /**
        * <code>required int32 destPort = 6;</code>
+       * @return The destPort.
        */
       public int getDestPort() {
         return destPort_;
       }
       /**
        * <code>required int32 destPort = 6;</code>
+       * @param value The destPort to set.
+       * @return This builder for chaining.
        */
       public Builder setDestPort(int value) {
         bitField0_ |= 0x00000020;
@@ -6688,6 +7325,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 destPort = 6;</code>
+       * @return This builder for chaining.
        */
       public Builder clearDestPort() {
         bitField0_ = (bitField0_ & ~0x00000020);
@@ -6699,18 +7337,22 @@ public final class RampPacketsProtos {
       private int expiry_ ;
       /**
        * <code>optional int32 expiry = 7;</code>
+       * @return Whether the expiry field is set.
        */
       public boolean hasExpiry() {
-        return ((bitField0_ & 0x00000040) == 0x00000040);
+        return ((bitField0_ & 0x00000040) != 0);
       }
       /**
        * <code>optional int32 expiry = 7;</code>
+       * @return The expiry.
        */
       public int getExpiry() {
         return expiry_;
       }
       /**
        * <code>optional int32 expiry = 7;</code>
+       * @param value The expiry to set.
+       * @return This builder for chaining.
        */
       public Builder setExpiry(int value) {
         bitField0_ |= 0x00000040;
@@ -6720,6 +7362,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>optional int32 expiry = 7;</code>
+       * @return This builder for chaining.
        */
       public Builder clearExpiry() {
         bitField0_ = (bitField0_ & ~0x00000040);
@@ -6735,9 +7378,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int64 dataType = 8;</code>
+       * @return Whether the dataType field is set.
        */
       public boolean hasDataType() {
-        return ((bitField0_ & 0x00000080) == 0x00000080);
+        return ((bitField0_ & 0x00000080) != 0);
       }
       /**
        * <pre>
@@ -6745,6 +7389,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int64 dataType = 8;</code>
+       * @return The dataType.
        */
       public long getDataType() {
         return dataType_;
@@ -6755,6 +7400,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int64 dataType = 8;</code>
+       * @param value The dataType to set.
+       * @return This builder for chaining.
        */
       public Builder setDataType(long value) {
         bitField0_ |= 0x00000080;
@@ -6768,6 +7415,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int64 dataType = 8;</code>
+       * @return This builder for chaining.
        */
       public Builder clearDataType() {
         bitField0_ = (bitField0_ & ~0x00000080);
@@ -6779,18 +7427,22 @@ public final class RampPacketsProtos {
       private com.google.protobuf.ByteString payload_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>required bytes payload = 99;</code>
+       * @return Whether the payload field is set.
        */
       public boolean hasPayload() {
-        return ((bitField0_ & 0x00000100) == 0x00000100);
+        return ((bitField0_ & 0x00000100) != 0);
       }
       /**
        * <code>required bytes payload = 99;</code>
+       * @return The payload.
        */
       public com.google.protobuf.ByteString getPayload() {
         return payload_;
       }
       /**
        * <code>required bytes payload = 99;</code>
+       * @param value The payload to set.
+       * @return This builder for chaining.
        */
       public Builder setPayload(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -6803,6 +7455,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required bytes payload = 99;</code>
+       * @return This builder for chaining.
        */
       public Builder clearPayload() {
         bitField0_ = (bitField0_ & ~0x00000100);
@@ -6810,11 +7463,13 @@ public final class RampPacketsProtos {
         onChanged();
         return this;
       }
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
@@ -6836,11 +7491,12 @@ public final class RampPacketsProtos {
 
     @Deprecated public static final com.google.protobuf.Parser<BroadcastPacket>
         PARSER = new com.google.protobuf.AbstractParser<BroadcastPacket>() {
+      @Override
       public BroadcastPacket parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new BroadcastPacket(input, extensionRegistry);
+        return new BroadcastPacket(input, extensionRegistry);
       }
     };
 
@@ -6853,6 +7509,7 @@ public final class RampPacketsProtos {
       return PARSER;
     }
 
+    @Override
     public BroadcastPacket getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
@@ -6865,37 +7522,45 @@ public final class RampPacketsProtos {
 
     /**
      * <code>required int32 ernId = 1;</code>
+     * @return Whether the ernId field is set.
      */
     boolean hasErnId();
     /**
      * <code>required int32 ernId = 1;</code>
+     * @return The ernId.
      */
     int getErnId();
 
     /**
      * <code>required int32 eskId = 2;</code>
+     * @return Whether the eskId field is set.
      */
     boolean hasEskId();
     /**
      * <code>required int32 eskId = 2;</code>
+     * @return The eskId.
      */
     int getEskId();
 
     /**
      * <code>required bytes encryptedPayload = 3;</code>
+     * @return Whether the encryptedPayload field is set.
      */
     boolean hasEncryptedPayload();
     /**
      * <code>required bytes encryptedPayload = 3;</code>
+     * @return The encryptedPayload.
      */
     com.google.protobuf.ByteString getEncryptedPayload();
 
     /**
      * <code>required int32 encryptedBytes = 4;</code>
+     * @return Whether the encryptedBytes field is set.
      */
     boolean hasEncryptedBytes();
     /**
      * <code>required int32 encryptedBytes = 4;</code>
+     * @return The encryptedBytes.
      */
     int getEncryptedBytes();
   }
@@ -6910,15 +7575,20 @@ public final class RampPacketsProtos {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:EncryptedPacket)
       EncryptedPacketOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use EncryptedPacket.newBuilder() to construct.
     private EncryptedPacket(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
     }
     private EncryptedPacket() {
-      ernId_ = 0;
-      eskId_ = 0;
       encryptedPayload_ = com.google.protobuf.ByteString.EMPTY;
-      encryptedBytes_ = 0;
+    }
+
+    @Override
+    @SuppressWarnings({"unused"})
+    protected Object newInstance(
+        UnusedPrivateParameter unused) {
+      return new EncryptedPacket();
     }
 
     @Override
@@ -6931,6 +7601,9 @@ public final class RampPacketsProtos {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -6942,13 +7615,6 @@ public final class RampPacketsProtos {
             case 0:
               done = true;
               break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
             case 8: {
               bitField0_ |= 0x00000001;
               ernId_ = input.readInt32();
@@ -6969,6 +7635,13 @@ public final class RampPacketsProtos {
               encryptedBytes_ = input.readInt32();
               break;
             }
+            default: {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -6986,6 +7659,7 @@ public final class RampPacketsProtos {
       return RampPacketsProtos.internal_static_EncryptedPacket_descriptor;
     }
 
+    @Override
     protected FieldAccessorTable
         internalGetFieldAccessorTable() {
       return RampPacketsProtos.internal_static_EncryptedPacket_fieldAccessorTable
@@ -6998,12 +7672,14 @@ public final class RampPacketsProtos {
     private int ernId_;
     /**
      * <code>required int32 ernId = 1;</code>
+     * @return Whether the ernId field is set.
      */
     public boolean hasErnId() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000001) != 0);
     }
     /**
      * <code>required int32 ernId = 1;</code>
+     * @return The ernId.
      */
     public int getErnId() {
       return ernId_;
@@ -7013,12 +7689,14 @@ public final class RampPacketsProtos {
     private int eskId_;
     /**
      * <code>required int32 eskId = 2;</code>
+     * @return Whether the eskId field is set.
      */
     public boolean hasEskId() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
+      return ((bitField0_ & 0x00000002) != 0);
     }
     /**
      * <code>required int32 eskId = 2;</code>
+     * @return The eskId.
      */
     public int getEskId() {
       return eskId_;
@@ -7028,12 +7706,14 @@ public final class RampPacketsProtos {
     private com.google.protobuf.ByteString encryptedPayload_;
     /**
      * <code>required bytes encryptedPayload = 3;</code>
+     * @return Whether the encryptedPayload field is set.
      */
     public boolean hasEncryptedPayload() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+      return ((bitField0_ & 0x00000004) != 0);
     }
     /**
      * <code>required bytes encryptedPayload = 3;</code>
+     * @return The encryptedPayload.
      */
     public com.google.protobuf.ByteString getEncryptedPayload() {
       return encryptedPayload_;
@@ -7043,18 +7723,21 @@ public final class RampPacketsProtos {
     private int encryptedBytes_;
     /**
      * <code>required int32 encryptedBytes = 4;</code>
+     * @return Whether the encryptedBytes field is set.
      */
     public boolean hasEncryptedBytes() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
+      return ((bitField0_ & 0x00000008) != 0);
     }
     /**
      * <code>required int32 encryptedBytes = 4;</code>
+     * @return The encryptedBytes.
      */
     public int getEncryptedBytes() {
       return encryptedBytes_;
     }
 
     private byte memoizedIsInitialized = -1;
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -7080,41 +7763,43 @@ public final class RampPacketsProtos {
       return true;
     }
 
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         output.writeInt32(1, ernId_);
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         output.writeInt32(2, eskId_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         output.writeBytes(3, encryptedPayload_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000008) != 0)) {
         output.writeInt32(4, encryptedBytes_);
       }
       unknownFields.writeTo(output);
     }
 
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(1, ernId_);
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(2, eskId_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(3, encryptedPayload_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000008) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(4, encryptedBytes_);
       }
@@ -7123,7 +7808,6 @@ public final class RampPacketsProtos {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @Override
     public boolean equals(final Object obj) {
       if (obj == this) {
@@ -7134,29 +7818,28 @@ public final class RampPacketsProtos {
       }
       EncryptedPacket other = (EncryptedPacket) obj;
 
-      boolean result = true;
-      result = result && (hasErnId() == other.hasErnId());
+      if (hasErnId() != other.hasErnId()) return false;
       if (hasErnId()) {
-        result = result && (getErnId()
-            == other.getErnId());
+        if (getErnId()
+            != other.getErnId()) return false;
       }
-      result = result && (hasEskId() == other.hasEskId());
+      if (hasEskId() != other.hasEskId()) return false;
       if (hasEskId()) {
-        result = result && (getEskId()
-            == other.getEskId());
+        if (getEskId()
+            != other.getEskId()) return false;
       }
-      result = result && (hasEncryptedPayload() == other.hasEncryptedPayload());
+      if (hasEncryptedPayload() != other.hasEncryptedPayload()) return false;
       if (hasEncryptedPayload()) {
-        result = result && getEncryptedPayload()
-            .equals(other.getEncryptedPayload());
+        if (!getEncryptedPayload()
+            .equals(other.getEncryptedPayload())) return false;
       }
-      result = result && (hasEncryptedBytes() == other.hasEncryptedBytes());
+      if (hasEncryptedBytes() != other.hasEncryptedBytes()) return false;
       if (hasEncryptedBytes()) {
-        result = result && (getEncryptedBytes()
-            == other.getEncryptedBytes());
+        if (getEncryptedBytes()
+            != other.getEncryptedBytes()) return false;
       }
-      result = result && unknownFields.equals(other.unknownFields);
-      return result;
+      if (!unknownFields.equals(other.unknownFields)) return false;
+      return true;
     }
 
     @Override
@@ -7165,7 +7848,7 @@ public final class RampPacketsProtos {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasErnId()) {
         hash = (37 * hash) + ERNID_FIELD_NUMBER;
         hash = (53 * hash) + getErnId();
@@ -7187,6 +7870,17 @@ public final class RampPacketsProtos {
       return hash;
     }
 
+    public static EncryptedPacket parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static EncryptedPacket parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static EncryptedPacket parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -7246,6 +7940,7 @@ public final class RampPacketsProtos {
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
@@ -7253,6 +7948,7 @@ public final class RampPacketsProtos {
     public static Builder newBuilder(EncryptedPacket prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
@@ -7280,6 +7976,7 @@ public final class RampPacketsProtos {
         return RampPacketsProtos.internal_static_EncryptedPacket_descriptor;
       }
 
+      @Override
       protected FieldAccessorTable
           internalGetFieldAccessorTable() {
         return RampPacketsProtos.internal_static_EncryptedPacket_fieldAccessorTable
@@ -7302,6 +7999,7 @@ public final class RampPacketsProtos {
                 .alwaysUseFieldBuilders) {
         }
       }
+      @Override
       public Builder clear() {
         super.clear();
         ernId_ = 0;
@@ -7315,15 +8013,18 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
         return RampPacketsProtos.internal_static_EncryptedPacket_descriptor;
       }
 
+      @Override
       public EncryptedPacket getDefaultInstanceForType() {
         return EncryptedPacket.getDefaultInstance();
       }
 
+      @Override
       public EncryptedPacket build() {
         EncryptedPacket result = buildPartial();
         if (!result.isInitialized()) {
@@ -7332,57 +8033,65 @@ public final class RampPacketsProtos {
         return result;
       }
 
+      @Override
       public EncryptedPacket buildPartial() {
         EncryptedPacket result = new EncryptedPacket(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.ernId_ = ernId_;
           to_bitField0_ |= 0x00000001;
         }
-        result.ernId_ = ernId_;
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.eskId_ = eskId_;
           to_bitField0_ |= 0x00000002;
         }
-        result.eskId_ = eskId_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+        if (((from_bitField0_ & 0x00000004) != 0)) {
           to_bitField0_ |= 0x00000004;
         }
         result.encryptedPayload_ = encryptedPayload_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+        if (((from_bitField0_ & 0x00000008) != 0)) {
+          result.encryptedBytes_ = encryptedBytes_;
           to_bitField0_ |= 0x00000008;
         }
-        result.encryptedBytes_ = encryptedBytes_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
 
+      @Override
       public Builder clone() {
-        return (Builder) super.clone();
+        return super.clone();
       }
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.setField(field, value);
+        return super.setField(field, value);
       }
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return (Builder) super.clearField(field);
+        return super.clearField(field);
       }
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return (Builder) super.clearOneof(oneof);
+        return super.clearOneof(oneof);
       }
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           int index, Object value) {
-        return (Builder) super.setRepeatedField(field, index, value);
+        return super.setRepeatedField(field, index, value);
       }
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.addRepeatedField(field, value);
+        return super.addRepeatedField(field, value);
       }
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof EncryptedPacket) {
           return mergeFrom((EncryptedPacket)other);
@@ -7411,6 +8120,7 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public final boolean isInitialized() {
         if (!hasErnId()) {
           return false;
@@ -7427,6 +8137,7 @@ public final class RampPacketsProtos {
         return true;
       }
 
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -7449,18 +8160,22 @@ public final class RampPacketsProtos {
       private int ernId_ ;
       /**
        * <code>required int32 ernId = 1;</code>
+       * @return Whether the ernId field is set.
        */
       public boolean hasErnId() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>required int32 ernId = 1;</code>
+       * @return The ernId.
        */
       public int getErnId() {
         return ernId_;
       }
       /**
        * <code>required int32 ernId = 1;</code>
+       * @param value The ernId to set.
+       * @return This builder for chaining.
        */
       public Builder setErnId(int value) {
         bitField0_ |= 0x00000001;
@@ -7470,6 +8185,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 ernId = 1;</code>
+       * @return This builder for chaining.
        */
       public Builder clearErnId() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -7481,18 +8197,22 @@ public final class RampPacketsProtos {
       private int eskId_ ;
       /**
        * <code>required int32 eskId = 2;</code>
+       * @return Whether the eskId field is set.
        */
       public boolean hasEskId() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000002) != 0);
       }
       /**
        * <code>required int32 eskId = 2;</code>
+       * @return The eskId.
        */
       public int getEskId() {
         return eskId_;
       }
       /**
        * <code>required int32 eskId = 2;</code>
+       * @param value The eskId to set.
+       * @return This builder for chaining.
        */
       public Builder setEskId(int value) {
         bitField0_ |= 0x00000002;
@@ -7502,6 +8222,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 eskId = 2;</code>
+       * @return This builder for chaining.
        */
       public Builder clearEskId() {
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -7513,18 +8234,22 @@ public final class RampPacketsProtos {
       private com.google.protobuf.ByteString encryptedPayload_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>required bytes encryptedPayload = 3;</code>
+       * @return Whether the encryptedPayload field is set.
        */
       public boolean hasEncryptedPayload() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000004) != 0);
       }
       /**
        * <code>required bytes encryptedPayload = 3;</code>
+       * @return The encryptedPayload.
        */
       public com.google.protobuf.ByteString getEncryptedPayload() {
         return encryptedPayload_;
       }
       /**
        * <code>required bytes encryptedPayload = 3;</code>
+       * @param value The encryptedPayload to set.
+       * @return This builder for chaining.
        */
       public Builder setEncryptedPayload(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -7537,6 +8262,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required bytes encryptedPayload = 3;</code>
+       * @return This builder for chaining.
        */
       public Builder clearEncryptedPayload() {
         bitField0_ = (bitField0_ & ~0x00000004);
@@ -7548,18 +8274,22 @@ public final class RampPacketsProtos {
       private int encryptedBytes_ ;
       /**
        * <code>required int32 encryptedBytes = 4;</code>
+       * @return Whether the encryptedBytes field is set.
        */
       public boolean hasEncryptedBytes() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
+        return ((bitField0_ & 0x00000008) != 0);
       }
       /**
        * <code>required int32 encryptedBytes = 4;</code>
+       * @return The encryptedBytes.
        */
       public int getEncryptedBytes() {
         return encryptedBytes_;
       }
       /**
        * <code>required int32 encryptedBytes = 4;</code>
+       * @param value The encryptedBytes to set.
+       * @return This builder for chaining.
        */
       public Builder setEncryptedBytes(int value) {
         bitField0_ |= 0x00000008;
@@ -7569,6 +8299,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 encryptedBytes = 4;</code>
+       * @return This builder for chaining.
        */
       public Builder clearEncryptedBytes() {
         bitField0_ = (bitField0_ & ~0x00000008);
@@ -7576,11 +8307,13 @@ public final class RampPacketsProtos {
         onChanged();
         return this;
       }
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
@@ -7602,11 +8335,12 @@ public final class RampPacketsProtos {
 
     @Deprecated public static final com.google.protobuf.Parser<EncryptedPacket>
         PARSER = new com.google.protobuf.AbstractParser<EncryptedPacket>() {
+      @Override
       public EncryptedPacket parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new EncryptedPacket(input, extensionRegistry);
+        return new EncryptedPacket(input, extensionRegistry);
       }
     };
 
@@ -7619,6 +8353,7 @@ public final class RampPacketsProtos {
       return PARSER;
     }
 
+    @Override
     public EncryptedPacket getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
@@ -7631,46 +8366,56 @@ public final class RampPacketsProtos {
 
     /**
      * <code>required int32 ernId = 1;</code>
+     * @return Whether the ernId field is set.
      */
     boolean hasErnId();
     /**
      * <code>required int32 ernId = 1;</code>
+     * @return The ernId.
      */
     int getErnId();
 
     /**
      * <code>required int32 eskId = 2;</code>
+     * @return Whether the eskId field is set.
      */
     boolean hasEskId();
     /**
      * <code>required int32 eskId = 2;</code>
+     * @return The eskId.
      */
     int getEskId();
 
     /**
      * <code>required bytes payload = 3;</code>
+     * @return Whether the payload field is set.
      */
     boolean hasPayload();
     /**
      * <code>required bytes payload = 3;</code>
+     * @return The payload.
      */
     com.google.protobuf.ByteString getPayload();
 
     /**
      * <code>required bytes signature = 4;</code>
+     * @return Whether the signature field is set.
      */
     boolean hasSignature();
     /**
      * <code>required bytes signature = 4;</code>
+     * @return The signature.
      */
     com.google.protobuf.ByteString getSignature();
 
     /**
      * <code>required int32 signedBytes = 5;</code>
+     * @return Whether the signedBytes field is set.
      */
     boolean hasSignedBytes();
     /**
      * <code>required int32 signedBytes = 5;</code>
+     * @return The signedBytes.
      */
     int getSignedBytes();
   }
@@ -7685,16 +8430,21 @@ public final class RampPacketsProtos {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:SignedPacket)
       SignedPacketOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use SignedPacket.newBuilder() to construct.
     private SignedPacket(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
     }
     private SignedPacket() {
-      ernId_ = 0;
-      eskId_ = 0;
       payload_ = com.google.protobuf.ByteString.EMPTY;
       signature_ = com.google.protobuf.ByteString.EMPTY;
-      signedBytes_ = 0;
+    }
+
+    @Override
+    @SuppressWarnings({"unused"})
+    protected Object newInstance(
+        UnusedPrivateParameter unused) {
+      return new SignedPacket();
     }
 
     @Override
@@ -7707,6 +8457,9 @@ public final class RampPacketsProtos {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -7718,13 +8471,6 @@ public final class RampPacketsProtos {
             case 0:
               done = true;
               break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
             case 8: {
               bitField0_ |= 0x00000001;
               ernId_ = input.readInt32();
@@ -7750,6 +8496,13 @@ public final class RampPacketsProtos {
               signedBytes_ = input.readInt32();
               break;
             }
+            default: {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -7767,6 +8520,7 @@ public final class RampPacketsProtos {
       return RampPacketsProtos.internal_static_SignedPacket_descriptor;
     }
 
+    @Override
     protected FieldAccessorTable
         internalGetFieldAccessorTable() {
       return RampPacketsProtos.internal_static_SignedPacket_fieldAccessorTable
@@ -7779,12 +8533,14 @@ public final class RampPacketsProtos {
     private int ernId_;
     /**
      * <code>required int32 ernId = 1;</code>
+     * @return Whether the ernId field is set.
      */
     public boolean hasErnId() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000001) != 0);
     }
     /**
      * <code>required int32 ernId = 1;</code>
+     * @return The ernId.
      */
     public int getErnId() {
       return ernId_;
@@ -7794,12 +8550,14 @@ public final class RampPacketsProtos {
     private int eskId_;
     /**
      * <code>required int32 eskId = 2;</code>
+     * @return Whether the eskId field is set.
      */
     public boolean hasEskId() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
+      return ((bitField0_ & 0x00000002) != 0);
     }
     /**
      * <code>required int32 eskId = 2;</code>
+     * @return The eskId.
      */
     public int getEskId() {
       return eskId_;
@@ -7809,12 +8567,14 @@ public final class RampPacketsProtos {
     private com.google.protobuf.ByteString payload_;
     /**
      * <code>required bytes payload = 3;</code>
+     * @return Whether the payload field is set.
      */
     public boolean hasPayload() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+      return ((bitField0_ & 0x00000004) != 0);
     }
     /**
      * <code>required bytes payload = 3;</code>
+     * @return The payload.
      */
     public com.google.protobuf.ByteString getPayload() {
       return payload_;
@@ -7824,12 +8584,14 @@ public final class RampPacketsProtos {
     private com.google.protobuf.ByteString signature_;
     /**
      * <code>required bytes signature = 4;</code>
+     * @return Whether the signature field is set.
      */
     public boolean hasSignature() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
+      return ((bitField0_ & 0x00000008) != 0);
     }
     /**
      * <code>required bytes signature = 4;</code>
+     * @return The signature.
      */
     public com.google.protobuf.ByteString getSignature() {
       return signature_;
@@ -7839,18 +8601,21 @@ public final class RampPacketsProtos {
     private int signedBytes_;
     /**
      * <code>required int32 signedBytes = 5;</code>
+     * @return Whether the signedBytes field is set.
      */
     public boolean hasSignedBytes() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
+      return ((bitField0_ & 0x00000010) != 0);
     }
     /**
      * <code>required int32 signedBytes = 5;</code>
+     * @return The signedBytes.
      */
     public int getSignedBytes() {
       return signedBytes_;
     }
 
     private byte memoizedIsInitialized = -1;
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -7880,48 +8645,50 @@ public final class RampPacketsProtos {
       return true;
     }
 
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         output.writeInt32(1, ernId_);
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         output.writeInt32(2, eskId_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         output.writeBytes(3, payload_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000008) != 0)) {
         output.writeBytes(4, signature_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+      if (((bitField0_ & 0x00000010) != 0)) {
         output.writeInt32(5, signedBytes_);
       }
       unknownFields.writeTo(output);
     }
 
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(1, ernId_);
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(2, eskId_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(3, payload_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000008) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(4, signature_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+      if (((bitField0_ & 0x00000010) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(5, signedBytes_);
       }
@@ -7930,7 +8697,6 @@ public final class RampPacketsProtos {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @Override
     public boolean equals(final Object obj) {
       if (obj == this) {
@@ -7941,34 +8707,33 @@ public final class RampPacketsProtos {
       }
       SignedPacket other = (SignedPacket) obj;
 
-      boolean result = true;
-      result = result && (hasErnId() == other.hasErnId());
+      if (hasErnId() != other.hasErnId()) return false;
       if (hasErnId()) {
-        result = result && (getErnId()
-            == other.getErnId());
+        if (getErnId()
+            != other.getErnId()) return false;
       }
-      result = result && (hasEskId() == other.hasEskId());
+      if (hasEskId() != other.hasEskId()) return false;
       if (hasEskId()) {
-        result = result && (getEskId()
-            == other.getEskId());
+        if (getEskId()
+            != other.getEskId()) return false;
       }
-      result = result && (hasPayload() == other.hasPayload());
+      if (hasPayload() != other.hasPayload()) return false;
       if (hasPayload()) {
-        result = result && getPayload()
-            .equals(other.getPayload());
+        if (!getPayload()
+            .equals(other.getPayload())) return false;
       }
-      result = result && (hasSignature() == other.hasSignature());
+      if (hasSignature() != other.hasSignature()) return false;
       if (hasSignature()) {
-        result = result && getSignature()
-            .equals(other.getSignature());
+        if (!getSignature()
+            .equals(other.getSignature())) return false;
       }
-      result = result && (hasSignedBytes() == other.hasSignedBytes());
+      if (hasSignedBytes() != other.hasSignedBytes()) return false;
       if (hasSignedBytes()) {
-        result = result && (getSignedBytes()
-            == other.getSignedBytes());
+        if (getSignedBytes()
+            != other.getSignedBytes()) return false;
       }
-      result = result && unknownFields.equals(other.unknownFields);
-      return result;
+      if (!unknownFields.equals(other.unknownFields)) return false;
+      return true;
     }
 
     @Override
@@ -7977,7 +8742,7 @@ public final class RampPacketsProtos {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasErnId()) {
         hash = (37 * hash) + ERNID_FIELD_NUMBER;
         hash = (53 * hash) + getErnId();
@@ -8003,6 +8768,17 @@ public final class RampPacketsProtos {
       return hash;
     }
 
+    public static SignedPacket parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static SignedPacket parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static SignedPacket parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -8062,6 +8838,7 @@ public final class RampPacketsProtos {
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
@@ -8069,6 +8846,7 @@ public final class RampPacketsProtos {
     public static Builder newBuilder(SignedPacket prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
@@ -8096,6 +8874,7 @@ public final class RampPacketsProtos {
         return RampPacketsProtos.internal_static_SignedPacket_descriptor;
       }
 
+      @Override
       protected FieldAccessorTable
           internalGetFieldAccessorTable() {
         return RampPacketsProtos.internal_static_SignedPacket_fieldAccessorTable
@@ -8118,6 +8897,7 @@ public final class RampPacketsProtos {
                 .alwaysUseFieldBuilders) {
         }
       }
+      @Override
       public Builder clear() {
         super.clear();
         ernId_ = 0;
@@ -8133,15 +8913,18 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
         return RampPacketsProtos.internal_static_SignedPacket_descriptor;
       }
 
+      @Override
       public SignedPacket getDefaultInstanceForType() {
         return SignedPacket.getDefaultInstance();
       }
 
+      @Override
       public SignedPacket build() {
         SignedPacket result = buildPartial();
         if (!result.isInitialized()) {
@@ -8150,61 +8933,69 @@ public final class RampPacketsProtos {
         return result;
       }
 
+      @Override
       public SignedPacket buildPartial() {
         SignedPacket result = new SignedPacket(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.ernId_ = ernId_;
           to_bitField0_ |= 0x00000001;
         }
-        result.ernId_ = ernId_;
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.eskId_ = eskId_;
           to_bitField0_ |= 0x00000002;
         }
-        result.eskId_ = eskId_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+        if (((from_bitField0_ & 0x00000004) != 0)) {
           to_bitField0_ |= 0x00000004;
         }
         result.payload_ = payload_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+        if (((from_bitField0_ & 0x00000008) != 0)) {
           to_bitField0_ |= 0x00000008;
         }
         result.signature_ = signature_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+        if (((from_bitField0_ & 0x00000010) != 0)) {
+          result.signedBytes_ = signedBytes_;
           to_bitField0_ |= 0x00000010;
         }
-        result.signedBytes_ = signedBytes_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
 
+      @Override
       public Builder clone() {
-        return (Builder) super.clone();
+        return super.clone();
       }
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.setField(field, value);
+        return super.setField(field, value);
       }
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return (Builder) super.clearField(field);
+        return super.clearField(field);
       }
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return (Builder) super.clearOneof(oneof);
+        return super.clearOneof(oneof);
       }
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           int index, Object value) {
-        return (Builder) super.setRepeatedField(field, index, value);
+        return super.setRepeatedField(field, index, value);
       }
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.addRepeatedField(field, value);
+        return super.addRepeatedField(field, value);
       }
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof SignedPacket) {
           return mergeFrom((SignedPacket)other);
@@ -8236,6 +9027,7 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public final boolean isInitialized() {
         if (!hasErnId()) {
           return false;
@@ -8255,6 +9047,7 @@ public final class RampPacketsProtos {
         return true;
       }
 
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -8277,18 +9070,22 @@ public final class RampPacketsProtos {
       private int ernId_ ;
       /**
        * <code>required int32 ernId = 1;</code>
+       * @return Whether the ernId field is set.
        */
       public boolean hasErnId() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>required int32 ernId = 1;</code>
+       * @return The ernId.
        */
       public int getErnId() {
         return ernId_;
       }
       /**
        * <code>required int32 ernId = 1;</code>
+       * @param value The ernId to set.
+       * @return This builder for chaining.
        */
       public Builder setErnId(int value) {
         bitField0_ |= 0x00000001;
@@ -8298,6 +9095,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 ernId = 1;</code>
+       * @return This builder for chaining.
        */
       public Builder clearErnId() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -8309,18 +9107,22 @@ public final class RampPacketsProtos {
       private int eskId_ ;
       /**
        * <code>required int32 eskId = 2;</code>
+       * @return Whether the eskId field is set.
        */
       public boolean hasEskId() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000002) != 0);
       }
       /**
        * <code>required int32 eskId = 2;</code>
+       * @return The eskId.
        */
       public int getEskId() {
         return eskId_;
       }
       /**
        * <code>required int32 eskId = 2;</code>
+       * @param value The eskId to set.
+       * @return This builder for chaining.
        */
       public Builder setEskId(int value) {
         bitField0_ |= 0x00000002;
@@ -8330,6 +9132,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 eskId = 2;</code>
+       * @return This builder for chaining.
        */
       public Builder clearEskId() {
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -8341,18 +9144,22 @@ public final class RampPacketsProtos {
       private com.google.protobuf.ByteString payload_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>required bytes payload = 3;</code>
+       * @return Whether the payload field is set.
        */
       public boolean hasPayload() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000004) != 0);
       }
       /**
        * <code>required bytes payload = 3;</code>
+       * @return The payload.
        */
       public com.google.protobuf.ByteString getPayload() {
         return payload_;
       }
       /**
        * <code>required bytes payload = 3;</code>
+       * @param value The payload to set.
+       * @return This builder for chaining.
        */
       public Builder setPayload(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -8365,6 +9172,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required bytes payload = 3;</code>
+       * @return This builder for chaining.
        */
       public Builder clearPayload() {
         bitField0_ = (bitField0_ & ~0x00000004);
@@ -8376,18 +9184,22 @@ public final class RampPacketsProtos {
       private com.google.protobuf.ByteString signature_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>required bytes signature = 4;</code>
+       * @return Whether the signature field is set.
        */
       public boolean hasSignature() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
+        return ((bitField0_ & 0x00000008) != 0);
       }
       /**
        * <code>required bytes signature = 4;</code>
+       * @return The signature.
        */
       public com.google.protobuf.ByteString getSignature() {
         return signature_;
       }
       /**
        * <code>required bytes signature = 4;</code>
+       * @param value The signature to set.
+       * @return This builder for chaining.
        */
       public Builder setSignature(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -8400,6 +9212,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required bytes signature = 4;</code>
+       * @return This builder for chaining.
        */
       public Builder clearSignature() {
         bitField0_ = (bitField0_ & ~0x00000008);
@@ -8411,18 +9224,22 @@ public final class RampPacketsProtos {
       private int signedBytes_ ;
       /**
        * <code>required int32 signedBytes = 5;</code>
+       * @return Whether the signedBytes field is set.
        */
       public boolean hasSignedBytes() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
+        return ((bitField0_ & 0x00000010) != 0);
       }
       /**
        * <code>required int32 signedBytes = 5;</code>
+       * @return The signedBytes.
        */
       public int getSignedBytes() {
         return signedBytes_;
       }
       /**
        * <code>required int32 signedBytes = 5;</code>
+       * @param value The signedBytes to set.
+       * @return This builder for chaining.
        */
       public Builder setSignedBytes(int value) {
         bitField0_ |= 0x00000010;
@@ -8432,6 +9249,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 signedBytes = 5;</code>
+       * @return This builder for chaining.
        */
       public Builder clearSignedBytes() {
         bitField0_ = (bitField0_ & ~0x00000010);
@@ -8439,11 +9257,13 @@ public final class RampPacketsProtos {
         onChanged();
         return this;
       }
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
@@ -8465,11 +9285,12 @@ public final class RampPacketsProtos {
 
     @Deprecated public static final com.google.protobuf.Parser<SignedPacket>
         PARSER = new com.google.protobuf.AbstractParser<SignedPacket>() {
+      @Override
       public SignedPacket parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new SignedPacket(input, extensionRegistry);
+        return new SignedPacket(input, extensionRegistry);
       }
     };
 
@@ -8482,6 +9303,7 @@ public final class RampPacketsProtos {
       return PARSER;
     }
 
+    @Override
     public SignedPacket getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
@@ -8494,37 +9316,45 @@ public final class RampPacketsProtos {
 
     /**
      * <code>required int32 ernId = 1;</code>
+     * @return Whether the ernId field is set.
      */
     boolean hasErnId();
     /**
      * <code>required int32 ernId = 1;</code>
+     * @return The ernId.
      */
     int getErnId();
 
     /**
      * <code>required bytes connectedRins = 2;</code>
+     * @return Whether the connectedRins field is set.
      */
     boolean hasConnectedRins();
     /**
      * <code>required bytes connectedRins = 2;</code>
+     * @return The connectedRins.
      */
     com.google.protobuf.ByteString getConnectedRins();
 
     /**
      * <code>required bytes oldKey = 3;</code>
+     * @return Whether the oldKey field is set.
      */
     boolean hasOldKey();
     /**
      * <code>required bytes oldKey = 3;</code>
+     * @return The oldKey.
      */
     com.google.protobuf.ByteString getOldKey();
 
     /**
      * <code>required bytes newKey = 4;</code>
+     * @return Whether the newKey field is set.
      */
     boolean hasNewKey();
     /**
      * <code>required bytes newKey = 4;</code>
+     * @return The newKey.
      */
     com.google.protobuf.ByteString getNewKey();
 
@@ -8534,6 +9364,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 socialRelationshipType = 5 [default = 0];</code>
+     * @return Whether the socialRelationshipType field is set.
      */
     boolean hasSocialRelationshipType();
     /**
@@ -8542,24 +9373,29 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 socialRelationshipType = 5 [default = 0];</code>
+     * @return The socialRelationshipType.
      */
     int getSocialRelationshipType();
 
     /**
      * <code>optional bytes ernManagerFriendId = 6;</code>
+     * @return Whether the ernManagerFriendId field is set.
      */
     boolean hasErnManagerFriendId();
     /**
      * <code>optional bytes ernManagerFriendId = 6;</code>
+     * @return The ernManagerFriendId.
      */
     com.google.protobuf.ByteString getErnManagerFriendId();
 
     /**
      * <code>optional bytes connectorFriendId = 7;</code>
+     * @return Whether the connectorFriendId field is set.
      */
     boolean hasConnectorFriendId();
     /**
      * <code>optional bytes connectorFriendId = 7;</code>
+     * @return The connectorFriendId.
      */
     com.google.protobuf.ByteString getConnectorFriendId();
   }
@@ -8574,18 +9410,24 @@ public final class RampPacketsProtos {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:EncryptedEskAndRins)
       EncryptedEskAndRinsOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use EncryptedEskAndRins.newBuilder() to construct.
     private EncryptedEskAndRins(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
     }
     private EncryptedEskAndRins() {
-      ernId_ = 0;
       connectedRins_ = com.google.protobuf.ByteString.EMPTY;
       oldKey_ = com.google.protobuf.ByteString.EMPTY;
       newKey_ = com.google.protobuf.ByteString.EMPTY;
-      socialRelationshipType_ = 0;
       ernManagerFriendId_ = com.google.protobuf.ByteString.EMPTY;
       connectorFriendId_ = com.google.protobuf.ByteString.EMPTY;
+    }
+
+    @Override
+    @SuppressWarnings({"unused"})
+    protected Object newInstance(
+        UnusedPrivateParameter unused) {
+      return new EncryptedEskAndRins();
     }
 
     @Override
@@ -8598,6 +9440,9 @@ public final class RampPacketsProtos {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -8609,13 +9454,6 @@ public final class RampPacketsProtos {
             case 0:
               done = true;
               break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
             case 8: {
               bitField0_ |= 0x00000001;
               ernId_ = input.readInt32();
@@ -8651,6 +9489,13 @@ public final class RampPacketsProtos {
               connectorFriendId_ = input.readBytes();
               break;
             }
+            default: {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -8668,6 +9513,7 @@ public final class RampPacketsProtos {
       return RampPacketsProtos.internal_static_EncryptedEskAndRins_descriptor;
     }
 
+    @Override
     protected FieldAccessorTable
         internalGetFieldAccessorTable() {
       return RampPacketsProtos.internal_static_EncryptedEskAndRins_fieldAccessorTable
@@ -8680,12 +9526,14 @@ public final class RampPacketsProtos {
     private int ernId_;
     /**
      * <code>required int32 ernId = 1;</code>
+     * @return Whether the ernId field is set.
      */
     public boolean hasErnId() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000001) != 0);
     }
     /**
      * <code>required int32 ernId = 1;</code>
+     * @return The ernId.
      */
     public int getErnId() {
       return ernId_;
@@ -8695,12 +9543,14 @@ public final class RampPacketsProtos {
     private com.google.protobuf.ByteString connectedRins_;
     /**
      * <code>required bytes connectedRins = 2;</code>
+     * @return Whether the connectedRins field is set.
      */
     public boolean hasConnectedRins() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
+      return ((bitField0_ & 0x00000002) != 0);
     }
     /**
      * <code>required bytes connectedRins = 2;</code>
+     * @return The connectedRins.
      */
     public com.google.protobuf.ByteString getConnectedRins() {
       return connectedRins_;
@@ -8710,12 +9560,14 @@ public final class RampPacketsProtos {
     private com.google.protobuf.ByteString oldKey_;
     /**
      * <code>required bytes oldKey = 3;</code>
+     * @return Whether the oldKey field is set.
      */
     public boolean hasOldKey() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+      return ((bitField0_ & 0x00000004) != 0);
     }
     /**
      * <code>required bytes oldKey = 3;</code>
+     * @return The oldKey.
      */
     public com.google.protobuf.ByteString getOldKey() {
       return oldKey_;
@@ -8725,12 +9577,14 @@ public final class RampPacketsProtos {
     private com.google.protobuf.ByteString newKey_;
     /**
      * <code>required bytes newKey = 4;</code>
+     * @return Whether the newKey field is set.
      */
     public boolean hasNewKey() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
+      return ((bitField0_ & 0x00000008) != 0);
     }
     /**
      * <code>required bytes newKey = 4;</code>
+     * @return The newKey.
      */
     public com.google.protobuf.ByteString getNewKey() {
       return newKey_;
@@ -8744,9 +9598,10 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 socialRelationshipType = 5 [default = 0];</code>
+     * @return Whether the socialRelationshipType field is set.
      */
     public boolean hasSocialRelationshipType() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
+      return ((bitField0_ & 0x00000010) != 0);
     }
     /**
      * <pre>
@@ -8754,6 +9609,7 @@ public final class RampPacketsProtos {
      * </pre>
      *
      * <code>optional int32 socialRelationshipType = 5 [default = 0];</code>
+     * @return The socialRelationshipType.
      */
     public int getSocialRelationshipType() {
       return socialRelationshipType_;
@@ -8763,12 +9619,14 @@ public final class RampPacketsProtos {
     private com.google.protobuf.ByteString ernManagerFriendId_;
     /**
      * <code>optional bytes ernManagerFriendId = 6;</code>
+     * @return Whether the ernManagerFriendId field is set.
      */
     public boolean hasErnManagerFriendId() {
-      return ((bitField0_ & 0x00000020) == 0x00000020);
+      return ((bitField0_ & 0x00000020) != 0);
     }
     /**
      * <code>optional bytes ernManagerFriendId = 6;</code>
+     * @return The ernManagerFriendId.
      */
     public com.google.protobuf.ByteString getErnManagerFriendId() {
       return ernManagerFriendId_;
@@ -8778,18 +9636,21 @@ public final class RampPacketsProtos {
     private com.google.protobuf.ByteString connectorFriendId_;
     /**
      * <code>optional bytes connectorFriendId = 7;</code>
+     * @return Whether the connectorFriendId field is set.
      */
     public boolean hasConnectorFriendId() {
-      return ((bitField0_ & 0x00000040) == 0x00000040);
+      return ((bitField0_ & 0x00000040) != 0);
     }
     /**
      * <code>optional bytes connectorFriendId = 7;</code>
+     * @return The connectorFriendId.
      */
     public com.google.protobuf.ByteString getConnectorFriendId() {
       return connectorFriendId_;
     }
 
     private byte memoizedIsInitialized = -1;
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -8815,62 +9676,64 @@ public final class RampPacketsProtos {
       return true;
     }
 
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         output.writeInt32(1, ernId_);
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         output.writeBytes(2, connectedRins_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         output.writeBytes(3, oldKey_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000008) != 0)) {
         output.writeBytes(4, newKey_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+      if (((bitField0_ & 0x00000010) != 0)) {
         output.writeInt32(5, socialRelationshipType_);
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+      if (((bitField0_ & 0x00000020) != 0)) {
         output.writeBytes(6, ernManagerFriendId_);
       }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+      if (((bitField0_ & 0x00000040) != 0)) {
         output.writeBytes(7, connectorFriendId_);
       }
       unknownFields.writeTo(output);
     }
 
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(1, ernId_);
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(2, connectedRins_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(3, oldKey_);
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000008) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(4, newKey_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+      if (((bitField0_ & 0x00000010) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(5, socialRelationshipType_);
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+      if (((bitField0_ & 0x00000020) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(6, ernManagerFriendId_);
       }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+      if (((bitField0_ & 0x00000040) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(7, connectorFriendId_);
       }
@@ -8879,7 +9742,6 @@ public final class RampPacketsProtos {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @Override
     public boolean equals(final Object obj) {
       if (obj == this) {
@@ -8890,44 +9752,43 @@ public final class RampPacketsProtos {
       }
       EncryptedEskAndRins other = (EncryptedEskAndRins) obj;
 
-      boolean result = true;
-      result = result && (hasErnId() == other.hasErnId());
+      if (hasErnId() != other.hasErnId()) return false;
       if (hasErnId()) {
-        result = result && (getErnId()
-            == other.getErnId());
+        if (getErnId()
+            != other.getErnId()) return false;
       }
-      result = result && (hasConnectedRins() == other.hasConnectedRins());
+      if (hasConnectedRins() != other.hasConnectedRins()) return false;
       if (hasConnectedRins()) {
-        result = result && getConnectedRins()
-            .equals(other.getConnectedRins());
+        if (!getConnectedRins()
+            .equals(other.getConnectedRins())) return false;
       }
-      result = result && (hasOldKey() == other.hasOldKey());
+      if (hasOldKey() != other.hasOldKey()) return false;
       if (hasOldKey()) {
-        result = result && getOldKey()
-            .equals(other.getOldKey());
+        if (!getOldKey()
+            .equals(other.getOldKey())) return false;
       }
-      result = result && (hasNewKey() == other.hasNewKey());
+      if (hasNewKey() != other.hasNewKey()) return false;
       if (hasNewKey()) {
-        result = result && getNewKey()
-            .equals(other.getNewKey());
+        if (!getNewKey()
+            .equals(other.getNewKey())) return false;
       }
-      result = result && (hasSocialRelationshipType() == other.hasSocialRelationshipType());
+      if (hasSocialRelationshipType() != other.hasSocialRelationshipType()) return false;
       if (hasSocialRelationshipType()) {
-        result = result && (getSocialRelationshipType()
-            == other.getSocialRelationshipType());
+        if (getSocialRelationshipType()
+            != other.getSocialRelationshipType()) return false;
       }
-      result = result && (hasErnManagerFriendId() == other.hasErnManagerFriendId());
+      if (hasErnManagerFriendId() != other.hasErnManagerFriendId()) return false;
       if (hasErnManagerFriendId()) {
-        result = result && getErnManagerFriendId()
-            .equals(other.getErnManagerFriendId());
+        if (!getErnManagerFriendId()
+            .equals(other.getErnManagerFriendId())) return false;
       }
-      result = result && (hasConnectorFriendId() == other.hasConnectorFriendId());
+      if (hasConnectorFriendId() != other.hasConnectorFriendId()) return false;
       if (hasConnectorFriendId()) {
-        result = result && getConnectorFriendId()
-            .equals(other.getConnectorFriendId());
+        if (!getConnectorFriendId()
+            .equals(other.getConnectorFriendId())) return false;
       }
-      result = result && unknownFields.equals(other.unknownFields);
-      return result;
+      if (!unknownFields.equals(other.unknownFields)) return false;
+      return true;
     }
 
     @Override
@@ -8936,7 +9797,7 @@ public final class RampPacketsProtos {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasErnId()) {
         hash = (37 * hash) + ERNID_FIELD_NUMBER;
         hash = (53 * hash) + getErnId();
@@ -8970,6 +9831,17 @@ public final class RampPacketsProtos {
       return hash;
     }
 
+    public static EncryptedEskAndRins parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static EncryptedEskAndRins parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static EncryptedEskAndRins parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -9029,6 +9901,7 @@ public final class RampPacketsProtos {
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
@@ -9036,6 +9909,7 @@ public final class RampPacketsProtos {
     public static Builder newBuilder(EncryptedEskAndRins prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
@@ -9063,6 +9937,7 @@ public final class RampPacketsProtos {
         return RampPacketsProtos.internal_static_EncryptedEskAndRins_descriptor;
       }
 
+      @Override
       protected FieldAccessorTable
           internalGetFieldAccessorTable() {
         return RampPacketsProtos.internal_static_EncryptedEskAndRins_fieldAccessorTable
@@ -9085,6 +9960,7 @@ public final class RampPacketsProtos {
                 .alwaysUseFieldBuilders) {
         }
       }
+      @Override
       public Builder clear() {
         super.clear();
         ernId_ = 0;
@@ -9104,15 +9980,18 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
         return RampPacketsProtos.internal_static_EncryptedEskAndRins_descriptor;
       }
 
+      @Override
       public EncryptedEskAndRins getDefaultInstanceForType() {
         return EncryptedEskAndRins.getDefaultInstance();
       }
 
+      @Override
       public EncryptedEskAndRins build() {
         EncryptedEskAndRins result = buildPartial();
         if (!result.isInitialized()) {
@@ -9121,35 +10000,36 @@ public final class RampPacketsProtos {
         return result;
       }
 
+      @Override
       public EncryptedEskAndRins buildPartial() {
         EncryptedEskAndRins result = new EncryptedEskAndRins(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.ernId_ = ernId_;
           to_bitField0_ |= 0x00000001;
         }
-        result.ernId_ = ernId_;
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((from_bitField0_ & 0x00000002) != 0)) {
           to_bitField0_ |= 0x00000002;
         }
         result.connectedRins_ = connectedRins_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+        if (((from_bitField0_ & 0x00000004) != 0)) {
           to_bitField0_ |= 0x00000004;
         }
         result.oldKey_ = oldKey_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+        if (((from_bitField0_ & 0x00000008) != 0)) {
           to_bitField0_ |= 0x00000008;
         }
         result.newKey_ = newKey_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+        if (((from_bitField0_ & 0x00000010) != 0)) {
+          result.socialRelationshipType_ = socialRelationshipType_;
           to_bitField0_ |= 0x00000010;
         }
-        result.socialRelationshipType_ = socialRelationshipType_;
-        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+        if (((from_bitField0_ & 0x00000020) != 0)) {
           to_bitField0_ |= 0x00000020;
         }
         result.ernManagerFriendId_ = ernManagerFriendId_;
-        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+        if (((from_bitField0_ & 0x00000040) != 0)) {
           to_bitField0_ |= 0x00000040;
         }
         result.connectorFriendId_ = connectorFriendId_;
@@ -9158,32 +10038,39 @@ public final class RampPacketsProtos {
         return result;
       }
 
+      @Override
       public Builder clone() {
-        return (Builder) super.clone();
+        return super.clone();
       }
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.setField(field, value);
+        return super.setField(field, value);
       }
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return (Builder) super.clearField(field);
+        return super.clearField(field);
       }
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return (Builder) super.clearOneof(oneof);
+        return super.clearOneof(oneof);
       }
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           int index, Object value) {
-        return (Builder) super.setRepeatedField(field, index, value);
+        return super.setRepeatedField(field, index, value);
       }
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.addRepeatedField(field, value);
+        return super.addRepeatedField(field, value);
       }
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof EncryptedEskAndRins) {
           return mergeFrom((EncryptedEskAndRins)other);
@@ -9221,6 +10108,7 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public final boolean isInitialized() {
         if (!hasErnId()) {
           return false;
@@ -9237,6 +10125,7 @@ public final class RampPacketsProtos {
         return true;
       }
 
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -9259,18 +10148,22 @@ public final class RampPacketsProtos {
       private int ernId_ ;
       /**
        * <code>required int32 ernId = 1;</code>
+       * @return Whether the ernId field is set.
        */
       public boolean hasErnId() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>required int32 ernId = 1;</code>
+       * @return The ernId.
        */
       public int getErnId() {
         return ernId_;
       }
       /**
        * <code>required int32 ernId = 1;</code>
+       * @param value The ernId to set.
+       * @return This builder for chaining.
        */
       public Builder setErnId(int value) {
         bitField0_ |= 0x00000001;
@@ -9280,6 +10173,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 ernId = 1;</code>
+       * @return This builder for chaining.
        */
       public Builder clearErnId() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -9291,18 +10185,22 @@ public final class RampPacketsProtos {
       private com.google.protobuf.ByteString connectedRins_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>required bytes connectedRins = 2;</code>
+       * @return Whether the connectedRins field is set.
        */
       public boolean hasConnectedRins() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000002) != 0);
       }
       /**
        * <code>required bytes connectedRins = 2;</code>
+       * @return The connectedRins.
        */
       public com.google.protobuf.ByteString getConnectedRins() {
         return connectedRins_;
       }
       /**
        * <code>required bytes connectedRins = 2;</code>
+       * @param value The connectedRins to set.
+       * @return This builder for chaining.
        */
       public Builder setConnectedRins(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -9315,6 +10213,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required bytes connectedRins = 2;</code>
+       * @return This builder for chaining.
        */
       public Builder clearConnectedRins() {
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -9326,18 +10225,22 @@ public final class RampPacketsProtos {
       private com.google.protobuf.ByteString oldKey_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>required bytes oldKey = 3;</code>
+       * @return Whether the oldKey field is set.
        */
       public boolean hasOldKey() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000004) != 0);
       }
       /**
        * <code>required bytes oldKey = 3;</code>
+       * @return The oldKey.
        */
       public com.google.protobuf.ByteString getOldKey() {
         return oldKey_;
       }
       /**
        * <code>required bytes oldKey = 3;</code>
+       * @param value The oldKey to set.
+       * @return This builder for chaining.
        */
       public Builder setOldKey(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -9350,6 +10253,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required bytes oldKey = 3;</code>
+       * @return This builder for chaining.
        */
       public Builder clearOldKey() {
         bitField0_ = (bitField0_ & ~0x00000004);
@@ -9361,18 +10265,22 @@ public final class RampPacketsProtos {
       private com.google.protobuf.ByteString newKey_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>required bytes newKey = 4;</code>
+       * @return Whether the newKey field is set.
        */
       public boolean hasNewKey() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
+        return ((bitField0_ & 0x00000008) != 0);
       }
       /**
        * <code>required bytes newKey = 4;</code>
+       * @return The newKey.
        */
       public com.google.protobuf.ByteString getNewKey() {
         return newKey_;
       }
       /**
        * <code>required bytes newKey = 4;</code>
+       * @param value The newKey to set.
+       * @return This builder for chaining.
        */
       public Builder setNewKey(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -9385,6 +10293,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required bytes newKey = 4;</code>
+       * @return This builder for chaining.
        */
       public Builder clearNewKey() {
         bitField0_ = (bitField0_ & ~0x00000008);
@@ -9400,9 +10309,10 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 socialRelationshipType = 5 [default = 0];</code>
+       * @return Whether the socialRelationshipType field is set.
        */
       public boolean hasSocialRelationshipType() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
+        return ((bitField0_ & 0x00000010) != 0);
       }
       /**
        * <pre>
@@ -9410,6 +10320,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 socialRelationshipType = 5 [default = 0];</code>
+       * @return The socialRelationshipType.
        */
       public int getSocialRelationshipType() {
         return socialRelationshipType_;
@@ -9420,6 +10331,8 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 socialRelationshipType = 5 [default = 0];</code>
+       * @param value The socialRelationshipType to set.
+       * @return This builder for chaining.
        */
       public Builder setSocialRelationshipType(int value) {
         bitField0_ |= 0x00000010;
@@ -9433,6 +10346,7 @@ public final class RampPacketsProtos {
        * </pre>
        *
        * <code>optional int32 socialRelationshipType = 5 [default = 0];</code>
+       * @return This builder for chaining.
        */
       public Builder clearSocialRelationshipType() {
         bitField0_ = (bitField0_ & ~0x00000010);
@@ -9444,18 +10358,22 @@ public final class RampPacketsProtos {
       private com.google.protobuf.ByteString ernManagerFriendId_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>optional bytes ernManagerFriendId = 6;</code>
+       * @return Whether the ernManagerFriendId field is set.
        */
       public boolean hasErnManagerFriendId() {
-        return ((bitField0_ & 0x00000020) == 0x00000020);
+        return ((bitField0_ & 0x00000020) != 0);
       }
       /**
        * <code>optional bytes ernManagerFriendId = 6;</code>
+       * @return The ernManagerFriendId.
        */
       public com.google.protobuf.ByteString getErnManagerFriendId() {
         return ernManagerFriendId_;
       }
       /**
        * <code>optional bytes ernManagerFriendId = 6;</code>
+       * @param value The ernManagerFriendId to set.
+       * @return This builder for chaining.
        */
       public Builder setErnManagerFriendId(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -9468,6 +10386,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>optional bytes ernManagerFriendId = 6;</code>
+       * @return This builder for chaining.
        */
       public Builder clearErnManagerFriendId() {
         bitField0_ = (bitField0_ & ~0x00000020);
@@ -9479,18 +10398,22 @@ public final class RampPacketsProtos {
       private com.google.protobuf.ByteString connectorFriendId_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>optional bytes connectorFriendId = 7;</code>
+       * @return Whether the connectorFriendId field is set.
        */
       public boolean hasConnectorFriendId() {
-        return ((bitField0_ & 0x00000040) == 0x00000040);
+        return ((bitField0_ & 0x00000040) != 0);
       }
       /**
        * <code>optional bytes connectorFriendId = 7;</code>
+       * @return The connectorFriendId.
        */
       public com.google.protobuf.ByteString getConnectorFriendId() {
         return connectorFriendId_;
       }
       /**
        * <code>optional bytes connectorFriendId = 7;</code>
+       * @param value The connectorFriendId to set.
+       * @return This builder for chaining.
        */
       public Builder setConnectorFriendId(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -9503,6 +10426,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>optional bytes connectorFriendId = 7;</code>
+       * @return This builder for chaining.
        */
       public Builder clearConnectorFriendId() {
         bitField0_ = (bitField0_ & ~0x00000040);
@@ -9510,11 +10434,13 @@ public final class RampPacketsProtos {
         onChanged();
         return this;
       }
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
@@ -9536,11 +10462,12 @@ public final class RampPacketsProtos {
 
     @Deprecated public static final com.google.protobuf.Parser<EncryptedEskAndRins>
         PARSER = new com.google.protobuf.AbstractParser<EncryptedEskAndRins>() {
+      @Override
       public EncryptedEskAndRins parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new EncryptedEskAndRins(input, extensionRegistry);
+        return new EncryptedEskAndRins(input, extensionRegistry);
       }
     };
 
@@ -9553,6 +10480,7 @@ public final class RampPacketsProtos {
       return PARSER;
     }
 
+    @Override
     public EncryptedEskAndRins getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
@@ -9565,28 +10493,34 @@ public final class RampPacketsProtos {
 
     /**
      * <code>required int32 internetAddress = 1;</code>
+     * @return Whether the internetAddress field is set.
      */
     boolean hasInternetAddress();
     /**
      * <code>required int32 internetAddress = 1;</code>
+     * @return The internetAddress.
      */
     int getInternetAddress();
 
     /**
      * <code>required int64 sentTime = 2;</code>
+     * @return Whether the sentTime field is set.
      */
     boolean hasSentTime();
     /**
      * <code>required int64 sentTime = 2;</code>
+     * @return The sentTime.
      */
     long getSentTime();
 
     /**
      * <code>required bool replied = 3 [default = false];</code>
+     * @return Whether the replied field is set.
      */
     boolean hasReplied();
     /**
      * <code>required bool replied = 3 [default = false];</code>
+     * @return The replied.
      */
     boolean getReplied();
   }
@@ -9601,14 +10535,19 @@ public final class RampPacketsProtos {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:NatTDelayTunerPacket)
       NatTDelayTunerPacketOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use NatTDelayTunerPacket.newBuilder() to construct.
     private NatTDelayTunerPacket(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
     }
     private NatTDelayTunerPacket() {
-      internetAddress_ = 0;
-      sentTime_ = 0L;
-      replied_ = false;
+    }
+
+    @Override
+    @SuppressWarnings({"unused"})
+    protected Object newInstance(
+        UnusedPrivateParameter unused) {
+      return new NatTDelayTunerPacket();
     }
 
     @Override
@@ -9621,6 +10560,9 @@ public final class RampPacketsProtos {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -9632,13 +10574,6 @@ public final class RampPacketsProtos {
             case 0:
               done = true;
               break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
             case 8: {
               bitField0_ |= 0x00000001;
               internetAddress_ = input.readInt32();
@@ -9652,6 +10587,13 @@ public final class RampPacketsProtos {
             case 24: {
               bitField0_ |= 0x00000004;
               replied_ = input.readBool();
+              break;
+            }
+            default: {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
               break;
             }
           }
@@ -9671,6 +10613,7 @@ public final class RampPacketsProtos {
       return RampPacketsProtos.internal_static_NatTDelayTunerPacket_descriptor;
     }
 
+    @Override
     protected FieldAccessorTable
         internalGetFieldAccessorTable() {
       return RampPacketsProtos.internal_static_NatTDelayTunerPacket_fieldAccessorTable
@@ -9683,12 +10626,14 @@ public final class RampPacketsProtos {
     private int internetAddress_;
     /**
      * <code>required int32 internetAddress = 1;</code>
+     * @return Whether the internetAddress field is set.
      */
     public boolean hasInternetAddress() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000001) != 0);
     }
     /**
      * <code>required int32 internetAddress = 1;</code>
+     * @return The internetAddress.
      */
     public int getInternetAddress() {
       return internetAddress_;
@@ -9698,12 +10643,14 @@ public final class RampPacketsProtos {
     private long sentTime_;
     /**
      * <code>required int64 sentTime = 2;</code>
+     * @return Whether the sentTime field is set.
      */
     public boolean hasSentTime() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
+      return ((bitField0_ & 0x00000002) != 0);
     }
     /**
      * <code>required int64 sentTime = 2;</code>
+     * @return The sentTime.
      */
     public long getSentTime() {
       return sentTime_;
@@ -9713,18 +10660,21 @@ public final class RampPacketsProtos {
     private boolean replied_;
     /**
      * <code>required bool replied = 3 [default = false];</code>
+     * @return Whether the replied field is set.
      */
     public boolean hasReplied() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+      return ((bitField0_ & 0x00000004) != 0);
     }
     /**
      * <code>required bool replied = 3 [default = false];</code>
+     * @return The replied.
      */
     public boolean getReplied() {
       return replied_;
     }
 
     private byte memoizedIsInitialized = -1;
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -9746,34 +10696,36 @@ public final class RampPacketsProtos {
       return true;
     }
 
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         output.writeInt32(1, internetAddress_);
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         output.writeInt64(2, sentTime_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         output.writeBool(3, replied_);
       }
       unknownFields.writeTo(output);
     }
 
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(1, internetAddress_);
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(2, sentTime_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBoolSize(3, replied_);
       }
@@ -9782,7 +10734,6 @@ public final class RampPacketsProtos {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @Override
     public boolean equals(final Object obj) {
       if (obj == this) {
@@ -9793,24 +10744,23 @@ public final class RampPacketsProtos {
       }
       NatTDelayTunerPacket other = (NatTDelayTunerPacket) obj;
 
-      boolean result = true;
-      result = result && (hasInternetAddress() == other.hasInternetAddress());
+      if (hasInternetAddress() != other.hasInternetAddress()) return false;
       if (hasInternetAddress()) {
-        result = result && (getInternetAddress()
-            == other.getInternetAddress());
+        if (getInternetAddress()
+            != other.getInternetAddress()) return false;
       }
-      result = result && (hasSentTime() == other.hasSentTime());
+      if (hasSentTime() != other.hasSentTime()) return false;
       if (hasSentTime()) {
-        result = result && (getSentTime()
-            == other.getSentTime());
+        if (getSentTime()
+            != other.getSentTime()) return false;
       }
-      result = result && (hasReplied() == other.hasReplied());
+      if (hasReplied() != other.hasReplied()) return false;
       if (hasReplied()) {
-        result = result && (getReplied()
-            == other.getReplied());
+        if (getReplied()
+            != other.getReplied()) return false;
       }
-      result = result && unknownFields.equals(other.unknownFields);
-      return result;
+      if (!unknownFields.equals(other.unknownFields)) return false;
+      return true;
     }
 
     @Override
@@ -9819,7 +10769,7 @@ public final class RampPacketsProtos {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasInternetAddress()) {
         hash = (37 * hash) + INTERNETADDRESS_FIELD_NUMBER;
         hash = (53 * hash) + getInternetAddress();
@@ -9839,6 +10789,17 @@ public final class RampPacketsProtos {
       return hash;
     }
 
+    public static NatTDelayTunerPacket parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static NatTDelayTunerPacket parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static NatTDelayTunerPacket parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -9898,6 +10859,7 @@ public final class RampPacketsProtos {
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
@@ -9905,6 +10867,7 @@ public final class RampPacketsProtos {
     public static Builder newBuilder(NatTDelayTunerPacket prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
@@ -9932,6 +10895,7 @@ public final class RampPacketsProtos {
         return RampPacketsProtos.internal_static_NatTDelayTunerPacket_descriptor;
       }
 
+      @Override
       protected FieldAccessorTable
           internalGetFieldAccessorTable() {
         return RampPacketsProtos.internal_static_NatTDelayTunerPacket_fieldAccessorTable
@@ -9954,6 +10918,7 @@ public final class RampPacketsProtos {
                 .alwaysUseFieldBuilders) {
         }
       }
+      @Override
       public Builder clear() {
         super.clear();
         internetAddress_ = 0;
@@ -9965,15 +10930,18 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
         return RampPacketsProtos.internal_static_NatTDelayTunerPacket_descriptor;
       }
 
+      @Override
       public NatTDelayTunerPacket getDefaultInstanceForType() {
         return NatTDelayTunerPacket.getDefaultInstance();
       }
 
+      @Override
       public NatTDelayTunerPacket build() {
         NatTDelayTunerPacket result = buildPartial();
         if (!result.isInitialized()) {
@@ -9982,53 +10950,61 @@ public final class RampPacketsProtos {
         return result;
       }
 
+      @Override
       public NatTDelayTunerPacket buildPartial() {
         NatTDelayTunerPacket result = new NatTDelayTunerPacket(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.internetAddress_ = internetAddress_;
           to_bitField0_ |= 0x00000001;
         }
-        result.internetAddress_ = internetAddress_;
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.sentTime_ = sentTime_;
           to_bitField0_ |= 0x00000002;
         }
-        result.sentTime_ = sentTime_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+        if (((from_bitField0_ & 0x00000004) != 0)) {
+          result.replied_ = replied_;
           to_bitField0_ |= 0x00000004;
         }
-        result.replied_ = replied_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
 
+      @Override
       public Builder clone() {
-        return (Builder) super.clone();
+        return super.clone();
       }
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.setField(field, value);
+        return super.setField(field, value);
       }
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return (Builder) super.clearField(field);
+        return super.clearField(field);
       }
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return (Builder) super.clearOneof(oneof);
+        return super.clearOneof(oneof);
       }
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           int index, Object value) {
-        return (Builder) super.setRepeatedField(field, index, value);
+        return super.setRepeatedField(field, index, value);
       }
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           Object value) {
-        return (Builder) super.addRepeatedField(field, value);
+        return super.addRepeatedField(field, value);
       }
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof NatTDelayTunerPacket) {
           return mergeFrom((NatTDelayTunerPacket)other);
@@ -10054,6 +11030,7 @@ public final class RampPacketsProtos {
         return this;
       }
 
+      @Override
       public final boolean isInitialized() {
         if (!hasInternetAddress()) {
           return false;
@@ -10067,6 +11044,7 @@ public final class RampPacketsProtos {
         return true;
       }
 
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -10089,18 +11067,22 @@ public final class RampPacketsProtos {
       private int internetAddress_ ;
       /**
        * <code>required int32 internetAddress = 1;</code>
+       * @return Whether the internetAddress field is set.
        */
       public boolean hasInternetAddress() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>required int32 internetAddress = 1;</code>
+       * @return The internetAddress.
        */
       public int getInternetAddress() {
         return internetAddress_;
       }
       /**
        * <code>required int32 internetAddress = 1;</code>
+       * @param value The internetAddress to set.
+       * @return This builder for chaining.
        */
       public Builder setInternetAddress(int value) {
         bitField0_ |= 0x00000001;
@@ -10110,6 +11092,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int32 internetAddress = 1;</code>
+       * @return This builder for chaining.
        */
       public Builder clearInternetAddress() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -10121,18 +11104,22 @@ public final class RampPacketsProtos {
       private long sentTime_ ;
       /**
        * <code>required int64 sentTime = 2;</code>
+       * @return Whether the sentTime field is set.
        */
       public boolean hasSentTime() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000002) != 0);
       }
       /**
        * <code>required int64 sentTime = 2;</code>
+       * @return The sentTime.
        */
       public long getSentTime() {
         return sentTime_;
       }
       /**
        * <code>required int64 sentTime = 2;</code>
+       * @param value The sentTime to set.
+       * @return This builder for chaining.
        */
       public Builder setSentTime(long value) {
         bitField0_ |= 0x00000002;
@@ -10142,6 +11129,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required int64 sentTime = 2;</code>
+       * @return This builder for chaining.
        */
       public Builder clearSentTime() {
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -10153,18 +11141,22 @@ public final class RampPacketsProtos {
       private boolean replied_ ;
       /**
        * <code>required bool replied = 3 [default = false];</code>
+       * @return Whether the replied field is set.
        */
       public boolean hasReplied() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000004) != 0);
       }
       /**
        * <code>required bool replied = 3 [default = false];</code>
+       * @return The replied.
        */
       public boolean getReplied() {
         return replied_;
       }
       /**
        * <code>required bool replied = 3 [default = false];</code>
+       * @param value The replied to set.
+       * @return This builder for chaining.
        */
       public Builder setReplied(boolean value) {
         bitField0_ |= 0x00000004;
@@ -10174,6 +11166,7 @@ public final class RampPacketsProtos {
       }
       /**
        * <code>required bool replied = 3 [default = false];</code>
+       * @return This builder for chaining.
        */
       public Builder clearReplied() {
         bitField0_ = (bitField0_ & ~0x00000004);
@@ -10181,11 +11174,13 @@ public final class RampPacketsProtos {
         onChanged();
         return this;
       }
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
@@ -10207,11 +11202,12 @@ public final class RampPacketsProtos {
 
     @Deprecated public static final com.google.protobuf.Parser<NatTDelayTunerPacket>
         PARSER = new com.google.protobuf.AbstractParser<NatTDelayTunerPacket>() {
+      @Override
       public NatTDelayTunerPacket parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new NatTDelayTunerPacket(input, extensionRegistry);
+        return new NatTDelayTunerPacket(input, extensionRegistry);
       }
     };
 
@@ -10224,6 +11220,7 @@ public final class RampPacketsProtos {
       return PARSER;
     }
 
+    @Override
     public NatTDelayTunerPacket getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
@@ -10293,7 +11290,7 @@ public final class RampPacketsProtos {
       "ePortAck\030\010 \001(\005\022\022\n\ncurrentHop\030\t \002(\005\022\022\n\nbu" +
       "fferSize\030\n \002(\005\022\r\n\005retry\030\013 \002(\005\022\020\n\010timeWai" +
       "t\030\014 \001(\005\022\016\n\006expiry\030\r \001(\005\022\026\n\016connectTimeou" +
-      "t\030\016 \002(\005\022\016\n\006flowId\030\017 \001(\005\022\020\n\010dataType\030\020 \001(",
+      "t\030\016 \002(\005\022\016\n\006flowId\030\017 \001(\005\022\020\n\010dataType\030\020 \001(" +
       "\003\"\300\002\n\rUnicastPacket\022\n\n\002id\030\001 \002(\005\022\014\n\004dest\030" +
       "\002 \003(\005\022\016\n\006source\030\003 \003(\005\022\020\n\010destPort\030\004 \002(\005\022" +
       "\022\n\ndestNodeId\030\005 \001(\005\022\024\n\014sourceNodeId\030\006 \001(" +
@@ -10303,7 +11300,7 @@ public final class RampPacketsProtos {
       "iry\030\r \001(\005\022\026\n\016connectTimeout\030\016 \002(\005\022\016\n\006flo" +
       "wId\030\017 \001(\005\022\020\n\010dataType\030\020 \001(\003\022\017\n\007payload\030c" +
       " \002(\014\"\253\001\n\017BroadcastPacket\022\n\n\002id\030\001 \002(\005\022\016\n\006" +
-      "source\030\002 \003(\005\022\024\n\014traversedIds\030\003 \003(\005\022\024\n\014so",
+      "source\030\002 \003(\005\022\024\n\014traversedIds\030\003 \003(\005\022\024\n\014so" +
       "urceNodeId\030\004 \001(\005\022\013\n\003ttl\030\005 \002(\005\022\020\n\010destPor" +
       "t\030\006 \002(\005\022\016\n\006expiry\030\007 \001(\005\022\020\n\010dataType\030\010 \001(" +
       "\003\022\017\n\007payload\030c \002(\014\"a\n\017EncryptedPacket\022\r\n" +
@@ -10313,7 +11310,7 @@ public final class RampPacketsProtos {
       "\002(\005\022\017\n\007payload\030\003 \002(\014\022\021\n\tsignature\030\004 \002(\014\022" +
       "\023\n\013signedBytes\030\005 \002(\005\"\265\001\n\023EncryptedEskAnd" +
       "Rins\022\r\n\005ernId\030\001 \002(\005\022\025\n\rconnectedRins\030\002 \002" +
-      "(\014\022\016\n\006oldKey\030\003 \002(\014\022\016\n\006newKey\030\004 \002(\014\022!\n\026so",
+      "(\014\022\016\n\006oldKey\030\003 \002(\014\022\016\n\006newKey\030\004 \002(\014\022!\n\026so" +
       "cialRelationshipType\030\005 \001(\005:\0010\022\032\n\022ernMana" +
       "gerFriendId\030\006 \001(\014\022\031\n\021connectorFriendId\030\007" +
       " \001(\014\"Y\n\024NatTDelayTunerPacket\022\027\n\017internet" +
@@ -10321,18 +11318,10 @@ public final class RampPacketsProtos {
       "ed\030\003 \002(\010:\005falseB4\n\037it.unibo.deis.lia.ram" +
       "p.core.e2eB\021RampPacketsProtos"
     };
-    com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
-        new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
-          public com.google.protobuf.ExtensionRegistry assignDescriptors(
-              com.google.protobuf.Descriptors.FileDescriptor root) {
-            descriptor = root;
-            return null;
-          }
-        };
-    com.google.protobuf.Descriptors.FileDescriptor
+    descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
-        }, assigner);
+        });
     internal_static_HeartbeatRequest_descriptor =
       getDescriptor().getMessageTypes().get(0);
     internal_static_HeartbeatRequest_fieldAccessorTable = new

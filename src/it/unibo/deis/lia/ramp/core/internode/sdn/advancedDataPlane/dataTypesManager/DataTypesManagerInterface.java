@@ -21,5 +21,5 @@ public interface DataTypesManagerInterface {
 
     public Class getDataTypeClassObject(String dataTypeName);
 
-    public Class getDataTypeClassObjec(long dataTypeId);
+    public Class getDataTypeClassObject(long dataTypeId);
 }

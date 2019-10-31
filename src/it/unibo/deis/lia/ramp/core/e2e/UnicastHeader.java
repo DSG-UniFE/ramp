@@ -31,7 +31,7 @@ public class UnicastHeader extends GenericPacket {
     private byte retry;            // -1 => no delay tolerant					// 1 (bytes)
     private int timeWait;            // millis (only for delay tolerant packets)	// 4 (bytes)
     private int expiry;                // seconds (-1 => no opportunistic networking)				//Stefano Lanzone
-    private short connectTimeout;    // millis (only for TCP)					// 2 (bytes)
+    private int connectTimeout;    // millis (only for TCP)					// 2 (bytes)
     private int flowId;                // (-1: field not used) Alessandro Dolci
     private long dataType;          // (-1: filed not used) Dmitrij David Padalino Montenero
 
@@ -47,7 +47,7 @@ public class UnicastHeader extends GenericPacket {
             byte retry,
             int timewait,
             int expiry,
-            short connectTimeout,
+            int connectTimeout,
             int flowId,
             long dataType
     ) {
@@ -82,7 +82,7 @@ public class UnicastHeader extends GenericPacket {
             byte retry,
             int timeWait,
             int expiry,
-            short connectTimeout,
+            int connectTimeout,
             int flowId,
             long dataType
     ) {
@@ -232,11 +232,11 @@ public class UnicastHeader extends GenericPacket {
         this.expiry = expiry;
     }
 
-    public short getConnectTimeout() {
+    public int getConnectTimeout() {
         return connectTimeout;
     }
 
-    protected void setConnectTimeout(short connectTimeout) {
+    protected void setConnectTimeout(int connectTimeout) {
         this.connectTimeout = connectTimeout;
     }
 
@@ -315,7 +315,7 @@ public class UnicastHeader extends GenericPacket {
     	out.writeInt(bufferSize);
     	out.writeByte(retry);
     	out.writeInt(timeWait);
-    	out.writeShort(connectTimeout);
+    	out.writeInt(connectTimeout);
     	out.flush();
     }
 	private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
@@ -338,7 +338,7 @@ public class UnicastHeader extends GenericPacket {
     	this.bufferSize = in.readInt();
     	this.retry = in.readByte();
     	this.timeWait = in.readInt();
-    	this.connectTimeout = in.readShort();
+    	this.connectTimeout = in.readInt();
 	}*/
     
     /*
@@ -364,7 +364,7 @@ public class UnicastHeader extends GenericPacket {
     	this.bufferSize = in.readInt();
     	this.retry = in.readByte();
     	this.timeWait = in.readInt();
-    	this.connectTimeout = in.readShort();
+    	this.connectTimeout = in.readInt();
 	}
 
 	@Override
@@ -386,7 +386,7 @@ public class UnicastHeader extends GenericPacket {
     	out.writeInt(bufferSize);
     	out.writeByte(retry);
     	out.writeInt(timeWait);
-    	out.writeShort(connectTimeout);
+    	out.writeInt(connectTimeout);
 	}
 	*/
 
@@ -461,7 +461,7 @@ public class UnicastHeader extends GenericPacket {
         uh.retry = (byte) uhProtobuf.getRetry();
         uh.timeWait = uhProtobuf.getTimeWait();
         uh.expiry = uhProtobuf.getExpiry(); //Stefano Lanzone
-        uh.connectTimeout = (short) uhProtobuf.getConnectTimeout();
+        uh.connectTimeout = uhProtobuf.getConnectTimeout();
         uh.flowId = uhProtobuf.getFlowId(); // Alessandro Dolci
         uh.dataType = uhProtobuf.getDataType(); // Dmitrij David Padalino Montenero
 

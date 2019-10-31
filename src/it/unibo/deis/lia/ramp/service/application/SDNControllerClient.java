@@ -24,6 +24,8 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -40,11 +42,12 @@ public class SDNControllerClient {
     private BoundReceiveSocket receiveSocketUDP;
     private DatagramSocket datagramSocketUDP;
     private ServerSocket serverSocketTCP;
-    private BlockingQueue<GenericPacket> rampMessageQueue;
+    private BlockingQueue<TestReceiverPacket> rampMessageQueue;
     private BlockingQueue<DatagramPacket> osRoutingMessageQueueUDP;
-    private BlockingQueue<Socket> osRoutingMessageQueueTCP;
+    private BlockingQueue<TestReceiverPacketOsRouting> osRoutingMessageQueueTCP;
     private Vector<String> receivedMessages;
     private int seqNumber = 0;
+    private int testRepetition = 0;
     private Vector<ServiceResponse> availableServices;
 
     private boolean active = true;
@@ -87,7 +90,7 @@ public class SDNControllerClient {
         ServiceManager.getInstance(false).registerService("SDNControllerClientReceiverUDP", receiveSocketUDP.getLocalPort(), UDP);
 
         try {
-            this.serverSocketTCP = new ServerSocket(0);
+            this.serverSocketTCP = new ServerSocket(0, 100);
             this.serverSocketTCP.setReuseAddress(true);
         } catch (IOException e) {
             e.printStackTrace();
@@ -147,7 +150,7 @@ public class SDNControllerClient {
     }
 
     public Vector<ServiceResponse> findControllerClientReceiver(int protocol, int ttl, int timeout, int serviceAmount, boolean osRoutingMode) throws Exception {
-        String serviceName;
+        String serviceName = "";
         if (!osRoutingMode) {
             if (protocol == UDP) {
                 serviceName = "SDNControllerClientReceiverUDP";
@@ -227,6 +230,11 @@ public class SDNControllerClient {
         return seqNumber;
     }
 
+    private int getNextTestRepetition() {
+        testRepetition++;
+        return testRepetition;
+    }
+
     private void resetSeqNumber() {
         seqNumber = 0;
     }
@@ -304,7 +312,7 @@ public class SDNControllerClient {
                     cls = dataTypesManager.getDataTypeClassObject(this.dataType);
                     packet = cls.getDeclaredConstructor().newInstance();
                     method = cls.getMethod("setPayloadSize", paramInt);
-                    method.invoke(packet, this.payload-141);
+                    method.invoke(packet, this.payload - 141);
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 } catch (InstantiationException e) {
@@ -317,6 +325,9 @@ public class SDNControllerClient {
                 dataType = dataTypesManager.getDataTypeId(this.dataType);
             } else {
                 packet = new SDNControllerMessage();
+                /*
+                 * The number 138 is the size in byte of the object without payload field set.
+                 */
                 ((SDNControllerMessage) packet).setPayloadSize(this.payload);
             }
 
@@ -369,16 +380,26 @@ public class SDNControllerClient {
                     }
                 }
             } else if (repetitions == -1 && packetsPerSecond > 0) {
-                long sleepTime = (long) Math.ceil(1000 / packetsPerSecond);
+                long computedSleepTime = (long) Math.ceil(1000 / packetsPerSecond);
 
                 trafficGeneratorActive = true;
 
-                while (trafficGeneratorActive) {
+                int packetsSent = 0;
+
+                long preWhile = System.currentTimeMillis();
+
+                int packetTimeoutConnect = 60000 * 4;
+
+                int testRepetition = getNextTestRepetition();
+
+                while (trafficGeneratorActive && packetsSent < (packetsPerSecond * 15)) {
                     int seqNumber = getNextSeqNumber();
                     if (!this.dataType.equals("Default Message")) {
                         try {
                             method = cls.getMethod("setSeqNumber", paramInt);
                             method.invoke(packet, seqNumber);
+                            method = cls.getMethod("setTestRepetition", paramInt);
+                            method.invoke(packet, testRepetition);
                         } catch (NoSuchMethodException e) {
                             e.printStackTrace();
                         } catch (IllegalAccessException e) {
@@ -388,11 +409,13 @@ public class SDNControllerClient {
                         }
                     } else {
                         ((SDNControllerMessage) packet).setSeqNumber(seqNumber);
+                        ((SDNControllerMessage) packet).setTestRepetition(testRepetition);
                     }
 
                     System.out.println("SDNControllerClient.UnicastPacketSender: sending packet \""
                             + seqNumber + "\" of type: " + this.dataType + " to the receiver (nodeId: " + serviceResponse.getServerNodeId() + "), flowId: " + flowId + ", Protocol: " + protocol);
                     try {
+                        // TODO Change me according to new protobuffer installation
                         E2EComm.sendUnicast(
                                 serviceResponse.getServerDest(),
                                 serviceResponse.getServerNodeId(),
@@ -403,7 +426,7 @@ public class SDNControllerClient {
                                 E2EComm.DEFAULT_BUFFERSIZE,
                                 GenericPacket.UNUSED_FIELD,
                                 GenericPacket.UNUSED_FIELD,
-                                GenericPacket.UNUSED_FIELD,
+                                packetTimeoutConnect,
                                 flowId,
                                 dataType,
                                 E2EComm.serialize(packet)
@@ -412,14 +435,17 @@ public class SDNControllerClient {
                         e.printStackTrace();
                     }
 
-                    try {
-                        Thread.sleep(sleepTime);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                    packetsSent++;
+                    long sleepTime = (computedSleepTime * seqNumber) - (System.currentTimeMillis() - preWhile);
+                    if (sleepTime > 0) {
+                        try {
+                            Thread.sleep(sleepTime);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
-
 
             System.out.println("SDNControllerClient.UnicastPacketSender: unicast message/s sent to the receiver");
         }
@@ -530,6 +556,10 @@ public class SDNControllerClient {
                     SDNControllerMessage packet = new SDNControllerMessage();
                     int seqNumber = getNextSeqNumber();
                     packet.setSeqNumber(seqNumber);
+                    /*
+                     * The number 138 is the size in byte of the object without payload field set.
+                     */
+                    packet.setPayloadSize(this.payload - 138);
                     System.out.println("SDNControllerClient.DatagramSocketPacketSender: sending Packet \""
                             + packet.getSeqNumber() + "\" to the receiver (nodeId: " + serviceResponse.getServerNodeId() + "), IP: " + destinationIP + ", Protocol: UDP");
 
@@ -563,7 +593,10 @@ public class SDNControllerClient {
                     int seqNumber = getNextSeqNumber();
                     SDNControllerMessage packet = new SDNControllerMessage();
                     packet.setSeqNumber(seqNumber);
-
+                    /*
+                     * The number 138 is the size in byte of the object without payload field set.
+                     */
+                    packet.setPayloadSize(this.payload - 138);
                     System.out.println("SDNControllerClient.DatagramSocketPacketSender: sending Packet \""
                             + packet.getSeqNumber() + "\" to the receiver (nodeId: " + serviceResponse.getServerNodeId() + "), IP: " + destinationIP + ", Protocol: UDP");
 
@@ -658,7 +691,10 @@ public class SDNControllerClient {
                     SDNControllerMessage packet = new SDNControllerMessage();
                     int seqNumber = getNextSeqNumber();
                     packet.setSeqNumber(seqNumber);
-                    packet.setPayloadSize(this.payload);
+                    /*
+                     * The number 138 is the size in byte of the object without payload field set.
+                     */
+                    packet.setPayloadSize(this.payload - 138);
                     System.out.println("SDNControllerClient.ServerSocketPacketSender: sending Packet \""
                             + packet.getSeqNumber() + "\" to the receiver (nodeId: " + serviceResponse.getServerNodeId() + "), IP: " + destinationIP + ", Protocol: TCP");
                     if (objectOutputStream != null) {
@@ -676,35 +712,44 @@ public class SDNControllerClient {
                     }
                 }
             } else if (repetitions == -1 && packetsPerSecond >= 0) {
-                long sleepTime = (long) Math.ceil(1000 / packetsPerSecond);
+                long computedSleepTime = (long) Math.ceil(1000 / packetsPerSecond);
 
                 trafficGeneratorActive = true;
 
-                while (trafficGeneratorActive) {
-                    try {
-                        this.socket = new Socket(InetAddress.getByName(destinationIP), port, sourceIpAddress, 0);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        outputStream = this.socket.getOutputStream();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                int packetsSent = 0;
+                long preWhile = System.currentTimeMillis();
+                int testRepetition = getNextTestRepetition();
 
-                    try {
-                        objectOutputStream = new ObjectOutputStream(outputStream);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                try {
+                    this.socket = new Socket(InetAddress.getByName(destinationIP), port, sourceIpAddress, 0);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    outputStream = this.socket.getOutputStream();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
+                try {
+                    objectOutputStream = new ObjectOutputStream(outputStream);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                while (trafficGeneratorActive && packetsSent < (packetsPerSecond * 15)) {
                     SDNControllerMessage packet = new SDNControllerMessage();
+                    packet.setTestRepetition(testRepetition);
+                    /*
+                     * The number 138 is the size in byte of the object without payload field set.
+                     */
+                    packet.setPayloadSize(this.payload - 138);
                     int seqNumber = getNextSeqNumber();
                     packet.setSeqNumber(seqNumber);
 
-                    packet.setPayloadSize(this.payload);
                     System.out.println("SDNControllerClient.ServerSocketPacketSender: sending Packet \""
                             + packet.getSeqNumber() + "\" to the receiver (nodeId: " + serviceResponse.getServerNodeId() + "), IP: " + destinationIP + ", Protocol: TCP");
+
                     if (objectOutputStream != null) {
                         try {
                             objectOutputStream.writeObject(packet);
@@ -713,17 +758,24 @@ public class SDNControllerClient {
                         }
                     }
 
-                    try {
-                        socket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    long sleepTime = (computedSleepTime * seqNumber) - (System.currentTimeMillis() - preWhile);
+                    if (sleepTime > 0) {
+                        try {
+                            Thread.sleep(sleepTime);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
+                }
 
-                    try {
-                        Thread.sleep(sleepTime);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                try {
+                    assert objectOutputStream != null;
+                    objectOutputStream.close();
+                    assert outputStream != null;
+                    outputStream.close();
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
 
@@ -751,9 +803,9 @@ public class SDNControllerClient {
                     /*
                      * Receive
                      */
-                    gp = E2EComm.receive(socket, 5 * 1000);
-                    System.out.println("SDNControllerClient" + protocol + ": new message arrived");
-                    rampMessageQueue.put(gp);
+                    gp = E2EComm.receive(socket, 30 * 1000);
+                    //System.out.println("SDNControllerClient" + protocol + ": new message arrived");
+                    rampMessageQueue.put(new TestReceiverPacket(LocalDateTime.now(), gp));
                 } catch (SocketTimeoutException ste) {
                     //
                 } catch (IOException e) {
@@ -772,9 +824,9 @@ public class SDNControllerClient {
 
     public class BoundReceiveSocketMessageHandler extends Thread {
 
-        private final BlockingQueue<GenericPacket> messageQueue;
+        private final BlockingQueue<TestReceiverPacket> messageQueue;
 
-        public BoundReceiveSocketMessageHandler(BlockingQueue<GenericPacket> messageQueue) {
+        public BoundReceiveSocketMessageHandler(BlockingQueue<TestReceiverPacket> messageQueue) {
             this.messageQueue = messageQueue;
         }
 
@@ -782,8 +834,11 @@ public class SDNControllerClient {
         public void run() {
             while (active) {
                 try {
-                    GenericPacket gp = this.messageQueue.take();
+                    TestReceiverPacket currentPacket = this.messageQueue.take();
+                    GenericPacket gp = currentPacket.getGenericPacket();
                     int packetSize = E2EComm.objectSizePacket(gp);
+                    LocalDateTime localDateTime = currentPacket.getReceivedTime();
+                    String timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
 
                     try {
                         /*
@@ -797,6 +852,11 @@ public class SDNControllerClient {
                             Object payload = E2EComm.deserialize(up.getBytePayload());
                             if (payload instanceof SDNControllerMessage) {
                                 int seqNumber = ((SDNControllerMessage) payload).getSeqNumber();
+                                int testRepetition = ((SDNControllerMessage) payload).getTestRepetition();
+
+                                /*
+                                 * The number 138 is the size in byte of the object without payload field set.
+                                 */
                                 int payloadSize = up.getBytePayload().length;
                                 String packetInfo = "BoundReceiveSocketMessageHandler: Default Message: " + seqNumber + ", packetSize: " + packetSize + ", payloadSize " + payloadSize + ", from " + up.getSourceNodeId();
                                 receivedMessages.addElement(packetInfo);
@@ -806,8 +866,9 @@ public class SDNControllerClient {
                                 Class cls = dataTypesManager.getDataTypeClassObject(dataType);
                                 Class noparams[] = {};
                                 Method method = cls.getMethod("getSeqNumber", noparams);
-
                                 int seqNumber = (int) method.invoke(payload, null);
+                                method = cls.getMethod("getTestRepetition", noparams);
+                                int testRepetition = (int) method.invoke(payload, null);
                                 int payloadSize = up.getBytePayload().length;
                                 String packetInfo = "BoundReceiveSocketMessageHandler: " + dataType + ": " + seqNumber + ", payloadSize " + payloadSize + ", from " + up.getSourceNodeId();
                                 receivedMessages.addElement(packetInfo);
@@ -854,10 +915,19 @@ public class SDNControllerClient {
                     /*
                      * Receive
                      */
-                    socket.setSoTimeout(5 * 1000);
+                    socket.setSoTimeout(10 * 60 * 1000);
                     Socket clientSocket = socket.accept();
-                    System.out.println("SDNControllerClient" + protocol + ": ServerSocket new message arrived");
-                    osRoutingMessageQueueTCP.put(clientSocket);
+                    InputStream inputStream = clientSocket.getInputStream();
+                    ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+                    Object payload = null;
+                    while ((payload = objectInputStream.readObject()) != null) {
+                        if (payload instanceof SDNControllerMessage) {
+                            osRoutingMessageQueueTCP.put(new TestReceiverPacketOsRouting(LocalDateTime.now(), (SDNControllerMessage) payload, clientSocket.getRemoteSocketAddress()));
+                        }
+                    }
+                    objectInputStream.close();
+                    inputStream.close();
+                    clientSocket.close();
                 } catch (SocketTimeoutException ste) {
                     //
                 } catch (IOException e) {
@@ -876,9 +946,9 @@ public class SDNControllerClient {
 
     public class ServiceSocketMessageHandler extends Thread {
 
-        private final BlockingQueue<Socket> messageQueue;
+        private final BlockingQueue<TestReceiverPacketOsRouting> messageQueue;
 
-        public ServiceSocketMessageHandler(BlockingQueue<Socket> messageQueue) {
+        public ServiceSocketMessageHandler(BlockingQueue<TestReceiverPacketOsRouting> messageQueue) {
             this.messageQueue = messageQueue;
         }
 
@@ -886,31 +956,19 @@ public class SDNControllerClient {
         public void run() {
             while (active) {
                 try {
-                    Socket s = this.messageQueue.take();
+                    TestReceiverPacketOsRouting currentPacket = this.messageQueue.take();
+                    SDNControllerMessage controllerMessage = currentPacket.getControllerMessage();
 
-                    try {
-                        InputStream inputStream = s.getInputStream();
+                    int seqNumber = controllerMessage.getSeqNumber();
+                    int testRepetition = controllerMessage.getTestRepetition();
 
-                        ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
-                        Object payload = objectInputStream.readObject();
-                        if (payload instanceof SDNControllerMessage) {
-                            int seqNumber = ((SDNControllerMessage) payload).getSeqNumber();
-                            int payloadSize = E2EComm.objectSize(payload);
-                            String packetInfo = "ServiceSocketMessageHandler Packet " + seqNumber + ", via " + ", payloadSize " + payloadSize + ", from " + s.getRemoteSocketAddress().toString();
-                            receivedMessages.addElement(packetInfo);
-                            System.out.println("SDNControllerClient.ServiceSocketMessageHandler message: " + packetInfo);
-                        } else {
-                            /*
-                             * Received payload is not SDNControllerMessage: do nothing...
-                             */
-                            System.out.println("SDNControllerClient.ServiceSocketMessageHandler wrong payload: " + payload);
-                        }
-                        s.close();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-
+                    /*
+                     * The number 138 is the size in byte of the object without payload field set.
+                     */
+                    int payloadSize = E2EComm.objectSize(controllerMessage);
+                    String packetInfo = "ServiceSocketMessageHandler Packet " + seqNumber + ", via " + ", payloadSize " + payloadSize + ", from " + currentPacket.getSocketAddress().toString();
+                    receivedMessages.addElement(packetInfo);
+                    System.out.println("SDNControllerClient.ServiceSocketMessageHandler message: " + packetInfo);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -976,6 +1034,10 @@ public class SDNControllerClient {
                     }
                     if (payload instanceof SDNControllerMessage) {
                         int seqNumber = ((SDNControllerMessage) payload).getSeqNumber();
+
+                        /*
+                         * The number 138 is the size in byte of the object without payload field set.
+                         */
                         int payloadSize = E2EComm.objectSize(payload);
                         String packetInfo = "DatagramSocketMessageHandler Packet " + seqNumber + ", via " + ", payloadSize " + payloadSize + ", from " + dp.getSocketAddress().toString();
                         receivedMessages.addElement(packetInfo);

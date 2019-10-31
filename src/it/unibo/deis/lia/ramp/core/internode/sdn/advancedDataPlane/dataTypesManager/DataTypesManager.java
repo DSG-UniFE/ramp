@@ -251,7 +251,7 @@ public class DataTypesManager implements DataTypesManagerInterface {
      * @param dataTypeId serialVersionUID of the DataType class
      * @return the Class object of the provided dataTypeId
      */
-    public Class getDataTypeClassObjec(long dataTypeId) {
+    public Class getDataTypeClassObject(long dataTypeId) {
         return getDataTypeClassObject(getDataTypeName(dataTypeId));
     }
 }

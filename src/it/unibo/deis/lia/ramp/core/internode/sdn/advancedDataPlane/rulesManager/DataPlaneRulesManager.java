@@ -156,6 +156,18 @@ public class DataPlaneRulesManager {
     }
 
     public void deactivate() {
+        /*
+         * Not used at the moment because in the case there is a ControllerClient in the same
+         * machine of the ControllerService, if the ControllerService stops this manager
+         * will become null for the ControllerClient.
+         */
+
+        /*
+         * TODO The best thing to do is before this manager
+         * TODO is deactivated the ControllerService should send a message
+         * TODO to all ControllerClients in order to remove all the rules
+         * TODO currently active.
+         */
         if (dataPlaneRulesManager != null) {
             Dispatcher.getInstance(false).removePacketForwardingListener(forwardingListener);
             forwardingListener = null;
@@ -311,7 +323,6 @@ public class DataPlaneRulesManager {
             System.out.println("DataPlaneRulesManager: unicastPacketDataPlaneRule: " + dataPlaneRuleName + " for DataType: " + dataTypeName + " successfully applied.");
         }
     }
-
 
     public void executeBroadcastPacketDataPlaneRule(long dataTypeId, BroadcastPacket bp) {
         String dataTypeName = dataTypesManager.getDataTypeName(dataTypeId);

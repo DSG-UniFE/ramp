@@ -384,7 +384,7 @@ public class E2EComm {
         );
         return res;
     }
-    public static boolean sendUnicastDestNodeId(int destNodeId, int destPort, int protocol, boolean ack, int timeoutAck, int bufferSize, int packetDeliveryTimeout, short packetTimeoutConnect, byte[] payload) throws Exception{
+    public static boolean sendUnicastDestNodeId(int destNodeId, int destPort, int protocol, boolean ack, int timeoutAck, int bufferSize, int packetDeliveryTimeout, int packetTimeoutConnect, byte[] payload) throws Exception{
         // destNodeId!!! static sender-side version
         boolean res;
         Vector<ResolverPath> paths = Resolver.getInstance(false).resolveBlocking(destNodeId);
@@ -447,7 +447,7 @@ public class E2EComm {
             int bufferSize,
             int timeWait,
             int expiry,                     // if != -1 OPPORTUNISTIC NETWORKING
-            short packetTimeoutConnect,    // inter-node socket connect timeout (only TCP)
+            int packetTimeoutConnect,    // inter-node socket connect timeout (only TCP)
             byte[] payload
     ) throws Exception {
 
@@ -490,7 +490,7 @@ public class E2EComm {
             boolean ack, int timeoutAck,
             int bufferSize,
             int packetDeliveryTimeout,        // delay-tolerant messaging
-            short packetTimeoutConnect,    // inter-node socket connect timeout (only TCP)
+            int packetTimeoutConnect,    // inter-node socket connect timeout (only TCP)
             byte[] payload
     ) throws Exception {
 
@@ -522,7 +522,7 @@ public class E2EComm {
             int bufferSize,
             int timeWait,
             int expiry,                     // if != -1 OPPORTUNISTIC NETWORKING
-            short packetTimeoutConnect,    // inter-node socket connect timeout (only TCP)
+            int packetTimeoutConnect,    // inter-node socket connect timeout (only TCP)
             int flowId,
             byte[] payload
     ) throws Exception {
@@ -551,7 +551,7 @@ public class E2EComm {
             int bufferSize,
             int timeWait,
             int expiry,                     // if != -1 OPPORTUNISTIC NETWORKING
-            short packetTimeoutConnect,    // inter-node socket connect timeout (only TCP)
+            int packetTimeoutConnect,    // inter-node socket connect timeout (only TCP)
             int flowId,
             long dataType,
             byte[] payload
@@ -570,7 +570,7 @@ public class E2EComm {
     }
 
     private static boolean executeSendUnicast(String[] dest, int destNodeId, int destPort, int protocol, boolean ack, int timeoutAck, int bufferSize, int packetDeliveryTimeout,
-                                              short packetTimeoutConnect, byte[] payload, int retry, int timeWait, int expiry, int flowId, long dataType, UnicastPacket gp) throws Exception, SocketException, UnknownHostException, IOException {
+                                              int packetTimeoutConnect, byte[] payload, int retry, int timeWait, int expiry, int flowId, long dataType, UnicastPacket gp) throws Exception, SocketException, UnknownHostException, IOException {
 
         boolean res = true;
         UnicastPacket up;
@@ -842,7 +842,7 @@ public class E2EComm {
         return res;
     }
     public static boolean sendUnicastDestNodeId(int destNodeId, int destPort, int protocol, boolean ack, int timeoutAck, int bufferSize, //int packetDeliveryTimeout,
-     short packetTimeoutConnect, InputStream payload) throws Exception{
+     int packetTimeoutConnect, InputStream payload) throws Exception{
         // destNodeId!!! static sender-side version
         boolean res;
         Vector<ResolverPath> paths = Resolver.getInstance(false).resolveBlocking(destNodeId);
@@ -952,7 +952,7 @@ public class E2EComm {
             int bufferSize,
             int timeWait,
             int expiry,                     // if != -1 OPPORTUNISTIC NETWORKING
-            short packetTimeoutConnect,        // inter-node socket connect timeout (only for TCP)
+            int packetTimeoutConnect,        // inter-node socket connect timeout (only for TCP)
             InputStream payload
     ) throws Exception {
         int flowId = GenericPacket.UNUSED_FIELD;
@@ -984,7 +984,7 @@ public class E2EComm {
             int bufferSize,
             int timeWait,
             int expiry,                     // if != -1 OPPORTUNISTIC NETWORKING
-            short packetTimeoutConnect,        // inter-node socket connect timeout (only for TCP)
+            int packetTimeoutConnect,        // inter-node socket connect timeout (only for TCP)
             int flowId,
             InputStream payload
     ) throws Exception {
@@ -1016,7 +1016,7 @@ public class E2EComm {
             int bufferSize,
             int timeWait,
             int expiry,                     // if != -1 OPPORTUNISTIC NETWORKING
-            short packetTimeoutConnect,        // inter-node socket connect timeout (only for TCP)
+            int packetTimeoutConnect,        // inter-node socket connect timeout (only for TCP)
             int flowId, // Alessandro Dolci
             long dataType, // Dmitrij David Padalino Montenero
             InputStream payload
