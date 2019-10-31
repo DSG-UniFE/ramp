@@ -131,7 +131,7 @@ public class RampEntryPoint {
 
     // RAMP properties
     private static boolean logging;
-    public static final String releaseDate = "1 X 2017";
+    public static final String releaseDate = "1 X 2019";
     public static final String os = System.getProperty("os.name").toLowerCase();
     public static final boolean protobuf = true;
     private static final RampClassLoader rampClassLoader = new RampClassLoader(new URL[0], ClassLoader.getSystemClassLoader());
