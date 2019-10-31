@@ -1,6 +1,6 @@
 # Real Ad-hoc Multi-hop Peer-to-peer (RAMP) Getting Started
 
-# Run instructions
+## Run instructions
 
 * Download the latest RampStandAloneClient_YYYY-MM-DD.zip contained in this folder.
 * Extract the zip file in your desired location
@@ -18,7 +18,7 @@ The RAMP main window will appear meaning that the middleware is up and running.
   <img src="https://github.com/DSG-UniFE/ramp/blob/master/deployment/images/RAMP_GUI.jpg?raw=true" alt="RAMP Main Window"/>
 </p>
 
-# RAMP Multi-LANE Setup Guide
+## RAMP Multi-LANE Setup Guide
 
 Multi-Layer Advanced Networking Environment (Multi-LANE) middleware, originally adopts a Multi Layer Routing (MLR) approach in conjunction with SDN to fully enhance the capabilities of heterogeneous Fog environments.
 
@@ -33,7 +33,7 @@ Let's assume that you have a topology like the one showed in the above picture. 
 * The node 2 will act as SDN Client
 * The node 3 will act as SDN Client
 
-# Configure the RAMP ID on each node
+### Configure the RAMP ID on each node
 
 Once downloaded the the latest RampStandAloneClient_YYYY-MM-DD.zip contained in this folder on each node, before running the RAMP Middleware is important to set the right RAMP ID. To do so:
 * Extract the zip file in your desired location
@@ -41,7 +41,7 @@ Once downloaded the the latest RampStandAloneClient_YYYY-MM-DD.zip contained in 
 
 The above steps must be done for each node so for node 1 the `nodeID` value should be set to 1, for node 2 the value should be 2 and so on.
 
-# Run the SDN Controller
+### Run the SDN Controller
 
 Launch RAMP on node 1
 
@@ -64,7 +64,7 @@ The picture above shows the SDNControllerService GUI, through it you can control
 * In the `Topology Graph` section you can get a visual representation of the topology.
 * The other sections are related to highest level routing features that RAMP Multi-LANE offers.
 
-# Run the SDN Client
+### Run the SDN Client
 
 For node 1 since RAMP is already running from the RAMP main window you only need to launch the SDN Client by selecting `SDNControllerClient` and press the button `start selected client` in the Applications section. 
 
@@ -82,7 +82,7 @@ The picture above shows the SDNControllerClient GUI, through it you can monitor 
 * In the `Traffic Engineering Policy` section you can see the active policy in case of messages having different priorities.
 * In the `Routing Policy` section you can see the active routing policy set by the SDN Controller.
 
-# Example of communication based on Flow
+### Example of communication based on Flow
 Assume that we want to send a message from node 1 to node 3 based on flow.
 
 In the SDNControllerClient GUI on node 1:
@@ -94,7 +94,7 @@ In the SDNControllerClient GUI on node 1:
 In the SDNControllerClient GUI on node 3:
 * To view the received message click on the `Update Log` button in the right-bottom.
 
-# Example of communication based on OS Level Routing
+### Example of communication based on OS Level Routing
 Assume that we want to send a message from node 1 to node 3 based on OS Level Routing.
 
 In the SDNControllerClient GUI on node 1:
@@ -107,7 +107,7 @@ In the SDNControllerClient GUI on node 1:
 In the SDNControllerClient GUI on node 3:
 * To view the received message click on the `Update Log` button in the right-bottom.
 
-# Graceful RAMP shut-down
+### Graceful RAMP shut-down
 In order to avoid any kind of inconsistencies, it is recommended to follow these steps to shutdown RAMP.
 * Close the SDNControllerClient and close the RAMP main window on node 3.
 * Close the SDNControllerClient and close the RAMP main window on node 2.
