@@ -68,7 +68,7 @@ The picture above shows the SDNControllerService GUI, through it you can control
 
 For node 1 since RAMP is already running from the RAMP main window you only need to launch the SDN Client by selecting `SDNControllerClient` and press the button `start selected client` in the Applications section. 
 
-It will ask you the root password used to make working the OS Routing Mode that will work on the local ip tables. The source code of this feature is contained in the OSRoutingManager.java.
+It will ask you the root password used to make the OS Routing Mode working that will create a manage several local ip tables. The source code of this feature is contained in the OSRoutingManager.java.
 
 For node 2 and node 3 you need first run RAMP on each node and after that launch only the SDNControllerClient application.
 
