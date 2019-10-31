@@ -1,4 +1,5 @@
-# Real Ad-hoc Multi-hop Peer-to-peer (RAMP) Project
+![Alt text](./images/ramp_logo.png?raw=true "RAMP Logo") 
+# Real Ad-hoc Multi-hop Peer-to-peer (RAMP) Project 
 
 RAMP supports transparent management of multi-hop heterogeneous spontaneous networks performing middleware-layer routing (without the need of operating system routing support).
 
