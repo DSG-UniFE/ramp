@@ -21,5 +21,9 @@ To leverage the adoption of heterogeneous spontaneous networking:
 * RAMP easily enables the registration/discovery/invocation of services dynamically and temporarily offered by spontaneous network peers;
 * to facilitate use and leverage adoption, RAMP facilities for communication/service management are transparent (independent) with regard to low-level implementation details about i) how the spontaneous network has been created (single-hop instantiation and control), ii) which specific wireless technologies are employed (e.g., Bluetooth, WiFi in ad-hoc mode, and WiFi in infrastructured mode), and iii) which operating system runs at each participating node.
 
-### Android Client
+## Ramp Getting Started
+A quick starting guide on how to use RAMP middleware in your environment is available [here](https://github.com/DSG-UniFE/ramp/tree/master/deployment).
+This tutorial contains also an example of usage of the last RAMP extension called RAMP Multi-LANE.
+
+## Android Client
 RAMP users can access the services offered by client App, which is available [here](https://github.com/DSG-UniFE/ramp-android).
