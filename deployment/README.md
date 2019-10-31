@@ -2,7 +2,7 @@
 
 ## Run instructions
 
-* Download the latest RampStandAloneClient_YYYY-MM-DD.zip contained in this folder.
+* Download the latest RampStandAloneClient_YYYY-MM-DD.zip contained in `ramp/deployment` folder.
 * Extract the zip file in your desired location
 * Open a terminal in the extracted folder RampStandAloneClient_YYYY-MM-DD
 
@@ -35,7 +35,7 @@ Let's assume that you have a topology like the one showed in the above picture. 
 
 ### Configure the RAMP ID on each node
 
-Once downloaded the the latest RampStandAloneClient_YYYY-MM-DD.zip contained in this folder on each node, before running the RAMP Middleware is important to set the right RAMP ID. To do so:
+Once downloaded the the latest RampStandAloneClient_YYYY-MM-DD.zip contained in `ramp/deployment` folder on each node, before running the RAMP Middleware is important to set the right RAMP ID. To do so:
 * Extract the zip file in your desired location
 * Open the extracted folder and open with a text editor the file `resource/ramp.props` and set the right ID in the `nodeID` field
 
