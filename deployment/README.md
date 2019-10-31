@@ -76,7 +76,7 @@ For node 2 and node 3 you need first run RAMP on each node and after that launch
   <img src="https://github.com/DSG-UniFE/ramp/blob/master/deployment/images/RAMP_SDNControllerClient.jpg?raw=true" alt="RAMP SDN Client"/>
 </p>
 
-Now that all three nodes are running the SDN RAMP applications, in order to verify that the SDN Controller service is managing the three SDN Clients click on the `Get Active Clients` button in the SDNControllerService GUI on node 1. Also by clicking the button `Get Topology Graph` button you can monitor the real-time visual representation of the topology.
+Now that all three nodes are running the SDN RAMP applications, in order to verify that the SDN Controller service is managing the three SDN Clients click on the `Get Active Clients` button in the SDNControllerService GUI on node 1. Also by clicking the `Get Topology Graph` button you can monitor the real-time visual representation of the topology.
 
 The picture above shows the SDNControllerClient GUI, through it you can monitor the policies currently active in the topology and communicate with the other SDN Clients. In particular:
 * In the `Traffic Engineering Policy` section you can see the active policy in case of messages having different priorities.
