@@ -98,7 +98,7 @@ In the SDNControllerClient GUI on node 3:
 Assume that we want to send a message from node 1 to node 3 based on OS Level Routing.
 
 In the SDNControllerClient GUI on node 1:
-* Switch the view by selecting the `OsRouting Mode`.
+* Switch the view by selecting the `OsRouting Mode` checkbox in the top-left.
 * Select the protocol you want to use (TCP or UDP) and press the `Find Nodes` button in the Available SDN Controller Client Receivers section. You will see all the available clients.
 * The `Destination Node ID` drop-down list will be automatically filled in the Route ID section, select 3 and press the button `Get Route ID`.
 * In the Send Packet section in the right-side select 3 as `Destination ID`, select the RouteID available in the `RouteID` drop-down list.
