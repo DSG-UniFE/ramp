@@ -20,6 +20,10 @@ The RAMP main window will appear meaning that the middleware is up and running.
 
 ## RAMP Multi-LANE Setup Guide
 
+<p align="left">
+  <img width="100" src="https://github.com/DSG-UniFE/ramp/blob/master/deployment/images/RAMP_Multi-LANE.png?raw=true" alt="RAMP Multi-LANE Logo"/>
+</p>
+
 Multi-Layer Advanced Networking Environment (Multi-LANE) middleware, originally adopts a Multi Layer Routing (MLR) approach in conjunction with SDN to fully enhance the capabilities of heterogeneous Fog environments.
 
 In this quick tutorial is shown how to use RAMP Multi-LANE in a topology of three nodes.
