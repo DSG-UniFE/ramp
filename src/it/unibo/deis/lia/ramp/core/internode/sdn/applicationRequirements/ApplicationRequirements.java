@@ -10,7 +10,7 @@ public class ApplicationRequirements implements Serializable {
     private static final long serialVersionUID = -8841892649004388194L;
     public static final int UNUSED_FIELD = -1;
 
-    private ApplicationType applicationType;
+    private TrafficType trafficType;
     /**
      *  Kb/s, used for streams
      */
@@ -27,21 +27,21 @@ public class ApplicationRequirements implements Serializable {
      */
     private int duration;
 
-    public ApplicationRequirements(ApplicationType applicationType, int bitrate,
+    public ApplicationRequirements(TrafficType trafficType, int bitrate,
                                    int trafficAmount, int secondsToStart, int duration) {
-        this.applicationType = applicationType;
+        this.trafficType = trafficType;
         this.bitrate = bitrate;
         this.trafficAmount = trafficAmount;
         this.secondsToStart = secondsToStart;
         this.duration = duration;
     }
 
-    public ApplicationType getApplicationType() {
-        return applicationType;
+    public TrafficType getTrafficType() {
+        return trafficType;
     }
 
-    public void setApplicationType(ApplicationType applicationType) {
-        this.applicationType = applicationType;
+    public void setTrafficType(TrafficType trafficType) {
+        this.trafficType = trafficType;
     }
 
     public int getBitrate() {
@@ -78,7 +78,7 @@ public class ApplicationRequirements implements Serializable {
 
     public String toString() {
         String result = "";
-        result += "Application Type: " + applicationType.toString() + "\n";
+        result += "Application Type: " + trafficType.toString() + "\n";
         result += "Bitrate: " + bitrate + "Kb/s\n";
         result += "Traffic Amount: " + trafficAmount + "Kb\n";
         result += "Seconds to Start: " + secondsToStart + "s\n";

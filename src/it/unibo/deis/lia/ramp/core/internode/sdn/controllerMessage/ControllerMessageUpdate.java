@@ -47,7 +47,6 @@ public class ControllerMessageUpdate extends ControllerMessage {
 
     private int routeId;
 
-    // TODO Change OS_ROUTING_ADD_ROUTE and OS_ROUTING_DELETE_ROUTE
     /**
      * TOPOLOGY_UPDATE message: messageType, neighborNodes, nodeStats
      * TRAFFIC_ENGINEERING_POLICY_UPDATE message: messageType, trafficEngineeringPolicy

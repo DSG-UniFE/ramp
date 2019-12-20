@@ -40,7 +40,7 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.dataPlaneForwarder.trafficEngin
 import it.unibo.deis.lia.ramp.core.internode.sdn.dataPlaneForwarder.routingForwarders.BestPathForwarder;
 import it.unibo.deis.lia.ramp.core.internode.sdn.dataPlaneForwarder.routingForwarders.MulticastingForwarder;
 import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.ApplicationRequirements;
-import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.ApplicationType;
+import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.TrafficType;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.PathSelectionMetric;
 
 import it.unibo.deis.lia.ramp.core.internode.*;
@@ -56,9 +56,14 @@ import org.graphstream.graph.Graph;
 public class ControllerClient extends Thread implements ControllerClientInterface {
 
     /**
+     * Control flow ID value, to be used for control communications between ControllerService and ControllerClients.
+     */
+    private static final int CONTROL_FLOW_ID = 0;
+
+    /**
      * Default flow ID value, to be used by default type applications.
      */
-    private static final int DEFAULT_FLOW_ID = 0;
+    private static final int DEFAULT_FLOW_ID = 1;
 
     /**
      * Paths time-to-live value.
@@ -343,11 +348,11 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
 
     public int getFlowId(ApplicationRequirements applicationRequirements, int[] destNodeIds, int[] destPorts, PathSelectionMetric pathSelectionMetric) {
         int flowId;
-        if (applicationRequirements.getApplicationType() == ApplicationType.DEFAULT)
+        if (applicationRequirements.getTrafficType() == TrafficType.DEFAULT)
             flowId = DEFAULT_FLOW_ID;
         else {
             flowId = ThreadLocalRandom.current().nextInt();
-            while (flowId == GenericPacket.UNUSED_FIELD || flowId == DEFAULT_FLOW_ID || this.flowStartTimes.containsKey(flowId))
+            while (flowId == GenericPacket.UNUSED_FIELD || flowId == CONTROL_FLOW_ID || flowId == DEFAULT_FLOW_ID || this.flowStartTimes.containsKey(flowId))
                 flowId = ThreadLocalRandom.current().nextInt();
             if (this.routingPolicy == RoutingPolicy.REROUTING) {
                 sendNewPathRequest(destNodeIds, applicationRequirements, pathSelectionMetric, flowId);
@@ -439,7 +444,10 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             else {
                 if (flowId != DEFAULT_FLOW_ID) {
                     System.out.println("ControllerClient: entry found for flow " + flowId + ", but its validity has expired, sending request to the controller");
-                    // The path request is not the first one for this application, so applicationRequirements is null
+                    /*
+                     * The path request is not the first one for this application,
+                     * so applicationRequirements is null
+                     */
                     flowPath = sendNewPathRequest(new int[]{destNodeId}, null, null, flowId);
                 } else
                     System.out.println("ControllerClient: entry found for default flow, but its validity has expired, returning null");
@@ -519,7 +527,8 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                  * side (it can be chosen as the path to be used), as well as destNodeId.
                  */
                 ControllerMessageRequest requestMessage = new ControllerMessageRequest(MessageType.PATH_REQUEST, responseSocket.getLocalPort(), destNodeIds, null, applicationRequirements, pathSelectionMetric, flowId);
-                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(requestMessage));
+
+                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(requestMessage));
 
                 System.out.println("ControllerClient: request for a new path for flow " + flowId + " sent to the controller");
             } catch (Exception e) {
@@ -579,6 +588,86 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             return null;
     }
 
+    @Override
+    public PathDescriptor sendFixPathRequest(int sourceNodeId, int destNodeId, int flowId) {
+        PathDescriptor newPath = null;
+        BoundReceiveSocket responseSocket = null;
+
+        /*
+         * Controller service has to be found before sending any message
+         */
+        ServiceResponse serviceResponse = this.controllerServiceDiscoverer.getControllerService();
+        if (serviceResponse == null) {
+            System.out.println("ControllerClient: controller service not found, cannot bind client socket");
+        } else {
+            try {
+                /*
+                 * Use the protocol specified by the controller
+                 */
+                responseSocket = E2EComm.bindPreReceive(serviceResponse.getProtocol());
+                /*
+                 * Send a path request to the controller for a certain flowId,
+                 * currentDest is also necessary for the search on the controller
+                 * side (it can be chosen as the path to be used), as well as destNodeId.
+                 */
+                ControllerMessageRequest requestMessage = new ControllerMessageRequest(MessageType.FIX_PATH_REQUEST, responseSocket.getLocalPort(), new int[]{destNodeId}, null, null, null, flowId);
+                requestMessage.setSourceNodeId(sourceNodeId);
+
+                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(requestMessage));
+
+                System.out.println("ControllerClient: request for fixing an existing path for flow " + flowId + " sent to the controller");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        /*
+         * In alternativa, ricezione della risposta nel metodo run(),
+         * senza attesa, ma senza poter inviare subito il nuovo percorso.
+         */
+        GenericPacket gp = null;
+        try {
+            gp = E2EComm.receive(responseSocket);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (gp instanceof UnicastPacket) {
+            UnicastPacket up = (UnicastPacket) gp;
+            Object payload = null;
+            try {
+                payload = E2EComm.deserialize(up.getBytePayload());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            if (payload instanceof ControllerMessage) {
+                ControllerMessage controllerMessage = (ControllerMessage) payload;
+                ControllerMessageResponse responseMessage = null;
+
+                switch (controllerMessage.getMessageType()) {
+                    case FIX_PATH_RESPONSE:
+                        responseMessage = (ControllerMessageResponse) controllerMessage;
+                        /*
+                         * Set the received path creation time and add it to the known flow paths.
+                         */
+                        newPath = responseMessage.getNewPaths().get(0);
+                        if (newPath != null) {
+                            System.out.println("ControllerClient: response with a fixed path for flow " + flowId + " received from the controller");
+                        } else
+                            System.out.println("ControllerClient: null fixed path received from the controller for flow " + flowId);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        if (newPath != null)
+            return newPath;
+        else
+            return null;
+    }
+
     public int getFlowPriority(int flowId) {
         Integer flowPriority = this.flowPriorities.get(flowId);
         if (flowPriority != null)
@@ -606,7 +695,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                  * Send a priority value request to the controller for a certain flowId
                  */
                 ControllerMessageRequest requestMessage = new ControllerMessageRequest(MessageType.PRIORITY_VALUE_REQUEST, responseSocket.getLocalPort(), new int[0], new int[0], applicationRequirements, null, flowId);
-                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(requestMessage));
+                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(requestMessage));
                 System.out.println("ControllerClient: request for a new priority value for flow " + flowId + " sent to the controller");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -662,7 +751,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             try {
                 responseSocket = E2EComm.bindPreReceive(serviceResponse.getProtocol());
                 ControllerMessageRequest requestMessage = new ControllerMessageRequest(MessageType.MULTICAST_REQUEST, responseSocket.getLocalPort(), destNodeIds, destPorts, applicationRequirements, pathSelectionMetric, flowId);
-                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(requestMessage));
+                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(requestMessage));
                 System.out.println("ControllerClient: request for a new multicast communication for flow " + flowId + " sent to the controller");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -716,7 +805,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             try {
                 responseSocket = E2EComm.bindPreReceive(serviceResponse.getProtocol());
                 ControllerMessageRequest requestMessage = new ControllerMessageRequest(MessageType.OS_ROUTING_REQUEST, responseSocket.getLocalPort(), destNodeIds, destPorts, applicationRequirements, pathSelectionMetric, ControllerMessage.UNUSED_FIELD);
-                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(requestMessage));
+                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(requestMessage));
                 System.out.println("ControllerClient: request for a new OS level communication sent to the controller");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -797,7 +886,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                  */
                 ControllerMessageRequest requestMessage = new ControllerMessageRequest(MessageType.TOPOLOGY_GRAPH_REQUEST, responseSocket.getLocalPort());
 
-                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(requestMessage));
+                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(requestMessage));
 
                 System.out.println("ControllerClient: topology graph request sent to the controller");
             } catch (Exception e) {
@@ -865,7 +954,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             System.out.println("ControllerClient: controller service not found, cannot bind client socket");
         } else {
             try {
-                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(joinMessage));
+                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(joinMessage));
                 System.out.println("ControllerClient: join request sent to the controller");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -883,7 +972,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             System.out.println("ControllerClient: controller service not found, cannot bind client socket");
         } else {
             try {
-                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(leaveMessage));
+                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(leaveMessage));
                 System.out.println("ControllerClient: leave request sent to the controller");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -954,6 +1043,9 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                             break;
                         case MULTICAST_CONTROL:
                             handleMulticastControl((ControllerMessageResponse) controllerMessage);
+                            break;
+                        case FIX_PATH_PUSH_RESPONSE:
+                            handleFixPathPushResponse((ControllerMessageResponse) controllerMessage);
                             break;
                         case OS_ROUTING_ADD_ROUTE:
                             handleOsRoutingAddRoute((ControllerMessageUpdate) controllerMessage);
@@ -1060,6 +1152,19 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             System.out.println("ControllerClient: multicast control update received from the controller and successfully applied");
         }
 
+        private void handleFixPathPushResponse(ControllerMessageResponse responseMessage) {
+            /*
+             * Set the received fixed path and update it to the known flow paths.
+             */
+            int flowId = responseMessage.getFlowId();
+            PathDescriptor newPath = responseMessage.getNewPaths().get(0);
+            newPath.setCreationTime(System.currentTimeMillis());
+
+            flowPaths.put(flowId, newPath);
+
+            System.out.println("ControllerClient: response with a fixed path for flow " + flowId + " received from the controller");
+        }
+
         /**
          * This method handles an OS_ROUTING_ADD_ROUTE message sent by the ControllerService
          * only to an intermediate node and not to the client asking for the OS level
@@ -1098,7 +1203,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                      */
                     ControllerMessageAck ackMessage = new ControllerMessageAck(MessageType.OS_ROUTING_ACK, routeId);
                     try {
-                        E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(ackMessage));
+                        E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), ackSocketPort, serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(ackMessage));
                         System.out.println("ControllerClient: OS_ROUTING_ACK for routeId: " + routeId + " sent to the controller");
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -1107,7 +1212,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                 } else {
                     ControllerMessageAck abortMessage = new ControllerMessageAck(MessageType.OS_ROUTING_ABORT, routeId);
                     try {
-                        E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(abortMessage));
+                        E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), ackSocketPort, serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(abortMessage));
                         System.out.println("ControllerClient: OS_ROUTING_ABORT for routeId: " + routeId + " sent to the controller");
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -1125,7 +1230,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
              * For the intermediate nodes of a os route the osRoutingPathDescriptor
              * is null.
              */
-            if(osRoutingPathDescriptor != null) {
+            if (osRoutingPathDescriptor != null) {
                 int destinationNode = osRoutingPathDescriptor.getDestinationNodeId();
                 if (!routeIdsByDestination.containsKey(destinationNode)) {
                     List<Integer> routeIds = new ArrayList<>();
@@ -1140,7 +1245,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
              * This check is in case of pathSelectionMetric that may have different
              * different intermediate nodes for the forward and the backward path.
              */
-            if(osRoutesStartTimes.containsKey(routeId)) {
+            if (osRoutesStartTimes.containsKey(routeId)) {
                 osRoutesStartTimes.replace(routeId, System.currentTimeMillis());
             } else {
                 osRoutesStartTimes.put(routeId, System.currentTimeMillis());
@@ -1152,7 +1257,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
              * have some intermediate node in common, given the fact that this value will be the same
              * for both the push responses we discard the second one.
              */
-            if(!osRoutesDurations.containsKey(routeId)) {
+            if (!osRoutesDurations.containsKey(routeId)) {
                 osRoutesDurations.put(routeId, osRoutingPathDuration);
             }
         }
@@ -1185,7 +1290,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                 if (success) {
                     ControllerMessageAck ackMessage = new ControllerMessageAck(MessageType.DATA_PLANE_DATA_TYPE_ACK);
                     try {
-                        E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(ackMessage));
+                        E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), ackSocketPort, serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(ackMessage));
                         System.out.println("ControllerClient: DATA_PLANE_DATA_TYPE_ACK sent to the controller");
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -1194,7 +1299,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                 } else {
                     ControllerMessageAck abortMessage = new ControllerMessageAck(MessageType.DATA_PLANE_DATA_TYPE_ABORT);
                     try {
-                        E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(abortMessage));
+                        E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), ackSocketPort, serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(abortMessage));
                         System.out.println("ControllerClient: DATA_PLANE_DATA_TYPE_ABORT sent to the controller");
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -1234,7 +1339,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                 if (success) {
                     ControllerMessageAck ackMessage = new ControllerMessageAck(MessageType.DATA_PLANE_RULE_ACK);
                     try {
-                        E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(ackMessage));
+                        E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), ackSocketPort, serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(ackMessage));
                         System.out.println("ControllerClient: DATA_PLANE_RULE_ACK sent to the controller");
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -1244,7 +1349,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                 } else {
                     ControllerMessageAck abortMessage = new ControllerMessageAck(MessageType.DATA_PLANE_RULE_ABORT);
                     try {
-                        E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(abortMessage));
+                        E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), ackSocketPort, serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(abortMessage));
                         System.out.println("ControllerClient: DATA_PLANE_RULE_ABORT sent to the controller");
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -1289,7 +1394,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                      */
                     ControllerMessageAck ackMessage = new ControllerMessageAck(MessageType.DATA_PLANE_RULE_ACK);
                     try {
-                        E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(ackMessage));
+                        E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), ackSocketPort, serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(ackMessage));
                         System.out.println("ControllerClient: DATA_PLANE_RULE_ACK sent to the controller");
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -1299,7 +1404,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                 } else {
                     ControllerMessageAck abortMessage = new ControllerMessageAck(MessageType.DATA_PLANE_RULE_ABORT);
                     try {
-                        E2EComm.sendUnicast(serviceResponse.getServerDest(), ackSocketPort, serviceResponse.getProtocol(), E2EComm.serialize(abortMessage));
+                        E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), ackSocketPort, serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(abortMessage));
                         System.out.println("ControllerClient: DATA_PLANE_RULE_ABORT sent to the controller");
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -1411,7 +1516,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                 System.out.println("ControllerClient: controller service not found, cannot bind client socket");
             } else {
                 try {
-                    E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), E2EComm.serialize(updateMessage));
+                    E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                     System.out.println("ControllerClient UpdateManager: topology update sent to the controller");
                 } catch (Exception e) {
                     e.printStackTrace();

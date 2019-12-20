@@ -2,7 +2,6 @@ package it.unibo.deis.lia.ramp.core.internode.sdn.osRoutingManager;
 
 import it.unibo.deis.lia.ramp.RampEntryPoint;
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
-import it.unibo.deis.lia.ramp.core.internode.Heartbeater;
 import it.unibo.deis.lia.ramp.core.internode.sdn.osRoutingManager.ipRouteRule.IpRouteRule;
 import it.unibo.deis.lia.ramp.core.internode.sdn.osRoutingManager.localRoutingTable.LocalRoutingTable;
 import org.apache.commons.exec.CommandLine;
@@ -10,7 +9,6 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
 
 import java.io.*;
-import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -210,7 +208,7 @@ public class OsRoutingManager {
     public boolean addRoute(String sourceIP, String destinationIP, String viaIP, int routeId) {
         if (RampEntryPoint.os.startsWith("windows")) {
             /*
-             * Future Work: implements this feature for Windows. Since iproute2 is not
+             * Future Work: implement this feature for Windows. Since iproute2 is not
              * available for Windows at the moment we should use another Policy-based
              * routing library.
              * Tips: remove from here the functions related to sudoCommand and create a factory

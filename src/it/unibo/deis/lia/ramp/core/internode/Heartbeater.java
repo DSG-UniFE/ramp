@@ -55,18 +55,17 @@ public class Heartbeater extends Thread {
 		}
 
 		try {
+			/*
+			 * Set the blacklist according to what is specified in the
+			 * "neighborsBlackList" field of ramp.props file.
+			 * If this is field is not present you can create it
+			 * by pasting the following example and customize it
+			 * for your needs.
+			 * Example: neighborsBlackList: 192.168.1.7,192.168.1.10
+			 */
 			for(String blacklistAddress : neighborsAddressesBlackList) {
 				neighborsBlackList.add(InetAddress.getByName(blacklistAddress));
 			}
-//			neighborsBlackList.add(InetAddress.getByName("137.204.56.113")); // desktop Stefano
-//			neighborsBlackList.add(InetAddress.getByName("137.204.57.31"));  // jacopo
-//			neighborsBlackList.add(InetAddress.getByName("137.204.57.170")); // relay server
-//			neighborsBlackList.add(InetAddress.getByName("137.204.57.172")); // portatile carlo, vm studente
-//			neighborsBlackList.add(InetAddress.getByName("137.204.57.183")); // desktop Carlo
-//			neighborsBlackList.add(InetAddress.getByName("137.204.57.192")); // Qnap
-//			neighborsBlackList.add(InetAddress.getByName("137.204.57.155")); // Macchina di prova
-//			neighborsBlackList.add(InetAddress.getByName("137.204.57.156")); // Macchina di prova
-//			neighborsBlackList.add(InetAddress.getByName("137.204.57.157")); // Macchina di prova
 		} catch (UnknownHostException e1) {
 			e1.printStackTrace();
 		}

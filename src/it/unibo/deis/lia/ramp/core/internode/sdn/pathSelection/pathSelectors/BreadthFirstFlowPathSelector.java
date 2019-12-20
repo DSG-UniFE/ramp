@@ -24,23 +24,23 @@ public class BreadthFirstFlowPathSelector implements TopologyGraphSelector {
 
     @Override
     public PathDescriptor selectPath(int sourceNodeId, int destNodeId, ApplicationRequirements applicationRequirements, Map<Integer, PathDescriptor> activePaths) {
-        List<String> bestPath = new ArrayList<String>();
-        List<Integer> bestPathNodeIds = new ArrayList<Integer>();
+        List<String> bestPath = new ArrayList<>();
+        List<Integer> bestPathNodeIds = new ArrayList<>();
         boolean found = false;
         /*
          * Data structure to hold mappings between graph IDs of nodes and their parents (node, parent)
          */
-        Map<String, String> parentNodes = new HashMap<String, String>();
+        Map<String, String> parentNodes = new HashMap<>();
         /*
          * FIFO managed list to hold the sequence of parent nodes.
          */
-        LinkedList<MultiNode> nextParentNodes = new LinkedList<MultiNode>();
+        LinkedList<MultiNode> nextParentNodes = new LinkedList<>();
 
         MultiNode sourceNode = this.topologyGraph.getNode(Integer.toString(sourceNodeId));
         Iterator<MultiNode> iterator = sourceNode.getBreadthFirstIterator(false);
 
         MultiNode parentNode = iterator.next();
-        MultiNode node = null;
+        MultiNode node;
         int pointedNodes = 0;
         Iterator<MultiNode> neighborNodeIterator = parentNode.getNeighborNodeIterator();
         while (neighborNodeIterator.hasNext()) {
@@ -58,8 +58,7 @@ public class BreadthFirstFlowPathSelector implements TopologyGraphSelector {
             /*
              * Check that the current node hasn't already been visited
              */
-            if (parentNodes.containsKey(node.getId()) == false &&
-                    parentNodes.containsValue(node.getId()) == false) {
+            if (!parentNodes.containsKey(node.getId()) && !parentNodes.containsValue(node.getId())) {
                 parentNodes.put(node.getId(), parentNode.getId());
                 /*
                  * If the current node is destNode, backtrack and build the path using the parentNodes structure.
@@ -112,7 +111,7 @@ public class BreadthFirstFlowPathSelector implements TopologyGraphSelector {
 
     @Override
     public Map<Integer, PathDescriptor> getAllPathsFromSource(int sourceNodeId) {
-        Map<Integer, PathDescriptor> paths = new HashMap<Integer, PathDescriptor>();
+        Map<Integer, PathDescriptor> paths = new HashMap<>();
         for (Node destNode : this.topologyGraph.getNodeSet()) {
             int destNodeId = Integer.parseInt(destNode.getId());
             if (destNodeId != sourceNodeId) {

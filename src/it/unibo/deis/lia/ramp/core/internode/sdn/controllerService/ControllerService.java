@@ -30,7 +30,7 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.P
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.MulticastPathDescriptor;
 import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.ApplicationRequirements;
 import it.unibo.deis.lia.ramp.core.internode.sdn.prioritySelector.PrioritySelector;
-import it.unibo.deis.lia.ramp.core.internode.sdn.prioritySelector.ApplicationTypeFlowPrioritySelector;
+import it.unibo.deis.lia.ramp.core.internode.sdn.prioritySelector.TrafficTypeFlowPrioritySelector;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerMessage.ControllerMessageUpdate;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.PathSelectionMetric;
 
@@ -39,6 +39,7 @@ import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
+import org.graphstream.graph.implementations.Graphs;
 import org.graphstream.graph.implementations.MultiGraph;
 import org.graphstream.graph.implementations.MultiNode;
 
@@ -52,12 +53,16 @@ import it.unibo.deis.lia.ramp.util.NodeStats;
 import org.graphstream.ui.swingViewer.DefaultView;
 import org.graphstream.ui.view.Viewer;
 
-
 /**
  * @author Alessandro Dolci
  * @author Dmitrij David Padalino Montenero
  */
 public class ControllerService extends Thread {
+
+    /**
+     * Control flow ID value, to be used for control communications between ControllerService and ControllerClients.
+     */
+    private static final int CONTROL_FLOW_ID = 0;
 
     /**
      * Protocol used by the ControllerService to talk with ControllerClients
@@ -127,12 +132,12 @@ public class ControllerService extends Thread {
     private TopologyGraphSelector defaultPathSelector;
 
     /**
-     * Path selector to be used for flow-based communication when the controller client specifies the one to be used
+     * Default path selection metric to be used when the controller clients does not specify anything
      */
-    private TopologyGraphSelector flowPathSelector;
+    private PathSelectionMetric defaultPathSelectionMetric;
 
     /**
-     * Path selector to be used for oSRouting-based communication when the controller client specifies the one to be used
+     * Path selector to be used for oSRouting-based communication when the controller client does not specify anything
      */
     private OsRoutingTopologyGraphSelector osRoutingPathSelector;
 
@@ -147,6 +152,11 @@ public class ControllerService extends Thread {
     private Map<Integer, Long> flowStartTimes;
 
     /**
+     * Data structure to hold the path selection metric of the existing flows (flowId, pathSelectionMeteic)
+     */
+    private Map<Integer, PathSelectionMetric> flowPathSelectionMetrics;
+
+    /**
      * Data structure to hold application requirements for the existing flows (flowId, applicationRequirements)
      */
     private Map<Integer, ApplicationRequirements> flowApplicationRequirements;
@@ -157,7 +167,7 @@ public class ControllerService extends Thread {
     private Map<Integer, Integer> flowPriorities;
 
     /**
-     *
+     * This Object will return the priority value for a given TrafficType
      */
     private PrioritySelector flowPrioritySelector;
 
@@ -201,15 +211,17 @@ public class ControllerService extends Thread {
         // TODO Check with Giannelli
         //this.activeClients.add(Dispatcher.getLocalRampId());
         this.topologyGraph = new MultiGraph("TopologyGraph");
-        this.flowPathSelector = new MinimumNetworkLoadFlowPathSelector(this.topologyGraph);
-        this.osRoutingPathSelector = new MinimumNetworkLoadOsRoutingPathSelector(this.topologyGraph);
         this.defaultPathSelector = new BreadthFirstFlowPathSelector(this.topologyGraph);
+        this.defaultPathSelectionMetric = PathSelectionMetric.BREADTH_FIRST;
+        this.osRoutingPathSelector = new MinimumNetworkLoadOsRoutingPathSelector(this.topologyGraph);
+
         this.flowPaths = new ConcurrentHashMap<>();
         this.flowStartTimes = new ConcurrentHashMap<>();
+        this.flowPathSelectionMetrics = new ConcurrentHashMap<>();
         this.flowApplicationRequirements = new ConcurrentHashMap<>();
 
         this.flowPriorities = new ConcurrentHashMap<>();
-        this.flowPrioritySelector = new ApplicationTypeFlowPrioritySelector();
+        this.flowPrioritySelector = new TrafficTypeFlowPrioritySelector();
 
         this.forwardOsRoutingPaths = new ConcurrentHashMap<>();
         this.backwardOsRoutingPaths = new ConcurrentHashMap<>();
@@ -303,18 +315,32 @@ public class ControllerService extends Thread {
         return (DefaultView) viewer.addDefaultView(false);
     }
 
+    /**
+     * Save the current topology graph as an image file
+     */
     public void takeGraphScreenshot(String screenshotFilePath) {
         this.topologyGraph.addAttribute("ui.screenshot", screenshotFilePath);
     }
 
+    /**
+     * Get the list of the Controller Client currently managed by this Controller Service
+     */
     public Set<Integer> getActiveClients() {
         return this.activeClients;
     }
 
+    /**
+     * Get the active TrafficEngineeringPolicy
+     *
+     * @see TrafficEngineeringPolicy
+     */
     public TrafficEngineeringPolicy getTrafficEngineeringPolicy() {
         return this.trafficEngineeringPolicy;
     }
 
+    /**
+     * Update the active TrafficEngineeringPolicy for all the topology
+     */
     public void updateTrafficEngineeringPolicy(TrafficEngineeringPolicy trafficEngineeringPolicy) {
         this.trafficEngineeringPolicy = trafficEngineeringPolicy;
         for (Node clientNode : this.topologyGraph.getNodeSet()) {
@@ -323,7 +349,7 @@ public class ControllerService extends Thread {
             String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
             int clientPort = clientNode.getAttribute("port");
             try {
-                E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                E2EComm.sendUnicast(clientDest, clientNodeId, clientPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -331,6 +357,11 @@ public class ControllerService extends Thread {
         System.out.println("ControllerService: New flow policy set: " + this.trafficEngineeringPolicy.toString());
     }
 
+    /**
+     * Get the active RoutingPolicy
+     *
+     * @see RoutingPolicy
+     */
     public RoutingPolicy getRoutingPolicy() {
         return routingPolicy;
     }
@@ -343,7 +374,7 @@ public class ControllerService extends Thread {
             String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
             int clientPort = clientNode.getAttribute("port");
             try {
-                E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                E2EComm.sendUnicast(clientDest, clientNodeId, clientPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -351,10 +382,25 @@ public class ControllerService extends Thread {
         System.out.println("ControllerService: New routing policy set: " + this.routingPolicy.toString());
     }
 
+    /**
+     * Get the list of DataTypes currently usable by the network
+     * controlled by this Controller Service.
+     *
+     * @return
+     */
     public Set<String> getAvailableDataTypes() {
         return this.dataTypesManager.getAvailableDataTypes();
     }
 
+    /**
+     * Add a new DataType defined by the administrator of this SDN and
+     * spread its definition to all the Controller Clients managed by
+     * this ControllerService.
+     *
+     * @param dataTypeFileName
+     * @param dataTypeFile
+     * @return
+     */
     public boolean addUserDefinedDataType(String dataTypeFileName, File dataTypeFile) {
         BoundReceiveSocket ackSocket = null;
         GenericPacket gp = null;
@@ -393,7 +439,7 @@ public class ControllerService extends Thread {
             String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
             int clientPort = clientNode.getAttribute("port");
             try {
-                E2EComm.sendUnicast(clientDest, clientPort, E2EComm.TCP, E2EComm.serialize(updateMessage));
+                E2EComm.sendUnicast(clientDest, clientNodeId, clientPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -441,7 +487,7 @@ public class ControllerService extends Thread {
                 String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
                 int clientPort = clientNode.getAttribute("port");
                 try {
-                    E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                    E2EComm.sendUnicast(clientDest, clientNodeId, clientPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -457,14 +503,35 @@ public class ControllerService extends Thread {
         }
     }
 
+    /**
+     * Get the list of DataPlaneRules currently usable by the network
+     * controlled by this Controller Service.
+     *
+     * @return
+     */
     public Set<String> getAvailableDataPlaneRules() {
         return this.dataPlaneRulesManager.getAvailableDataPlaneRules();
     }
 
+    /**
+     * Get the list of DataPlaneRules currently active by the network
+     * controlled by this Controller Service.
+     *
+     * @return
+     */
     public Map<String, List<String>> getActiveDataPlaneRules() {
         return dataPlaneRulesManager.getActiveDataPlaneRulesByDataType();
     }
 
+    /**
+     * Add a new DataPlaneRule defined by the administrator of this SDN and
+     * spread its definition to all the Controller Clients managed by
+     * this ControllerService.
+     *
+     * @param dataPlaneRuleFileName
+     * @param dataPlaneRuleFile
+     * @return
+     */
     public boolean addUserDefinedDataPlaneRule(String dataPlaneRuleFileName, File dataPlaneRuleFile) {
         BoundReceiveSocket ackSocket = null;
         GenericPacket gp = null;
@@ -504,7 +571,7 @@ public class ControllerService extends Thread {
             String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
             int clientPort = clientNode.getAttribute("port");
             try {
-                E2EComm.sendUnicast(clientDest, clientPort, E2EComm.TCP, E2EComm.serialize(updateMessage));
+                E2EComm.sendUnicast(clientDest, clientNodeId, clientPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -553,7 +620,7 @@ public class ControllerService extends Thread {
                 String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
                 int clientPort = clientNode.getAttribute("port");
                 try {
-                    E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                    E2EComm.sendUnicast(clientDest, clientNodeId, clientPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -569,6 +636,13 @@ public class ControllerService extends Thread {
         }
     }
 
+    /**
+     * Enable a usable DataPlaneRule for a given DataType
+     *
+     * @param dataType
+     * @param dataPlaneRule
+     * @return
+     */
     public boolean addDataPlaneRule(String dataType, String dataPlaneRule) {
         return addDataPlaneRule(dataType, dataPlaneRule, null);
     }
@@ -615,7 +689,7 @@ public class ControllerService extends Thread {
             String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
             int clientPort = clientNode.getAttribute("port");
             try {
-                E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                E2EComm.sendUnicast(clientDest, clientNodeId, clientPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -663,7 +737,7 @@ public class ControllerService extends Thread {
                 String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
                 int clientPort = clientNode.getAttribute("port");
                 try {
-                    E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                    E2EComm.sendUnicast(clientDest, clientNodeId, clientPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -679,6 +753,12 @@ public class ControllerService extends Thread {
         }
     }
 
+    /**
+     * Disable an active DataPlaneRule for a given DataType
+     *
+     * @param dataType
+     * @param dataPlaneRule
+     */
     public void removeDataPlaneRule(String dataType, String dataPlaneRule) {
         removeDataPlaneRule(dataType, dataPlaneRule, null);
     }
@@ -705,7 +785,7 @@ public class ControllerService extends Thread {
             String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
             int clientPort = clientNode.getAttribute("port");
             try {
-                E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                E2EComm.sendUnicast(clientDest, clientNodeId, clientPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -773,6 +853,9 @@ public class ControllerService extends Thread {
                         case PATH_REQUEST:
                             handlePathRequest((ControllerMessageRequest) controllerMessage, clientNodeId, clientDest);
                             break;
+                        case FIX_PATH_REQUEST:
+                            handleFixPathRequest((ControllerMessageRequest) controllerMessage, clientNodeId, clientDest);
+                            break;
                         case TOPOLOGY_GRAPH_REQUEST:
                             handleTopologyGraphRequest((ControllerMessageRequest) controllerMessage, clientNodeId, clientDest);
                             break;
@@ -803,6 +886,7 @@ public class ControllerService extends Thread {
             activeClients.add(clientNodeId);
             MultiNode clientNode = topologyGraph.addNode(Integer.toString(clientNodeId));
             clientNode.addAttribute("port", controllerMessage.getClientPort());
+            clientNode.addAttribute("ui.style", "fill-color: rgb(35,118,185);");
             for (String address : controllerMessage.getNodeStats().keySet()) {
                 NodeStats nodeStats = controllerMessage.getNodeStats().get(address);
                 if (nodeStats instanceof NetworkInterfaceStats) {
@@ -839,7 +923,7 @@ public class ControllerService extends Thread {
             System.out.println("ControllerService: path request from client " + clientNodeId + " to node " + destNodeId + " for flow " + flowId);
 
             PathDescriptor newPath = null;
-            TopologyGraphSelector pathSelector = flowPathSelector;
+            TopologyGraphSelector pathSelector = defaultPathSelector;
             PathSelectionMetric pathSelectionMetric = requestMessage.getPathSelectionMetric();
             if (pathSelectionMetric != null) {
                 if (pathSelectionMetric == PathSelectionMetric.BREADTH_FIRST)
@@ -848,6 +932,8 @@ public class ControllerService extends Thread {
                     pathSelector = new FewestIntersectionsFlowPathSelector(topologyGraph);
                 else if (pathSelectionMetric == PathSelectionMetric.MINIMUM_NETWORK_LOAD)
                     pathSelector = new MinimumNetworkLoadFlowPathSelector(topologyGraph);
+            } else {
+                pathSelectionMetric = defaultPathSelectionMetric;
             }
             /*
              * If applicationRequirements is not null, this is the first path request for the flow,
@@ -858,6 +944,7 @@ public class ControllerService extends Thread {
                 newPath = pathSelector.selectPath(clientNodeId, destNodeId, applicationRequirements, flowPaths);
                 flowStartTimes.put(flowId, System.currentTimeMillis());
                 flowApplicationRequirements.put(flowId, applicationRequirements);
+                flowPathSelectionMetrics.put(flowId, pathSelectionMetric);
             }
             /*
              * If applicationRequirements is null, the time-to-live of the previous path for the flow
@@ -866,6 +953,15 @@ public class ControllerService extends Thread {
             else {
                 if (flowPaths.containsKey(flowId)) {
                     System.out.println("ControllerService: new path request for flow " + flowId + ", the flow is still valid, selecting a new path");
+                    PathSelectionMetric savedPathSelectionMetric = flowPathSelectionMetrics.get(flowId);
+                    if (savedPathSelectionMetric != null) {
+                        if (savedPathSelectionMetric == PathSelectionMetric.BREADTH_FIRST)
+                            pathSelector = new BreadthFirstFlowPathSelector(topologyGraph);
+                        else if (savedPathSelectionMetric == PathSelectionMetric.FEWEST_INTERSECTIONS)
+                            pathSelector = new FewestIntersectionsFlowPathSelector(topologyGraph);
+                        else if (savedPathSelectionMetric == PathSelectionMetric.MINIMUM_NETWORK_LOAD)
+                            pathSelector = new MinimumNetworkLoadFlowPathSelector(topologyGraph);
+                    }
                     newPath = pathSelector.selectPath(clientNodeId, destNodeId, null, flowPaths);
                 } else
                     System.out.println("ControllerService: new path request for flow " + flowId + ", but the flow isn't valid anymore, sending null path");
@@ -885,12 +981,168 @@ public class ControllerService extends Thread {
                 /*
                  * Send the response message using the inverted source path
                  */
-                E2EComm.sendUnicast(clientDest, requestMessage.getClientPort(), PROTOCOL, E2EComm.serialize(responseMessage));
+                E2EComm.sendUnicast(clientDest, clientNodeId, requestMessage.getClientPort(), PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(responseMessage));
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
             System.out.println("ControllerService: path request for flow " + flowId + " from client " + clientNodeId + ", response message successfully sent");
+        }
+
+        private void handleFixPathRequest(ControllerMessageRequest requestMessage, int clientNodeId, String[] clientDest) {
+            /*
+             * Choose the best path for the existing flow, update its info in the active flow paths and send it
+             * to the middle node node and push it to the original source node.
+             */
+            int sourceNodeId = requestMessage.getSourceNodeId();
+            int destNodeId = requestMessage.getDestNodeIds()[0];
+            int flowId = requestMessage.getFlowId();
+            System.out.println("ControllerService: fix path request from client " + clientNodeId + " for the path from the node " + sourceNodeId + " to node " + destNodeId + " for flow " + flowId);
+
+            /*
+             * Retrieve the current not working path
+             */
+            PathDescriptor currentPathDescriptor = flowPaths.get(flowId);
+
+            /*
+             * Remove the edge that represents the broken link from the
+             * topology graph. Don't remove the node because it should be
+             * possible that node could be reached trough another path.
+             */
+            List<Integer> currentPathNodeIds = currentPathDescriptor.getPathNodeIds();
+
+            int clientNodeIdIndex = -1;
+            int nextNodeIdIndex = 0;
+            for(int i=0; i<currentPathNodeIds.size(); i++) {
+                if(currentPathNodeIds.get(i) == clientNodeId) {
+                    clientNodeIdIndex = i;
+                    break;
+                }
+            }
+
+            if(clientNodeIdIndex >= 0 ) {
+                nextNodeIdIndex = clientNodeIdIndex + 1;
+            }
+
+            int nextHopNodeId = currentPathDescriptor.getPathNodeIds().get(nextNodeIdIndex);
+
+            /*
+             * Take a snapshot of the topology graph in order
+             * to avoid any concurrency issues given by the
+             * Update Manager. In this way we let the UpdateManager
+             * to update by itself.
+             */
+            Graph topologyGraphSnapshot = Graphs.clone(topologyGraph);
+            MultiNode clientNode = topologyGraphSnapshot.getNode(Integer.toString(clientNodeId));
+            MultiNode nextHopNode = topologyGraphSnapshot.getNode(Integer.toString(nextHopNodeId));
+            /*
+             * TODO the edge removal should be done better because there may be
+             * TODO more than one edges (i.e. networks) connecting the two nodes.
+             */
+            topologyGraphSnapshot.removeEdge(clientNode,nextHopNode);
+
+            /*
+             * This is the fixed path for the node
+             * that discovered the error
+             */
+            PathDescriptor newFixedPath = null;
+            /*
+             * This is the new path that the
+             * original source node must use
+             * from now on.
+             */
+            PathDescriptor newPath = null;
+
+            /*
+             * Take a snapshot of the current graph in
+             * order to avoid any modification taken by
+             * the Update Manager.
+             */
+            TopologyGraphSelector pathSelector = defaultPathSelector;
+
+            /*
+             * When this method is called we assume that a flowId for
+             * the current communication already exists.
+             */
+            if (flowPaths.containsKey(flowId)) {
+                PathSelectionMetric pathSelectionMetric = flowPathSelectionMetrics.get(flowId);
+                if (pathSelectionMetric != null) {
+                    if (pathSelectionMetric == PathSelectionMetric.BREADTH_FIRST)
+                        pathSelector = new BreadthFirstFlowPathSelector(topologyGraphSnapshot);
+                    else if (pathSelectionMetric == PathSelectionMetric.FEWEST_INTERSECTIONS)
+                        pathSelector = new FewestIntersectionsFlowPathSelector(topologyGraphSnapshot);
+                    else if (pathSelectionMetric == PathSelectionMetric.MINIMUM_NETWORK_LOAD)
+                        pathSelector = new MinimumNetworkLoadFlowPathSelector(topologyGraphSnapshot);
+                }
+
+                System.out.println("ControllerService: fix path request for flow " + flowId + ", selecting a path");
+
+                newFixedPath = pathSelector.selectPath(clientNodeId, destNodeId, null, flowPaths);
+                newPath = pathSelector.selectPath(sourceNodeId, destNodeId, null, flowPaths);
+
+                if (newPath != null) {
+                    for (int i = 0; i < newPath.getPath().length; i++) {
+                        System.out.println("ControllerService: new fixed flow path address " + i + ", " + newPath.getPath()[i]);
+                    }
+                    /*
+                     * We just update the flowPath data structure, all the other info
+                     * like creation time, duration and path selection metric remain
+                     * the same.
+                     */
+                    flowPaths.put(flowId, newPath);
+                }
+            }
+
+            List<PathDescriptor> newPaths = new ArrayList<>();
+            newPaths.add(newFixedPath);
+            ControllerMessageResponse responseMessage = new ControllerMessageResponse(MessageType.FIX_PATH_RESPONSE, ControllerMessage.UNUSED_FIELD, newPaths);
+            try {
+                /*
+                 * Send the response message using the inverted source path
+                 */
+                E2EComm.sendUnicast(clientDest, clientNodeId, requestMessage.getClientPort(), PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(responseMessage));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            System.out.println("ControllerService: fix path request for flow " + flowId + " from client " + clientNodeId + " for the source node " + sourceNodeId + ", response message successfully sent");
+
+            /*
+             * If a new path for the existing flow id is found we push it to
+             * the original source so it can update it.
+             */
+            if(newPath != null) {
+                newPaths = new ArrayList<>();
+                newPaths.add(newPath);
+                String[] sourceNodeDest;
+                if(sourceNodeId == clientNodeId) {
+                    sourceNodeDest = clientDest;
+                } else {
+                    /*
+                     * TODO The Resolver behaviour in retrieving the right
+                     * TODO for the original sender seems not working properly.
+                     * TODO In particular when the clientNode is different from
+                     * TODO the sourceNode the result is not correct.
+                     */
+                    sourceNodeDest = Resolver.getInstance(false).resolveBlocking(sourceNodeId, 5 * 1000).get(0).getPath();
+                }
+
+                MultiNode sourceNode = topologyGraphSnapshot.getNode(Integer.toString(sourceNodeId));
+                int sourceNodePort = sourceNode.getAttribute("port");
+
+                responseMessage = new ControllerMessageResponse(MessageType.FIX_PATH_PUSH_RESPONSE, flowId, newPaths);
+
+                try {
+                    /*
+                     * Send the response message using the inverted source path
+                     */
+                    E2EComm.sendUnicast(sourceNodeDest, sourceNodeId, sourceNodePort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(responseMessage));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            System.out.println("ControllerService: fix path request for flow " + flowId + " from client " + clientNodeId + " for the source node " + sourceNodeId + ", response message successfully pushed to the original sender");
         }
 
         private void handleTopologyGraphRequest(ControllerMessageRequest requestMessage, int clientNodeId, String[] clientDest) {
@@ -928,13 +1180,13 @@ public class ControllerService extends Thread {
              * Data structure to hold IDs of nodes removed during the initial
              * refresh and the respective node objects (nodeId, node)
              */
-            HashMap<String, MultiNode> removedNodes = new HashMap<String, MultiNode>();
+            HashMap<String, MultiNode> removedNodes = new HashMap<>();
             /*
              * Data structure to hold mappings between IDs of nodes removed during the
              * initial refresh and the source node addresses added on the graph by
              * them (targetNodeId, sourceNodeAddress)
              */
-            HashMap<String, List<String>> removedNodesAddresses = new HashMap<String, List<String>>();
+            HashMap<String, List<String>> removedNodesAddresses = new HashMap<>();
             /*
              * If the source node doesn't exist in the topology graph, create it
              */
@@ -942,6 +1194,7 @@ public class ControllerService extends Thread {
             if (sourceGraphNode == null) {
                 sourceGraphNode = topologyGraph.addNode(Integer.toString(clientNodeId));
                 sourceGraphNode.addAttribute("port", updateMessage.getClientPort());
+                sourceGraphNode.addAttribute("ui.style", "fill-color: rgb(35,118,185);");
                 for (String address : updateMessage.getNodeStats().keySet()) {
                     NodeStats nodeStats = updateMessage.getNodeStats().get(address);
                     if (nodeStats instanceof NetworkInterfaceStats) {
@@ -973,7 +1226,7 @@ public class ControllerService extends Thread {
                     if (!found) {
                         removedNodes.put(targetNode.getId(), targetNode);
                         Collection<Edge> edgesToSourceNode = targetNode.getEdgeSetBetween(sourceGraphNode);
-                        List<String> sourceNodeAddresses = new ArrayList<String>();
+                        List<String> sourceNodeAddresses = new ArrayList<>();
                         for (Edge edgeToSourceNode : edgesToSourceNode)
                             sourceNodeAddresses.add(edgeToSourceNode.getAttribute("address_" + sourceGraphNode.getId()));
                         removedNodesAddresses.put(targetNode.getId(), sourceNodeAddresses);
@@ -1005,8 +1258,10 @@ public class ControllerService extends Thread {
                         if (removedNodes.containsKey(neighborGraphNode.getId()))
                             for (String key : removedNodes.get(neighborGraphNode.getId()).getAttributeKeySet())
                                 neighborGraphNode.addAttribute(key, (Object) removedNodes.get(neighborGraphNode.getId()).getAttribute(key));
-                        else
+                        else {
                             neighborGraphNode.addAttribute("ui.label", neighborGraphNode.getId());
+                            neighborGraphNode.addAttribute("ui.style", "fill-color: rgb(35,118,185);");
+                        }
                     }
                     for (String neighborCompleteAddress : neighborNodes.get(neighborNodeId)) {
                         String neighborAddress = neighborCompleteAddress.substring(0, neighborCompleteAddress.indexOf("/"));
@@ -1098,7 +1353,7 @@ public class ControllerService extends Thread {
              * Send the new priority value to the client
              */
             try {
-                E2EComm.sendUnicast(clientDest, requestMessage.getClientPort(), PROTOCOL, E2EComm.serialize(updateMessage));
+                E2EComm.sendUnicast(clientDest, clientNodeId, requestMessage.getClientPort(), PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1106,10 +1361,11 @@ public class ControllerService extends Thread {
              * Send the new priority value to every other active node
              */
             for (Node node : topologyGraph.getNodeSet()) {
-                if (Integer.parseInt(node.getId()) != clientNodeId) {
-                    String[] dest = Resolver.getInstance(false).resolveBlocking(Integer.parseInt(node.getId())).get(0).getPath();
+                int nodeId = Integer.parseInt(node.getId());
+                if (nodeId != clientNodeId) {
+                    String[] dest = Resolver.getInstance(false).resolveBlocking(nodeId).get(0).getPath();
                     try {
-                        E2EComm.sendUnicast(dest, node.getAttribute("port"), PROTOCOL, E2EComm.serialize(updateMessage));
+                        E2EComm.sendUnicast(dest, nodeId, node.getAttribute("port"), PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -1139,12 +1395,14 @@ public class ControllerService extends Thread {
                     pathSelector = new FewestIntersectionsFlowPathSelector(topologyGraph);
                 else if (pathSelectionMetric == PathSelectionMetric.MINIMUM_NETWORK_LOAD)
                     pathSelector = new MinimumNetworkLoadFlowPathSelector(topologyGraph);
+            } else {
+                pathSelectionMetric = defaultPathSelectionMetric;
             }
             /*
              * Si inizializza la struttura che sarà impiegata alla fine per inviare le istruzioni prima
              * ai nodi che fanno parte del percorso e infine al nodo client che ha richiesto il calcolo del percorso.
              */
-            Map<Integer, List<PathDescriptor>> nodesNextHops = new HashMap<Integer, List<PathDescriptor>>();
+            Map<Integer, List<PathDescriptor>> nodesNextHops = new HashMap<>();
             for (int i = 0; i < destNodeIds.length; i++) {
                 /*
                  * Per ciascun nodo destinatario del messaggio multicast si calcola il percorso dal client usando il TopologyGraphSelector specificato
@@ -1211,7 +1469,7 @@ public class ControllerService extends Thread {
                     responseMessage = new ControllerMessageResponse(MessageType.MULTICAST_CONTROL, flowId, nodeNextHops);
                     String[] dest = Resolver.getInstance(false).resolveBlocking(nodeId).get(0).getPath();
                     try {
-                        E2EComm.sendUnicast(dest, topologyGraph.getNode(Integer.toString(nodeId)).getAttribute("port"), PROTOCOL, E2EComm.serialize(responseMessage));
+                        E2EComm.sendUnicast(dest, nodeId, topologyGraph.getNode(Integer.toString(nodeId)).getAttribute("port"), PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(responseMessage));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -1223,7 +1481,7 @@ public class ControllerService extends Thread {
             List<PathDescriptor> clientNodeNextHops = nodesNextHops.get(clientNodeId);
             responseMessage = new ControllerMessageResponse(MessageType.MULTICAST_CONTROL, flowId, clientNodeNextHops);
             try {
-                E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(responseMessage));
+                E2EComm.sendUnicast(clientDest, clientNodeId, clientPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(responseMessage));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1277,7 +1535,7 @@ public class ControllerService extends Thread {
                 candidateBackwardOsRoutingPaths.put(routeId, reversePath);
                 oSRoutingBackwardPath = pathSelector.selectPath(destNodeId, clientNodeId, applicationRequirements, candidateBackwardOsRoutingPaths);
             } else {
-                if(oSRoutingForwardPath != null) {
+                if (oSRoutingForwardPath != null) {
                     oSRoutingBackwardPath = pathSelector.reversePath(oSRoutingForwardPath);
                 }
             }
@@ -1345,7 +1603,7 @@ public class ControllerService extends Thread {
 
                 updateMessage = new ControllerMessageUpdate(MessageType.OS_ROUTING_ADD_ROUTE, ackSocket.getLocalPort(), forwardPathSourceIp, forwardPathDestinationIp, oSRoutingForwardPath.getPath()[0], routeId);
                 try {
-                    E2EComm.sendUnicast(sourceDest, sourcePort, PROTOCOL, E2EComm.serialize(updateMessage));
+                    E2EComm.sendUnicast(sourceDest, clientNodeId, sourcePort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                 } catch (Exception e) {
                     aborted = true;
                     e.printStackTrace();
@@ -1409,7 +1667,7 @@ public class ControllerService extends Thread {
 
                 updateMessage = new ControllerMessageUpdate(MessageType.OS_ROUTING_ADD_ROUTE, ackSocket.getLocalPort(), backwardPathSourceIp, backwardPathDestinationIp, oSRoutingBackwardPath.getPath()[0], routeId);
                 try {
-                    E2EComm.sendUnicast(destDest, destPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                    E2EComm.sendUnicast(destDest, destNodeId, destPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                 } catch (Exception e) {
                     aborted = true;
                     e.printStackTrace();
@@ -1481,7 +1739,7 @@ public class ControllerService extends Thread {
 
                         updateMessage = new ControllerMessageUpdate(MessageType.OS_ROUTING_ADD_ROUTE, ackSocket.getLocalPort(), forwardPathSourceIp, forwardPathDestinationIp, oSRoutingForwardPath.getPath()[i], routeId);
                         try {
-                            E2EComm.sendUnicast(intermediateDest, intermediatePort, PROTOCOL, E2EComm.serialize(updateMessage));
+                            E2EComm.sendUnicast(intermediateDest, intermediateNodeId, intermediatePort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                         } catch (Exception e) {
                             aborted = true;
                             e.printStackTrace();
@@ -1545,7 +1803,7 @@ public class ControllerService extends Thread {
 
                         updateMessage = new ControllerMessageUpdate(MessageType.OS_ROUTING_ADD_ROUTE, ackSocket.getLocalPort(), backwardPathSourceIp, backwardPathDestinationIp, oSRoutingBackwardPath.getPath()[j], routeId);
                         try {
-                            E2EComm.sendUnicast(intermediateDest, intermediatePort, PROTOCOL, E2EComm.serialize(updateMessage));
+                            E2EComm.sendUnicast(intermediateDest, intermediateNodeId, intermediatePort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                         } catch (Exception e) {
                             aborted = true;
                             e.printStackTrace();
@@ -1620,7 +1878,7 @@ public class ControllerService extends Thread {
                             int intermediatePort = intermediateNode.getAttribute("port");
 
                             try {
-                                E2EComm.sendUnicast(intermediateDest, intermediatePort, PROTOCOL, E2EComm.serialize(updateMessage));
+                                E2EComm.sendUnicast(intermediateDest, intermediateNodeId, intermediatePort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -1630,7 +1888,7 @@ public class ControllerService extends Thread {
 
                 if (forwardPathSourceIp != null) {
                     try {
-                        E2EComm.sendUnicast(sourceDest, sourcePort, PROTOCOL, E2EComm.serialize(updateMessage));
+                        E2EComm.sendUnicast(sourceDest, clientNodeId, sourcePort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -1651,7 +1909,7 @@ public class ControllerService extends Thread {
                             int intermediatePort = intermediateNode.getAttribute("port");
 
                             try {
-                                E2EComm.sendUnicast(intermediateDest, intermediatePort, PROTOCOL, E2EComm.serialize(updateMessage));
+                                E2EComm.sendUnicast(intermediateDest, intermediateNodeId, intermediatePort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -1661,7 +1919,7 @@ public class ControllerService extends Thread {
 
                 if (backwardPathSourceIp != null) {
                     try {
-                        E2EComm.sendUnicast(destDest, destPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                        E2EComm.sendUnicast(destDest, destNodeId, destPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -1695,7 +1953,7 @@ public class ControllerService extends Thread {
                 Node receiverNode = topologyGraph.getNode(Integer.toString(destNodeId));
                 int receiverPort = receiverNode.getAttribute("port");
                 try {
-                    E2EComm.sendUnicast(destDest, receiverPort, PROTOCOL, E2EComm.serialize(responseMessage));
+                    E2EComm.sendUnicast(destDest, destNodeId, receiverPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(responseMessage));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -1715,7 +1973,7 @@ public class ControllerService extends Thread {
                         int intermediatePort = intermediateNode.getAttribute("port");
 
                         try {
-                            E2EComm.sendUnicast(intermediateDest, intermediatePort, PROTOCOL, E2EComm.serialize(responseMessage));
+                            E2EComm.sendUnicast(intermediateDest, intermediateNodeId, intermediatePort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(responseMessage));
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -1729,7 +1987,7 @@ public class ControllerService extends Thread {
                  * intermediate nodes. In case of fewest intersections the intermediate nodes of the
                  * forward path and the backward path are in most common cases different.
                  */
-                if(pathSelectionMetric == PathSelectionMetric.FEWEST_INTERSECTIONS) {
+                if (pathSelectionMetric == PathSelectionMetric.FEWEST_INTERSECTIONS) {
                     for (int n = 1; n <= backwardPathHopCount; n++) {
                         int intermediateNodeId = oSRoutingBackwardPath.getPathNodeIds().get(n);
 
@@ -1739,7 +1997,7 @@ public class ControllerService extends Thread {
                             int intermediatePort = intermediateNode.getAttribute("port");
 
                             try {
-                                E2EComm.sendUnicast(intermediateDest, intermediatePort, PROTOCOL, E2EComm.serialize(responseMessage));
+                                E2EComm.sendUnicast(intermediateDest, intermediateNodeId, intermediatePort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(responseMessage));
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -1755,7 +2013,7 @@ public class ControllerService extends Thread {
              */
             responseMessage = new ControllerMessageResponse(MessageType.OS_ROUTING_PULL_RESPONSE, ControllerMessage.UNUSED_FIELD, routeId, oSRoutingForwardPath, ControllerMessage.UNUSED_FIELD);
             try {
-                E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(responseMessage));
+                E2EComm.sendUnicast(clientDest, clientNodeId, clientPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(responseMessage));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1808,6 +2066,7 @@ public class ControllerService extends Thread {
                 if (elapsed > (duration + (duration / 4)) * 1000) {
                     flowStartTimes.remove(flowId);
                     flowApplicationRequirements.remove(flowId);
+                    flowPathSelectionMetrics.remove(flowId);
                     flowPaths.remove(flowId);
                 }
             }
@@ -1835,7 +2094,7 @@ public class ControllerService extends Thread {
                 String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
                 int clientPort = clientNode.getAttribute("port");
                 try {
-                    E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                    E2EComm.sendUnicast(clientDest, clientNodeId, clientPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -1850,11 +2109,21 @@ public class ControllerService extends Thread {
                 String[] clientDest = Resolver.getInstance(false).resolveBlocking(clientNodeId, 5 * 1000).get(0).getPath();
                 int clientPort = clientNode.getAttribute("port");
                 try {
-                    E2EComm.sendUnicast(clientDest, clientPort, PROTOCOL, E2EComm.serialize(updateMessage));
+                    E2EComm.sendUnicast(clientDest, clientNodeId, clientPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
+        }
+
+        private void update() {
+            updateTopology();
+            updateFlows();
+            updateOsRoutes();
+            if (routingPolicy == RoutingPolicy.REROUTING)
+                sendDefaultFlowPathsUpdate();
+            if (trafficEngineeringPolicy == TrafficEngineeringPolicy.SINGLE_FLOW || trafficEngineeringPolicy == TrafficEngineeringPolicy.QUEUES || trafficEngineeringPolicy == TrafficEngineeringPolicy.TRAFFIC_SHAPING)
+                sendFlowPrioritiesUpdate();
         }
 
         @Override
@@ -1866,13 +2135,7 @@ public class ControllerService extends Thread {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                updateTopology();
-                updateFlows();
-                updateOsRoutes();
-                if (routingPolicy == RoutingPolicy.REROUTING)
-                    sendDefaultFlowPathsUpdate();
-                if (trafficEngineeringPolicy == TrafficEngineeringPolicy.SINGLE_FLOW || trafficEngineeringPolicy == TrafficEngineeringPolicy.QUEUES || trafficEngineeringPolicy == TrafficEngineeringPolicy.TRAFFIC_SHAPING)
-                    sendFlowPrioritiesUpdate();
+                update();
             }
             System.out.println("ControllerService UpdateManager FINISHED");
         }

@@ -5,7 +5,7 @@ import it.unibo.deis.lia.ramp.core.internode.*;
 import it.unibo.deis.lia.ramp.core.internode.sdn.routingPolicy.RoutingPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy.TrafficEngineeringPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.ApplicationRequirements;
-import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.ApplicationType;
+import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.TrafficType;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.PathSelectionMetric;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.PathDescriptor;
 import it.unibo.deis.lia.ramp.service.management.ServiceResponse;
@@ -342,19 +342,24 @@ public class SDNControllerClientJFrame extends JFrame {
     }
 
     private void initApplicationRequirementsPanel() {
-        applicationRequirements = new ApplicationRequirements(ApplicationType.DEFAULT, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 300);
+        applicationRequirements = new ApplicationRequirements(TrafficType.DEFAULT, ApplicationRequirements.UNUSED_FIELD, ApplicationRequirements.UNUSED_FIELD, 0, 300);
 
         applicationRequirementsPanel = new JPanel();
         applicationRequirementsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Application Requirements"));
 
         applicationTypeLabel = new JLabel("Application Type");
         applicationTypeComboBox = new JComboBox();
-        int count = ApplicationType.values().length;
+        /*
+         * CONTROL_STREAM won't be a possible option
+         */
+        int count = TrafficType.values().length - 1;
         String[] applicationTypeItems = new String[count];
         count = 0;
-        for (ApplicationType a : ApplicationType.values()) {
-            applicationTypeItems[count] = a.toString();
-            count++;
+        for (TrafficType a : TrafficType.values()) {
+            if(!a.equals(TrafficType.CONTROL_STREAM)) {
+                applicationTypeItems[count] = a.toString();
+                count++;
+            }
         }
         DefaultComboBoxModel dcm = new DefaultComboBoxModel(applicationTypeItems);
         applicationTypeComboBox.setModel(dcm);
@@ -429,7 +434,7 @@ public class SDNControllerClientJFrame extends JFrame {
 
     private void showApplicationRequirementsFieldsPolicy() {
         boolean show = true;
-        if (ApplicationType.valueOf(applicationTypeComboBox.getSelectedItem().toString()) == ApplicationType.DEFAULT) {
+        if (TrafficType.valueOf(applicationTypeComboBox.getSelectedItem().toString()) == TrafficType.DEFAULT) {
             show = false;
         }
 
@@ -1026,7 +1031,7 @@ public class SDNControllerClientJFrame extends JFrame {
     }
 
     private void jButtonSetApplicationRequirementsActionPerformed(ActionEvent evt) {
-        applicationRequirements.setApplicationType(ApplicationType.valueOf(applicationTypeComboBox.getSelectedItem().toString()));
+        applicationRequirements.setTrafficType(TrafficType.valueOf(applicationTypeComboBox.getSelectedItem().toString()));
 
         int bitrate = Integer.parseInt(bitrateTextField.getText());
         if (bitrate < 0) {

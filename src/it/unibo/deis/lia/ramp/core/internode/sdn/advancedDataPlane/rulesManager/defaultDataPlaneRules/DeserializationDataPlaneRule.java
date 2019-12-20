@@ -61,29 +61,29 @@ public class DeserializationDataPlaneRule extends AbstractDataPlaneRule implemen
         double result = 0;
         try {
             method = cls.getMethod("getSeqNumber", noparams);
-            seqNumber = (int) method.invoke(payload, null);
+            seqNumber = (int) method.invoke(payload);
             method = cls.getMethod("getPayloadSize", noparams);
-            payloadSize = (int) method.invoke(payload, null);
+            payloadSize = (int) method.invoke(payload);
             method = cls.getDeclaredMethod("getArray1", noparams);
-            array1 = (double[]) method.invoke(payload, null);
+            array1 = (double[]) method.invoke(payload);
             method = cls.getDeclaredMethod("getArray2", noparams);
-            array2 = (double[]) method.invoke(payload, null);
+            array2 = (double[]) method.invoke(payload);
             method = cls.getDeclaredMethod("getArray3", noparams);
-            array3 = (double[]) method.invoke(payload, null);
+            array3 = (double[]) method.invoke(payload);
             method = cls.getDeclaredMethod("getArray4", noparams);
-            array4 = (double[]) method.invoke(payload, null);
+            array4 = (double[]) method.invoke(payload);
             method = cls.getDeclaredMethod("getArray5", noparams);
-            array5 = (double[]) method.invoke(payload, null);
+            array5 = (double[]) method.invoke(payload);
             method = cls.getDeclaredMethod("getArray6", noparams);
-            array6 = (double[]) method.invoke(payload, null);
+            array6 = (double[]) method.invoke(payload);
             method = cls.getDeclaredMethod("getArray7", noparams);
-            array7 = (double[]) method.invoke(payload, null);
+            array7 = (double[]) method.invoke(payload);
             method = cls.getDeclaredMethod("getArray8", noparams);
-            array8 = (double[]) method.invoke(payload, null);
+            array8 = (double[]) method.invoke(payload);
             method = cls.getDeclaredMethod("getArray9", noparams);
-            array9 = (double[]) method.invoke(payload, null);
+            array9 = (double[]) method.invoke(payload);
             method = cls.getDeclaredMethod("getArray10", noparams);
-            array10 = (double[]) method.invoke(payload, null);
+            array10 = (double[]) method.invoke(payload);
 
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
@@ -159,9 +159,9 @@ public class DeserializationDataPlaneRule extends AbstractDataPlaneRule implemen
         int payloadSize = -1;
         try {
             method = cls.getMethod("getSeqNumber", noparams);
-            seqNumber = (int) method.invoke(payload, null);
+            seqNumber = (int) method.invoke(payload);
             method = cls.getMethod("getPayloadSize", noparams);
-            payloadSize = (int) method.invoke(payload, null);
+            payloadSize = (int) method.invoke(payload);
 
         } catch (NoSuchMethodException e) {
             e.printStackTrace();

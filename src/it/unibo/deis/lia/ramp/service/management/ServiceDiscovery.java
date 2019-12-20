@@ -92,7 +92,7 @@ public class ServiceDiscovery extends Thread {
             }
         } catch (SocketTimeoutException ste) {
             // do nothing...
-            //System.out.println("ServiceDiscovery SocketTimeoutException");
+            System.out.println("ServiceDiscovery SocketTimeoutException");
         }
         serviceClientSocket.close();
 

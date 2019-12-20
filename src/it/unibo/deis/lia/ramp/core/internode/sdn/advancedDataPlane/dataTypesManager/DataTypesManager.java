@@ -169,8 +169,6 @@ public class DataTypesManager implements DataTypesManagerInterface {
         } else {
             System.out.println("DataTypesManager: " + dataTypeFileName + " not deleted.");
         }
-
-
     }
 
     public Set<String> getAvailableDataTypes() {

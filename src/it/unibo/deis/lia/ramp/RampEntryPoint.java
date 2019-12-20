@@ -53,6 +53,7 @@ import it.unibo.deis.lia.ramp.service.management.ServiceManager;
 //import it.unibo.deis.lia.ramp.service.upnp.UpnpProxyEntrypoint;
 import it.unibo.deis.lia.ramp.util.GeneralUtils;
 import it.unibo.deis.lia.ramp.util.LogWithTimestamp;
+import scala.collection.script.Remove;
 
 //import com.restfb.DefaultFacebookClient;
 
@@ -70,7 +71,7 @@ public class RampEntryPoint {
         // Set logs with timestamp
         try {
             PrintStream logWithTimestamp = new LogWithTimestamp(defaultOutPrintStream, "out");
-            //System.setOut(logWithTimestamp); TODO Dmitrij Remove Comment
+            //System.setOut(logWithTimestamp); //TODO Dmitrij Remove Comment
             PrintStream logErrWithTimestamp = new LogWithTimestamp(defaultErrPrintStream, "err");
             //System.setErr(logErrWithTimestamp); TODO Dmitrij Remove Comment
         } catch (Exception e1) {
@@ -131,7 +132,7 @@ public class RampEntryPoint {
 
     // RAMP properties
     private static boolean logging;
-    public static final String releaseDate = "1 X 2019";
+    public static final String releaseDate = "1 X 2020";
     public static final String os = System.getProperty("os.name").toLowerCase();
     public static final boolean protobuf = true;
     private static final RampClassLoader rampClassLoader = new RampClassLoader(new URL[0], ClassLoader.getSystemClassLoader());

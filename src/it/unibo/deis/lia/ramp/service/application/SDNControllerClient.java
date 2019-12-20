@@ -866,9 +866,9 @@ public class SDNControllerClient {
                                 Class cls = dataTypesManager.getDataTypeClassObject(dataType);
                                 Class noparams[] = {};
                                 Method method = cls.getMethod("getSeqNumber", noparams);
-                                int seqNumber = (int) method.invoke(payload, null);
+                                int seqNumber = (int) method.invoke(payload);
                                 method = cls.getMethod("getTestRepetition", noparams);
-                                int testRepetition = (int) method.invoke(payload, null);
+                                int testRepetition = (int) method.invoke(payload);
                                 int payloadSize = up.getBytePayload().length;
                                 String packetInfo = "BoundReceiveSocketMessageHandler: " + dataType + ": " + seqNumber + ", payloadSize " + payloadSize + ", from " + up.getSourceNodeId();
                                 receivedMessages.addElement(packetInfo);

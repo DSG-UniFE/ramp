@@ -3,6 +3,9 @@ package it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * @author Dmitrij David Padalino Montenero
+ */
 public class OsRoutingPathDescriptor extends PathDescriptor implements Serializable {
 
     private static final long serialVersionUID = -7007761956766072449L;

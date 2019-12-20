@@ -1,6 +1,7 @@
 package test.sdncontroller;
 
 import it.unibo.deis.lia.ramp.RampEntryPoint;
+import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClient;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerService.ControllerService;
 import it.unibo.deis.lia.ramp.service.management.ServiceManager;
@@ -11,8 +12,10 @@ public class ControllerClientSenderReceiverTest {
 	private static RampEntryPoint ramp;
 	private static ControllerService controllerService;
 	private static ControllerClient controllerClient;
-	
+
 	public static void main(String[] args) {
+
+		String monitoredInterface = args[0];
 
 		ramp = RampEntryPoint.getInstance(true, null);
 
@@ -53,8 +56,8 @@ public class ControllerClientSenderReceiverTest {
 			@Override
 			public void run() {
 				try {
-						// Start Receiver
-						ControllerClientTestReceiver.receiveTwoSeriesOfPacketsInDifferentThreads();
+					// Start Receiver
+					ControllerClientTestReceiver.receiveTwoSeriesOfPacketsInDifferentThreads(E2EComm.TCP, 1000);
 				}
 				catch (Exception e) {
 					e.printStackTrace();
@@ -71,11 +74,10 @@ public class ControllerClientSenderReceiverTest {
 		}
 		
 		// Start Sender
-		ControllerClientTestSender.StatsPrinter statsPrinter = new StatsPrinter("output_external.csv");
+		ControllerClientTestSender.StatsPrinter statsPrinter = new StatsPrinter("output_external.csv", monitoredInterface);
 		statsPrinter.start();
 		try {
-			// TODO RemoveComment Dmitrij
-			//ControllerClientTestSender.sendTwoSeriesOfPacketsToDifferentReceivers(controllerClient);
+			ControllerClientTestSender.sendTwoSeriesOfPacketsToDifferentReceivers(E2EComm.TCP, 50000, 1000);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

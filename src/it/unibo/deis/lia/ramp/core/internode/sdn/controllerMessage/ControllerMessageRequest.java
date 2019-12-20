@@ -1,7 +1,6 @@
 package it.unibo.deis.lia.ramp.core.internode.sdn.controllerMessage;
 
 import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.ApplicationRequirements;
-import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.TopologyGraphSelector;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.PathSelectionMetric;
 import it.unibo.deis.lia.ramp.util.NodeStats;
 
@@ -22,6 +21,8 @@ public class ControllerMessageRequest extends ControllerMessage {
 
     private int flowId;
 
+    private int sourceNodeId;
+
     /**
      * PATH_REQUEST message: messageType, clientPort, destNodeIds, applicationRequirements, pathSelectionMetric, flowId,
      * MULTICAST_REQUEST message: messageType, clientPort, destNodeIds, destPorts, applicationRequirements, pathSelectionMetric, flowId
@@ -37,6 +38,7 @@ public class ControllerMessageRequest extends ControllerMessage {
         this.applicationRequirements = applicationRequirements;
         this.pathSelectionMetric = pathSelectionMetric;
         this.flowId = flowId;
+        this.sourceNodeId = ControllerMessage.UNUSED_FIELD;
     }
 
     public ControllerMessageRequest(MessageType messageType, int clientPort, int[] destNodeIds, int[] destPorts, ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric, int flowId) {
@@ -47,6 +49,7 @@ public class ControllerMessageRequest extends ControllerMessage {
         this.applicationRequirements = applicationRequirements;
         this.pathSelectionMetric = pathSelectionMetric;
         this.flowId = flowId;
+        this.sourceNodeId = ControllerMessage.UNUSED_FIELD;
     }
 
     public ControllerMessageRequest(MessageType messageType, int clientPort) {
@@ -56,6 +59,7 @@ public class ControllerMessageRequest extends ControllerMessage {
         this.applicationRequirements = null;
         this.pathSelectionMetric = null;
         this.flowId = UNUSED_FIELD;
+        this.sourceNodeId = ControllerMessage.UNUSED_FIELD;
     }
 
     public int[] getDestNodeIds() {
@@ -96,5 +100,13 @@ public class ControllerMessageRequest extends ControllerMessage {
 
     public void setFlowId(int flowId) {
         this.flowId = flowId;
+    }
+
+    public int getSourceNodeId() {
+        return sourceNodeId;
+    }
+
+    public void setSourceNodeId(int sourceNodeId) {
+        this.sourceNodeId = sourceNodeId;
     }
 }

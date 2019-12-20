@@ -2,6 +2,7 @@ package it.unibo.deis.lia.ramp.core.internode.sdn.dataPlaneForwarder.trafficEngi
 
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClientInterface;
 import it.unibo.deis.lia.ramp.core.internode.sdn.dataPlaneForwarder.DataPlaneForwarder;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -19,7 +20,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClient;
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
 import it.unibo.deis.lia.ramp.util.componentLocator.ComponentLocator;
 import it.unibo.deis.lia.ramp.util.componentLocator.ComponentType;
@@ -37,26 +37,51 @@ import oshi.hardware.NetworkIF;
 
 /**
  * @author Alessandro Dolci
+ * @author Dmitrij David Padalino Montenero
  */
 public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder {
 
     private static final int MAX_ATTEMPTS = 8000;
 
     private static MultipleFlowsSinglePriorityForwarder queuesForwarder = null;
+
     private UpdateManager updateManager;
+
+    private ControllerClientInterface controllerClient = null;
+
+    /**
+     * Control flow ID value, to be used for control communications between ControllerService and ControllerClients.
+     */
+    private static final int CONTROL_FLOW_ID = 0;
+
+    /**
+     * Control flow ID priority value always has the maximum priority.
+     */
+    private static final int CONTROL_FLOW_ID_PRIORITY = 0;
+
     /*
      * No need to make private fields static, since access always happens through the singleton
      */
     private Map<Integer, Integer> highestPriorityFlowIdsSentPackets;
+
     private Map<Integer, Integer> previousHighestPriorityFlowIdsSentPackets;
+
     private int previousHighestPriorityTotalFlows;
+
     private int previousHighestPriorityTotalSentPackets;
+
     private int lastPacketPriority;
+
     private Map<NetworkInterface, Long> lastPacketSendStartTimes;
+
     private Map<NetworkInterface, List<Long>> lastFivePacketsSendStartTimesLists;
+
     private Map<NetworkInterface, Double> lastPacketSendDurations;
+
     private Map<String, NetworkInterface> networkInterfaces;
+
     private Map<NetworkInterface, Long> networkSpeeds;
+
     /**
      * Data structure for throughput file building
      */
@@ -68,21 +93,25 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
             queuesForwarder.updateManager = new UpdateManager();
             queuesForwarder.updateManager.start();
 
-            queuesForwarder.highestPriorityFlowIdsSentPackets = new ConcurrentHashMap<Integer, Integer>();
-            queuesForwarder.previousHighestPriorityFlowIdsSentPackets = new ConcurrentHashMap<Integer, Integer>();
+            queuesForwarder.highestPriorityFlowIdsSentPackets = new ConcurrentHashMap<>();
+            queuesForwarder.previousHighestPriorityFlowIdsSentPackets = new ConcurrentHashMap<>();
             queuesForwarder.previousHighestPriorityTotalFlows = 0;
             queuesForwarder.previousHighestPriorityTotalSentPackets = 0;
             queuesForwarder.lastPacketPriority = -1;
-            queuesForwarder.lastPacketSendStartTimes = new ConcurrentHashMap<NetworkInterface, Long>();
-            queuesForwarder.lastFivePacketsSendStartTimesLists = new ConcurrentHashMap<NetworkInterface, List<Long>>();
-            queuesForwarder.lastPacketSendDurations = new ConcurrentHashMap<NetworkInterface, Double>();
-            queuesForwarder.networkInterfaces = new ConcurrentHashMap<String, NetworkInterface>();
-            queuesForwarder.networkSpeeds = new ConcurrentHashMap<NetworkInterface, Long>();
+            queuesForwarder.lastPacketSendStartTimes = new ConcurrentHashMap<>();
+            queuesForwarder.lastFivePacketsSendStartTimesLists = new ConcurrentHashMap<>();
+            queuesForwarder.lastPacketSendDurations = new ConcurrentHashMap<>();
+            queuesForwarder.networkInterfaces = new ConcurrentHashMap<>();
+            queuesForwarder.networkSpeeds = new ConcurrentHashMap<>();
 
-            queuesForwarder.highestPriorityFlowNumbers = new ConcurrentHashMap<Integer, Integer>();
-            //Dispatcher.getInstance(false).addPacketForwardingListener(queuesForwarder);
+            queuesForwarder.highestPriorityFlowNumbers = new ConcurrentHashMap<>();
             Dispatcher.getInstance(false).addPacketForwardingListenerBeforeAnother(queuesForwarder, routingForwarder);
-            System.out.println("QueuesForwarder ENABLED");
+            System.out.println("MultipleFlowsSinglePriorityForwarder ENABLED");
+
+            File outputFile = new File("output_internal.csv");
+            if (outputFile.exists()) {
+                outputFile.delete();
+            }
         }
         return queuesForwarder;
     }
@@ -93,7 +122,7 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
             Dispatcher.getInstance(false).removePacketForwardingListener(queuesForwarder);
             queuesForwarder.updateManager.stopUpdateManager();
             queuesForwarder = null;
-            System.out.println("QueuesForwarder DISABLED");
+            System.out.println("MultipleFlowsSinglePriorityForwarder DISABLED");
         }
     }
 
@@ -144,7 +173,6 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
                     if (networkSpeed == 0)
                         networkSpeed = 10000000L;
                     networkSpeed = networkSpeed / 8;
-                    // networkSpeed = networkSpeed / 2;
                     networkSpeeds.put(networkInterface, networkSpeed);
                 }
         }
@@ -164,10 +192,10 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
         long[] interPacketTimes = new long[4];
         List<Long> lastFivePacketsStartTimes = this.lastFivePacketsSendStartTimesLists.get(networkInterface);
         long averageInterPacketTime = 0;
-        if (lastFivePacketsStartTimes != null && lastFivePacketsStartTimes.size() == interPacketTimes.length+1) {
+        if (lastFivePacketsStartTimes != null && lastFivePacketsStartTimes.size() == interPacketTimes.length + 1) {
             long totalInterPacketTime = 0;
             for (int i = 0; i < interPacketTimes.length; i++) {
-                interPacketTimes[i] = lastFivePacketsStartTimes.get(i) - lastFivePacketsStartTimes.get(i+1);
+                interPacketTimes[i] = lastFivePacketsStartTimes.get(i) - lastFivePacketsStartTimes.get(i + 1);
                 totalInterPacketTime = totalInterPacketTime + interPacketTimes[i];
             }
             averageInterPacketTime = totalInterPacketTime / interPacketTimes.length;
@@ -195,11 +223,6 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
             Integer flowIdSentPackets = this.highestPriorityFlowIdsSentPackets.get(flowId);
             this.previousHighestPriorityFlowIdsSentPackets.put(flowId, flowIdSentPackets);
             this.previousHighestPriorityTotalSentPackets = this.previousHighestPriorityTotalSentPackets + flowIdSentPackets;
-            // flowIdSentPackets = flowIdSentPackets / 2;
-            // if (flowIdSentPackets == 0)
-            // 	this.highestPriorityFlowIdsSentPackets.remove(flowId);
-            // else
-            // 	this.highestPriorityFlowIdsSentPackets.put(flowId, flowIdSentPackets);
         }
         this.highestPriorityFlowIdsSentPackets.clear();
     }
@@ -216,21 +239,31 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
 
     @Override
     public void receivedTcpUnicastPacket(UnicastPacket up) {
+        if (controllerClient == null) {
+            controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
+        }
+
         /*
-         * Check if the current packet contains a valid flowId and has to be processed according to the SDN paradigm
+         * Check if the current packet contains a valid flowId and has to be
+         * processed according to the SDN paradigm
          */
-        if (up.getFlowId() != GenericPacket.UNUSED_FIELD && up.getDestNodeId() != Dispatcher.getLocalRampId()) {
-            ControllerClientInterface controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
-            //ControllerClient controllerClient = ControllerClient.getInstance();
-            int flowPriority = controllerClient.getFlowPriority(up.getFlowId());
+        int flowId = up.getFlowId();
+
+        if (flowId != GenericPacket.UNUSED_FIELD && flowId != CONTROL_FLOW_ID && up.getDestNodeId() != Dispatcher.getLocalRampId()) {
+            int flowPriority = controllerClient.getFlowPriority(flowId);
+
             NetworkInterface nextSendNetworkInterface = getNextSendNetworkInterface(up.getDest()[up.getCurrentHop()]);
             long networkSpeed = getNetworkSpeed(nextSendNetworkInterface);
             /*
-             * If the packet is the first to arrive, save the send informations and occupy the transmission channel
+             * If the packet is the first to arrive, save the send information
+             * and occupy the transmission channel
              */
             if (this.lastPacketSendStartTimes.get(nextSendNetworkInterface) == null && this.lastPacketSendDurations.get(nextSendNetworkInterface) == null && this.lastPacketPriority == -1) {
                 synchronized (this) {
-                    if (flowPriority == 0) {
+                    /*
+                     * If the flow has the highest priority (control messages)
+                     */
+                    if (flowPriority == 1) {
                         // double sendDuration = ((double) up.getBytePayload().length / networkSpeed) * 1000;
                         double sendDuration = getAverageInterPacketTime(nextSendNetworkInterface) * 1.25;
                         if (sendDuration < 25)
@@ -239,21 +272,21 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
                         this.lastPacketSendStartTimes.put(nextSendNetworkInterface, System.currentTimeMillis());
                         List<Long> lastFivePacketsSendStartTimes = this.lastFivePacketsSendStartTimesLists.get(nextSendNetworkInterface);
                         if (lastFivePacketsSendStartTimes == null)
-                            lastFivePacketsSendStartTimes = new ArrayList<Long>();
+                            lastFivePacketsSendStartTimes = new ArrayList<>();
                         lastFivePacketsSendStartTimes.add(0, System.currentTimeMillis());
                         if (lastFivePacketsSendStartTimes.size() == 6)
                             lastFivePacketsSendStartTimes.remove(5);
                         this.lastFivePacketsSendStartTimesLists.put(nextSendNetworkInterface, lastFivePacketsSendStartTimes);
-                        this.highestPriorityFlowIdsSentPackets.put(up.getFlowId(), 1);
+                        this.highestPriorityFlowIdsSentPackets.put(flowId, 1);
                     }
                     this.lastPacketPriority = flowPriority;
                 }
-                System.out.println("QueuesForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " is the first to reach the channel, no changes made to it");
+                System.out.println("MultipleFlowsSinglePriorityForwarder: packet " + up.getPacketId() + " with flowId " + flowId + " is the first to reach the channel, no changes made to it");
             }
             /*
-             * If the flow has the highest priority, check if the last packet was sent by a flow with the highest priority
+             * If the flow has the highest priority (control messages), check if the last packet was sent by a flow with the highest priority
              */
-            else if (flowPriority == 0) {
+            else if (flowPriority == 1) {
                 /*
                  * If the last packet was not sent by a flow with the highest priority, save the send information and occupy the transmission channel
                  */
@@ -266,30 +299,32 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
                         this.lastPacketSendDurations.put(nextSendNetworkInterface, sendDuration);
                         this.lastPacketSendStartTimes.put(nextSendNetworkInterface, System.currentTimeMillis());
                         List<Long> lastFivePacketsSendStartTimes = this.lastFivePacketsSendStartTimesLists.get(nextSendNetworkInterface);
-                        if (lastFivePacketsSendStartTimes == null)
-                            lastFivePacketsSendStartTimes = new ArrayList<Long>();
-                        lastFivePacketsSendStartTimes.add(0, System.currentTimeMillis());
-                        if (lastFivePacketsSendStartTimes.size() == 6)
-                            lastFivePacketsSendStartTimes.remove(5);
-                        this.lastFivePacketsSendStartTimesLists.put(nextSendNetworkInterface, lastFivePacketsSendStartTimes);
-                        if (this.highestPriorityFlowIdsSentPackets.containsKey(up.getFlowId()))
-                            this.highestPriorityFlowIdsSentPackets.put(up.getFlowId(), this.highestPriorityFlowIdsSentPackets.get(up.getFlowId())+1);
-                        else if (this.previousHighestPriorityFlowIdsSentPackets.containsKey(up.getFlowId())) {
-                            int sentPackets = (this.previousHighestPriorityFlowIdsSentPackets.get(up.getFlowId()) / 2) + 1;
-                            this.highestPriorityFlowIdsSentPackets.put(up.getFlowId(), sentPackets);
+                        if (lastFivePacketsSendStartTimes == null) {
+                            lastFivePacketsSendStartTimes = new ArrayList<>();
                         }
-                        else
-                            this.highestPriorityFlowIdsSentPackets.put(up.getFlowId(), 1);
+                        lastFivePacketsSendStartTimes.add(0, System.currentTimeMillis());
+
+                        if (lastFivePacketsSendStartTimes.size() == 6) {
+                            lastFivePacketsSendStartTimes.remove(5);
+                        }
+                        this.lastFivePacketsSendStartTimesLists.put(nextSendNetworkInterface, lastFivePacketsSendStartTimes);
+                        if (this.highestPriorityFlowIdsSentPackets.containsKey(flowId))
+                            this.highestPriorityFlowIdsSentPackets.put(flowId, this.highestPriorityFlowIdsSentPackets.get(flowId) + 1);
+                        else if (this.previousHighestPriorityFlowIdsSentPackets.containsKey(flowId)) {
+                            int sentPackets = (this.previousHighestPriorityFlowIdsSentPackets.get(flowId) / 2) + 1;
+                            this.highestPriorityFlowIdsSentPackets.put(flowId, sentPackets);
+                        } else
+                            this.highestPriorityFlowIdsSentPackets.put(flowId, 1);
                         this.lastPacketPriority = flowPriority;
                     }
-                    System.out.println("QueuesForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " has the highest priority, no changes made to it");
+                    System.out.println("MultipleFlowsSinglePriorityForwarder: packet " + up.getPacketId() + " with flowId " + flowId + " has the highest priority, no changes made to it");
                 }
                 /*
                  * If the last packet was sent by a flow with the highest priority, get the send probability
                  */
                 else {
                     long elapsed = System.currentTimeMillis() - this.lastPacketSendStartTimes.get(nextSendNetworkInterface);
-                    int sendProbability = getSendProbability(up.getFlowId());
+                    int sendProbability = getSendProbability(flowId);
                     int randomNumber = ThreadLocalRandom.current().nextInt(100);
                     /*
                      * If the packet is not allowed to proceed, wait and retry
@@ -301,14 +336,14 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
                             timeToWait = 4000;
                         if (timeToWait < 10)
                             timeToWait = 10;
-                        System.out.println("QueuesForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " has the highest priority but has not been sent, waiting " + timeToWait + " milliseconds and retrying");
+                        System.out.println("MultipleFlowsSinglePriorityForwarder: packet " + up.getPacketId() + " with flowId " + flowId + " has the highest priority but has not been sent, waiting " + timeToWait + " milliseconds and retrying");
                         try {
                             Thread.sleep(timeToWait);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                         elapsed = System.currentTimeMillis() - this.lastPacketSendStartTimes.get(nextSendNetworkInterface);
-                        sendProbability = getSendProbability(up.getFlowId());
+                        sendProbability = getSendProbability(flowId);
                         randomNumber = ThreadLocalRandom.current().nextInt(100);
                     }
                     synchronized (this) {
@@ -320,22 +355,21 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
                         this.lastPacketSendStartTimes.put(nextSendNetworkInterface, System.currentTimeMillis());
                         List<Long> lastFivePacketsSendStartTimes = this.lastFivePacketsSendStartTimesLists.get(nextSendNetworkInterface);
                         if (lastFivePacketsSendStartTimes == null)
-                            lastFivePacketsSendStartTimes = new ArrayList<Long>();
+                            lastFivePacketsSendStartTimes = new ArrayList<>();
                         lastFivePacketsSendStartTimes.add(0, System.currentTimeMillis());
                         if (lastFivePacketsSendStartTimes.size() == 6)
                             lastFivePacketsSendStartTimes.remove(5);
                         this.lastFivePacketsSendStartTimesLists.put(nextSendNetworkInterface, lastFivePacketsSendStartTimes);
-                        if (this.highestPriorityFlowIdsSentPackets.containsKey(up.getFlowId()))
-                            this.highestPriorityFlowIdsSentPackets.put(up.getFlowId(), this.highestPriorityFlowIdsSentPackets.get(up.getFlowId())+1);
-                        else if (this.previousHighestPriorityFlowIdsSentPackets.containsKey(up.getFlowId()) ) {
-                            int sentPackets = (this.previousHighestPriorityFlowIdsSentPackets.get(up.getFlowId()) / 2) + 1;
-                            this.highestPriorityFlowIdsSentPackets.put(up.getFlowId(), sentPackets);
-                        }
-                        else
-                            this.highestPriorityFlowIdsSentPackets.put(up.getFlowId(), 1);
+                        if (this.highestPriorityFlowIdsSentPackets.containsKey(flowId))
+                            this.highestPriorityFlowIdsSentPackets.put(flowId, this.highestPriorityFlowIdsSentPackets.get(flowId) + 1);
+                        else if (this.previousHighestPriorityFlowIdsSentPackets.containsKey(flowId)) {
+                            int sentPackets = (this.previousHighestPriorityFlowIdsSentPackets.get(flowId) / 2) + 1;
+                            this.highestPriorityFlowIdsSentPackets.put(flowId, sentPackets);
+                        } else
+                            this.highestPriorityFlowIdsSentPackets.put(flowId, 1);
                         this.lastPacketPriority = flowPriority;
                     }
-                    System.out.println("QueuesForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " has the highest priority, no changes made to it");
+                    System.out.println("MultipleFlowsSinglePriorityForwarder: packet " + up.getPacketId() + " with flowId " + flowId + " has the highest priority, no changes made to it");
                 }
             }
             /*
@@ -356,7 +390,7 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
                         timeToWait = 4000;
                     if (timeToWait < 10)
                         timeToWait = 10;
-                    System.out.println("QueuesForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " hasn't the highest priority, waiting " + timeToWait + " milliseconds and retrying; " + attempts + " attempts made");
+                    System.out.println("MultipleFlowsSinglePriorityForwarder: packet " + up.getPacketId() + " with flowId " + flowId + " hasn't the highest priority, waiting " + timeToWait + " milliseconds and retrying; " + attempts + " attempts made");
                     try {
                         Thread.sleep(timeToWait);
                     } catch (InterruptedException e) {
@@ -371,23 +405,26 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
                  */
                 if (attempts == MAX_ATTEMPTS) {
                     up.setDest(null);
-                    System.out.println("QueuesForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + ", maximum number of attempts made, the packet is being dropped");
+                    System.out.println("MultipleFlowsSinglePriorityForwarder: packet " + up.getPacketId() + " with flowId " + flowId + ", maximum number of attempts made, the packet is being dropped");
                 }
                 /*
                  * If the maximum number of attempts is not reached, save the send information and occupy the transmission channel
                  */
                 else {
                     synchronized (this) {
-                        // double sendDuration = ((double) up.getBytePayload().length / networkSpeed) * 1000;
-                        // if (sendDuration < 10)
-                        // 	sendDuration = 10;
-                        // this.lastPacketSendDurations.put(nextSendNetworkInterface, sendDuration);
-                        // this.lastPacketSendStartTimes.put(nextSendNetworkInterface, System.currentTimeMillis());
                         this.lastPacketPriority = flowPriority;
                     }
-                    System.out.println("QueuesForwarder: packet " + up.getPacketId() + " with flowId " + up.getFlowId() + " found the transmission channel free, no changes made to the packet");
+                    System.out.println("MultipleFlowsSinglePriorityForwarder: packet " + up.getPacketId() + " with flowId " + flowId + " found the transmission channel free, no changes made to the packet");
                 }
             }
+            /*
+             * Log all network traffic handled with this method
+             */
+            log(flowId, flowPriority, up.getBytePayload().length);
+        }
+
+        if (flowId == CONTROL_FLOW_ID) {
+            log(CONTROL_FLOW_ID, CONTROL_FLOW_ID_PRIORITY, up.getBytePayload().length);
         }
     }
 
@@ -398,13 +435,19 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
 
     @Override
     public void receivedTcpPartialPayload(UnicastHeader uh, byte[] payload, int off, int len, boolean lastChunk) {
+        if (controllerClient == null) {
+            controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
+        }
+
         /*
-         * Check if the current packet contains a valid flowId and has to be processed according to the SDN paradigm
+         * Check if the current packet contains a valid flowId and has to be
+         * processed according to the SDN paradigm
          */
-        if (uh.getFlowId() != GenericPacket.UNUSED_FIELD && uh.getDestNodeId() != Dispatcher.getLocalRampId()) {
-            //ControllerClient controllerClient = ControllerClient.getInstance();
-            ControllerClientInterface controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
-            int flowPriority = controllerClient.getFlowPriority(uh.getFlowId());
+        int flowId = uh.getFlowId();
+
+        if (flowId != GenericPacket.UNUSED_FIELD && flowId != CONTROL_FLOW_ID && uh.getDestNodeId() != Dispatcher.getLocalRampId()) {
+            int flowPriority = controllerClient.getFlowPriority(flowId);
+
             NetworkInterface nextSendNetworkInterface = getNextSendNetworkInterface(uh.getDest()[uh.getCurrentHop()]);
             int packetLength = 0;
             if (len <= payload.length)
@@ -417,7 +460,7 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
              */
             if (this.lastPacketSendStartTimes.get(nextSendNetworkInterface) == null && this.lastPacketSendDurations.get(nextSendNetworkInterface) == null && this.lastPacketPriority == -1) {
                 synchronized (this) {
-                    if (flowPriority == 0) {
+                    if (flowPriority == 1) {
                         // double sendDuration = ((double) packetLength / networkSpeed) * 1000;
                         double sendDuration = getAverageInterPacketTime(nextSendNetworkInterface) * 1.25;
                         if (sendDuration < 25)
@@ -426,27 +469,26 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
                         this.lastPacketSendStartTimes.put(nextSendNetworkInterface, System.currentTimeMillis());
                         List<Long> lastFivePacketsSendStartTimes = this.lastFivePacketsSendStartTimesLists.get(nextSendNetworkInterface);
                         if (lastFivePacketsSendStartTimes == null)
-                            lastFivePacketsSendStartTimes = new ArrayList<Long>();
+                            lastFivePacketsSendStartTimes = new ArrayList<>();
                         lastFivePacketsSendStartTimes.add(0, System.currentTimeMillis());
                         if (lastFivePacketsSendStartTimes.size() == 6)
                             lastFivePacketsSendStartTimes.remove(5);
                         this.lastFivePacketsSendStartTimesLists.put(nextSendNetworkInterface, lastFivePacketsSendStartTimes);
-                        this.highestPriorityFlowIdsSentPackets.put(uh.getFlowId(), 1);
+                        this.highestPriorityFlowIdsSentPackets.put(flowId, 1);
                     }
                     this.lastPacketPriority = flowPriority;
                 }
-                System.out.println("QueuesForwarder: packet " + uh.getPacketId() + " with flowId " + uh.getFlowId() + " is the first to reach the channel, no changes made to it");
+                System.out.println("MultipleFlowsSinglePriorityForwarder: packet " + uh.getPacketId() + " with flowId " + flowId + " is the first to reach the channel, no changes made to it");
             }
             /*
              * If the flow has the highest priority, check if the last packet was sent by a flow with the highest priority
              */
-            else if (flowPriority == 0) {
+            else if (flowPriority == 1) {
                 /*
                  * If the last packet was not sent by a flow with the highest priority, save the send information and occupy the transmission channel
                  */
                 if (this.lastPacketPriority > 0) {
                     synchronized (this) {
-                        // double sendDuration = ((double) packetLength / networkSpeed) * 1000;
                         double sendDuration = getAverageInterPacketTime(nextSendNetworkInterface) * 1.25;
                         if (sendDuration < 25)
                             sendDuration = 25;
@@ -454,29 +496,28 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
                         this.lastPacketSendStartTimes.put(nextSendNetworkInterface, System.currentTimeMillis());
                         List<Long> lastFivePacketsSendStartTimes = this.lastFivePacketsSendStartTimesLists.get(nextSendNetworkInterface);
                         if (lastFivePacketsSendStartTimes == null)
-                            lastFivePacketsSendStartTimes = new ArrayList<Long>();
+                            lastFivePacketsSendStartTimes = new ArrayList<>();
                         lastFivePacketsSendStartTimes.add(0, System.currentTimeMillis());
                         if (lastFivePacketsSendStartTimes.size() == 6)
                             lastFivePacketsSendStartTimes.remove(5);
                         this.lastFivePacketsSendStartTimesLists.put(nextSendNetworkInterface, lastFivePacketsSendStartTimes);
-                        if (this.highestPriorityFlowIdsSentPackets.containsKey(uh.getFlowId()))
-                            this.highestPriorityFlowIdsSentPackets.put(uh.getFlowId(), this.highestPriorityFlowIdsSentPackets.get(uh.getFlowId())+1);
-                        else if (this.previousHighestPriorityFlowIdsSentPackets.containsKey(uh.getFlowId())) {
-                            int sentPackets = (this.previousHighestPriorityFlowIdsSentPackets.get(uh.getFlowId()) / 2) + 1;
-                            this.highestPriorityFlowIdsSentPackets.put(uh.getFlowId(), sentPackets);
-                        }
-                        else
-                            this.highestPriorityFlowIdsSentPackets.put(uh.getFlowId(), 1);
+                        if (this.highestPriorityFlowIdsSentPackets.containsKey(flowId))
+                            this.highestPriorityFlowIdsSentPackets.put(flowId, this.highestPriorityFlowIdsSentPackets.get(flowId) + 1);
+                        else if (this.previousHighestPriorityFlowIdsSentPackets.containsKey(flowId)) {
+                            int sentPackets = (this.previousHighestPriorityFlowIdsSentPackets.get(flowId) / 2) + 1;
+                            this.highestPriorityFlowIdsSentPackets.put(flowId, sentPackets);
+                        } else
+                            this.highestPriorityFlowIdsSentPackets.put(flowId, 1);
                         this.lastPacketPriority = flowPriority;
                     }
-                    System.out.println("QueuesForwarder: packet " + uh.getPacketId() + " with flowId " + uh.getFlowId() + " has the highest priority, no changes made to it");
+                    System.out.println("MultipleFlowsSinglePriorityForwarder: packet " + uh.getPacketId() + " with flowId " + flowId + " has the highest priority, no changes made to it");
                 }
                 /*
                  * If the last packet was sent by a flow with the highest priority, get the send probability
                  */
                 else {
                     long elapsed = System.currentTimeMillis() - this.lastPacketSendStartTimes.get(nextSendNetworkInterface);
-                    int sendProbability = getSendProbability(uh.getFlowId());
+                    int sendProbability = getSendProbability(flowId);
                     int randomNumber = ThreadLocalRandom.current().nextInt(100);
                     /*
                      * If the packet is not allowed to proceed, wait and retry
@@ -488,14 +529,14 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
                             timeToWait = 4000;
                         if (timeToWait < 10)
                             timeToWait = 10;
-                        System.out.println("QueuesForwarder: packet " + uh.getPacketId() + " with flowId " + uh.getFlowId() + " has the highest priority, but has not been sent, waiting " + timeToWait + " milliseconds and retrying");
+                        System.out.println("MultipleFlowsSinglePriorityForwarder: packet " + uh.getPacketId() + " with flowId " + flowId + " has the highest priority, but has not been sent, waiting " + timeToWait + " milliseconds and retrying");
                         try {
                             Thread.sleep(timeToWait);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                         elapsed = System.currentTimeMillis() - this.lastPacketSendStartTimes.get(nextSendNetworkInterface);
-                        sendProbability = getSendProbability(uh.getFlowId());
+                        sendProbability = getSendProbability(flowId);
                         randomNumber = ThreadLocalRandom.current().nextInt(100);
                     }
                     synchronized (this) {
@@ -507,22 +548,21 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
                         this.lastPacketSendStartTimes.put(nextSendNetworkInterface, System.currentTimeMillis());
                         List<Long> lastFivePacketsSendStartTimes = this.lastFivePacketsSendStartTimesLists.get(nextSendNetworkInterface);
                         if (lastFivePacketsSendStartTimes == null)
-                            lastFivePacketsSendStartTimes = new ArrayList<Long>();
+                            lastFivePacketsSendStartTimes = new ArrayList<>();
                         lastFivePacketsSendStartTimes.add(0, System.currentTimeMillis());
                         if (lastFivePacketsSendStartTimes.size() == 6)
                             lastFivePacketsSendStartTimes.remove(5);
                         this.lastFivePacketsSendStartTimesLists.put(nextSendNetworkInterface, lastFivePacketsSendStartTimes);
-                        if (this.highestPriorityFlowIdsSentPackets.containsKey(uh.getFlowId()))
-                            this.highestPriorityFlowIdsSentPackets.put(uh.getFlowId(), this.highestPriorityFlowIdsSentPackets.get(uh.getFlowId())+1);
-                        else if (this.previousHighestPriorityFlowIdsSentPackets.containsKey(uh.getFlowId())) {
-                            int sentPackets = (this.previousHighestPriorityFlowIdsSentPackets.get(uh.getFlowId()) / 2) + 1;
-                            this.highestPriorityFlowIdsSentPackets.put(uh.getFlowId(), sentPackets);
-                        }
-                        else
-                            this.highestPriorityFlowIdsSentPackets.put(uh.getFlowId(), 1);
+                        if (this.highestPriorityFlowIdsSentPackets.containsKey(flowId))
+                            this.highestPriorityFlowIdsSentPackets.put(uh.getFlowId(), this.highestPriorityFlowIdsSentPackets.get(flowId) + 1);
+                        else if (this.previousHighestPriorityFlowIdsSentPackets.containsKey(flowId)) {
+                            int sentPackets = (this.previousHighestPriorityFlowIdsSentPackets.get(flowId) / 2) + 1;
+                            this.highestPriorityFlowIdsSentPackets.put(flowId, sentPackets);
+                        } else
+                            this.highestPriorityFlowIdsSentPackets.put(flowId, 1);
                         this.lastPacketPriority = flowPriority;
                     }
-                    System.out.println("QueuesForwarder: packet " + uh.getPacketId() + " with flowId " + uh.getFlowId() + " has the highest priority, no changes made to it");
+                    System.out.println("MultipleFlowsSinglePriorityForwarder: packet " + uh.getPacketId() + " with flowId " + flowId + " has the highest priority, no changes made to it");
                 }
             }
             /*
@@ -543,7 +583,7 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
                         timeToWait = 4000;
                     if (timeToWait < 10)
                         timeToWait = 10;
-                    System.out.println("QueuesForwarder: packet " + uh.getPacketId() + " with flowId " + uh.getFlowId() + " hasn't the highest priority, waiting " + timeToWait + " milliseconds and retrying; " + attempts + " attempts made");
+                    System.out.println("MultipleFlowsSinglePriorityForwarder: packet " + uh.getPacketId() + " with flowId " + flowId + " hasn't the highest priority, waiting " + timeToWait + " milliseconds and retrying; " + attempts + " attempts made");
                     try {
                         Thread.sleep(timeToWait);
                     } catch (InterruptedException e) {
@@ -558,63 +598,27 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
                  */
                 if (attempts == MAX_ATTEMPTS) {
                     uh.setDest(null);
-                    System.out.println("QueuesForwarder: packet " + uh.getPacketId() + " with flowId " + uh.getFlowId() + ", maximum number of attempts made, the packet is being dropped");
+                    System.out.println("MultipleFlowsSinglePriorityForwarder: packet " + uh.getPacketId() + " with flowId " + flowId + ", maximum number of attempts made, the packet is being dropped");
                 }
                 /*
                  * If the maximum number of attempts is not reached, save the send information and occupy the transmission channel
                  */
                 else {
                     synchronized (this) {
-                        // double sendDuration = ((double) packetLength / networkSpeed) * 1000;
-                        // if (sendDuration < 10)
-                        // 	sendDuration = 10;
-                        // this.lastPacketSendDurations.put(nextSendNetworkInterface, sendDuration);
-                        // this.lastPacketSendStartTimes.put(nextSendNetworkInterface, System.currentTimeMillis());
                         this.lastPacketPriority = flowPriority;
                     }
-                    System.out.println("QueuesForwarder: packet " + uh.getPacketId() + " with flowId " + uh.getFlowId() + " found the transmission channel free, no changes made to the packet");
+                    System.out.println("MultipleFlowsSinglePriorityForwarder: packet " + uh.getPacketId() + " with flowId " + flowId + " found the transmission channel free, no changes made to the packet");
                 }
             }
             /*
              * Log all network traffic handled with this method
              */
-            File outputFile = new File("output_internal.csv");
-            // if (flowPriority == 0)
-            // 	outputFile = new File("output_internal_maxpriority.csv");
-            // else
-            // 	outputFile = new File("output_internal_lowpriority.csv");
-            PrintWriter printWriter = null;
-            if (!outputFile.exists()) {
-                try {
-                    printWriter = new PrintWriter(outputFile);
-                    printWriter.println("timestamp,maxpriority_1_sentbytes,maxpriority_2_sentbytes,lowpriority_sentbytes");
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-            }
-            else {
-                try {
-                    printWriter = new PrintWriter(new FileWriter(outputFile, true));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            LocalDateTime localDateTime = LocalDateTime.now();
-            String timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
-            if (flowPriority == 0) {
-                Integer flowNumber = this.highestPriorityFlowNumbers.get(uh.getFlowId());
-                if (flowNumber == null) {
-                    flowNumber = this.highestPriorityFlowNumbers.size() + 1;
-                    this.highestPriorityFlowNumbers.put(uh.getFlowId(), flowNumber);
-                }
-                if (flowNumber == 1)
-                    printWriter.println(timestamp + "," + packetLength + ",,");
-                else if (flowNumber == 2)
-                    printWriter.println(timestamp + ",," + packetLength + ",");
-            }
-            else
-                printWriter.println(timestamp + ",,," + packetLength);
-            printWriter.close();
+            log(flowId, flowPriority, packetLength);
+        }
+
+        if (flowId == CONTROL_FLOW_ID) {
+            int packetLength = Math.min(len, payload.length);
+            log(CONTROL_FLOW_ID,CONTROL_FLOW_ID_PRIORITY, packetLength);
         }
     }
 
@@ -631,6 +635,48 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
     @Override
     public void sendingTcpUnicastHeaderException(UnicastHeader uh, Exception e) {
 
+    }
+
+    private void log(int flowId, int flowPriority, int packetLength) {
+        File outputFile = new File("output_internal.csv");
+        PrintWriter printWriter = null;
+        if (!outputFile.exists()) {
+            try {
+                printWriter = new PrintWriter(outputFile);
+                printWriter.println("timestamp,controlpriority sentbytes,maxpriority_1_sentbytes,maxpriority_2_sentbytes,lowpriority_sentbytes");
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                printWriter = new PrintWriter(new FileWriter(outputFile, true));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        LocalDateTime localDateTime = LocalDateTime.now();
+        String timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+        assert printWriter != null;
+
+        if (flowPriority == 0) {
+            printWriter.println(timestamp + "," + packetLength + ",,,");
+        }
+        else if (flowPriority == 1) {
+            Integer flowNumber = this.highestPriorityFlowNumbers.get(flowId);
+            if (flowNumber == null) {
+                flowNumber = this.highestPriorityFlowNumbers.size() + 1;
+                this.highestPriorityFlowNumbers.put(flowId, flowNumber);
+            }
+            if (flowNumber == 1)
+                printWriter.println(timestamp + ",," + packetLength + ",,");
+            else if (flowNumber == 2)
+                printWriter.println(timestamp + ",,," + packetLength + ",");
+        }
+        else {
+            printWriter.println(timestamp + ",,,," + packetLength);
+        }
+
+        printWriter.close();
     }
 
     private static class UpdateManager extends Thread {
@@ -656,7 +702,9 @@ public class MultipleFlowsSinglePriorityForwarder implements DataPlaneForwarder 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                queuesForwarder.resetHighestPriorityFlowIdsSentPackets();
+                if(queuesForwarder != null) {
+                    queuesForwarder.resetHighestPriorityFlowIdsSentPackets();
+                }
             }
         }
     }

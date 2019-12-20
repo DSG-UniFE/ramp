@@ -195,9 +195,9 @@ public class RampGUIJFrame extends javax.swing.JFrame {
                                                         .addComponent(jScrollPane4, javax.swing.GroupLayout.Alignment.LEADING, 0, 0, Short.MAX_VALUE)
                                                         .addComponent(jButtonStartLocalClients, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 182, Short.MAX_VALUE)))
                                         .addGroup(gl_jPanel1.createSequentialGroup()
-                                                .addComponent(jButtonRefreshLocalServices, javax.swing.GroupLayout.DEFAULT_SIZE, 189, Short.MAX_VALUE)
-                                                .addGap(3, 3, 3)
-                                                .addComponent(jButtonRefreshLocalClients, javax.swing.GroupLayout.DEFAULT_SIZE, 184, Short.MAX_VALUE)))
+                                                .addComponent(jButtonRefreshLocalServices, javax.swing.GroupLayout.DEFAULT_SIZE, 182, Short.MAX_VALUE)
+                                                .addGap(10, 10, 10)
+                                                .addComponent(jButtonRefreshLocalClients, javax.swing.GroupLayout.DEFAULT_SIZE, 176, Short.MAX_VALUE)))
                                 .addContainerGap())
         );
         gl_jPanel1.setVerticalGroup(
@@ -364,7 +364,7 @@ public class RampGUIJFrame extends javax.swing.JFrame {
                                 .addContainerGap())
         );
         jCheckBoxContinuityManager = new javax.swing.JCheckBox();
-        jCheckBoxContinuityManager.setSelected(true);
+        jCheckBoxContinuityManager.setSelected(false);
         jCheckBoxContinuityManager.setText("Continuity Manager");
         jCheckBoxContinuityManager.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {

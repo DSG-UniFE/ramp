@@ -40,18 +40,18 @@ public class FewestIntersectionsFlowPathSelector implements TopologyGraphSelecto
         dijkstra.setSource(this.topologyGraph.getNode(Integer.toString(sourceNodeId)));
         dijkstra.compute();
         Iterator<Path> availablePaths = dijkstra.getAllPathsIterator(this.topologyGraph.getNode(Integer.toString(destNodeId)));
-        Map<Integer, Integer> multiPathEdgeCounts = new HashMap<Integer, Integer>();
-        List<PathDescriptor> availablePathDescriptors = new ArrayList<PathDescriptor>();
+        Map<Integer, Integer> multiPathEdgeCounts = new HashMap<>();
+        List<PathDescriptor> availablePathDescriptors = new ArrayList<>();
         while (availablePaths.hasNext()) {
             Path path = availablePaths.next();
-            List<String> addresses = new ArrayList<String>();
-            List<Integer> nodeIds = new ArrayList<Integer>();
+            List<String> addresses = new ArrayList<>();
+            List<Integer> nodeIds = new ArrayList<>();
             for (int i = 0; i < path.getEdgeCount(); i++) {
                 // Edge edge = path.getEdgePath().get(i);
                 MultiNode currentNode = (MultiNode) path.getNodePath().get(i);
                 MultiNode nextNode = (MultiNode) path.getNodePath().get(i+1);
                 Collection<Edge> multiPathEdges = currentNode.getEdgeSetBetween(nextNode);
-                Edge edge = null;
+                Edge edge;
                 if (multiPathEdges.size() == 1)
                     edge = multiPathEdges.iterator().next();
                 else {
@@ -126,15 +126,15 @@ public class FewestIntersectionsFlowPathSelector implements TopologyGraphSelecto
 
     @Override
     public Map<Integer, PathDescriptor> getAllPathsFromSource(int sourceNodeId) {
-        Map<Integer, PathDescriptor> paths = new HashMap<Integer, PathDescriptor>();
+        Map<Integer, PathDescriptor> paths = new HashMap<>();
         dijkstra.init(this.topologyGraph);
         dijkstra.setSource(this.topologyGraph.getNode(Integer.toString(sourceNodeId)));
         dijkstra.compute();
         for (Node destNode : this.topologyGraph.getNodeSet()) {
             if (!destNode.equals(this.topologyGraph.getNode(Integer.toString(sourceNodeId)))) {
                 Path path = dijkstra.getPath(destNode);
-                List<String> addresses = new ArrayList<String>();
-                List<Integer> nodeIds = new ArrayList<Integer>();
+                List<String> addresses = new ArrayList<>();
+                List<Integer> nodeIds = new ArrayList<>();
                 for (int i = 0; i < path.getEdgeCount(); i++) {
                     Edge edge = path.getEdgePath().get(i);
                     Node currentNode = path.getNodePath().get(i);

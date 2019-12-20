@@ -541,6 +541,27 @@ public class E2EComm {
     }
 
     // Dmitrij David Padalino Montenero
+    public static boolean sendUnicast(String[] dest, int destNodeId, int destPort, int protocol, int flowId, byte[] payload) throws Exception {
+        boolean res;
+        res = sendUnicast(
+                dest,
+                destNodeId,
+                destPort,
+                protocol,
+                false,
+                GenericPacket.UNUSED_FIELD,
+                E2EComm.DEFAULT_BUFFERSIZE,
+                GenericPacket.UNUSED_FIELD,
+                GenericPacket.UNUSED_FIELD,
+                GenericPacket.UNUSED_FIELD,
+                flowId,
+                GenericPacket.UNUSED_FIELD,
+                payload
+        );
+        return res;
+    }
+
+    // Dmitrij David Padalino Montenero
     // sendUnicast with dataType input parameter
     public static boolean sendUnicast(
             String[] dest,
