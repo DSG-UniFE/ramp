@@ -6,20 +6,26 @@ import java.util.Set;
  * @author Dmitrij David Padalino Montenero
  *
  * The methods declared here should be related only to information retrieval.
+ *
+ * The class that implements these methods should be retrieved
+ * using the ComponentLocator object.
+ *
+ * Example of usage:
+ * DataTypesManagerInterface dataTypesManager = ((DataTypesManagerInterface) ComponentLocator.getComponent(ComponentType.DATA_TYPES_MANAGER));
  */
 public interface DataTypesManagerInterface {
 
-    public Set<String> getAvailableDataTypes();
+    Set<String> getAvailableDataTypes();
 
-    public long getDataTypeId(String dataTypeName);
+    long getDataTypeId(String dataTypeName);
 
-    public String getDataTypeName(long dataTypeId);
+    String getDataTypeName(long dataTypeId);
 
-    public boolean containsDataType(String dataTypeName);
+    boolean containsDataType(String dataTypeName);
 
-    public boolean containsDataType(long dataTypedId);
+    boolean containsDataType(long dataTypedId);
 
-    public Class getDataTypeClassObject(String dataTypeName);
+    Class getDataTypeClassObject(String dataTypeName);
 
-    public Class getDataTypeClassObject(long dataTypeId);
+    Class getDataTypeClassObject(long dataTypeId);
 }

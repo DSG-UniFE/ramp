@@ -4,7 +4,7 @@ package it.unibo.deis.lia.ramp.util.componentLocator;
  * @author Dmitrij David Padalino Montenero
  */
 public enum ComponentType {
-    RAMP_ENTRY_POINT("RampEntryPoint"),
+    RAMP_UTILS("RampUtils"),
     CONTROLLER_CLIENT("ControllerClient"),
     DATA_TYPES_MANAGER("DataTypesManager");
 

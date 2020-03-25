@@ -6,6 +6,9 @@ import it.unibo.deis.lia.ramp.core.e2e.UnicastHeader;
 import it.unibo.deis.lia.ramp.core.e2e.UnicastPacket;
 import it.unibo.deis.lia.ramp.core.internode.PacketForwardingListener;
 import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.rulesManager.DataPlaneRulesManager;
+import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClientInterface;
+import it.unibo.deis.lia.ramp.util.componentLocator.ComponentLocator;
+import it.unibo.deis.lia.ramp.util.componentLocator.ComponentType;
 
 /**
  * @author Dmitrij David Padalino Montenero
@@ -13,6 +16,11 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.rulesManager.
 public class DataPlaneForwardingListener implements PacketForwardingListener {
 
     private DataPlaneRulesManager dataPlaneRulesManager = DataPlaneRulesManager.getInstance();
+
+    /**
+     * TODO Remove me
+     */
+    private ControllerClientInterface controllerClient = null;
 
     @Override
     public void receivedUdpUnicastPacket(UnicastPacket up) {
@@ -26,10 +34,24 @@ public class DataPlaneForwardingListener implements PacketForwardingListener {
 
     @Override
     public void receivedTcpUnicastPacket(UnicastPacket up) {
+        /*
+         * TODO Remove me
+         */
+        long pre = System.currentTimeMillis();
+
         long dataTypeId = up.getHeader().getDataType();
         if (dataTypeId != GenericPacket.UNUSED_FIELD && dataPlaneRulesManager.containsDataPlaneRuleForDataType(dataTypeId)) {
             dataPlaneRulesManager.executeUnicastPacketDataPlaneRule(dataTypeId, up);
         }
+
+        /*
+         * TODO Remove me
+         */
+        long post = System.currentTimeMillis();
+        if(controllerClient == null) {
+            controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
+        }
+        controllerClient.logRule("DataPlaneForwardingListener completed in " + (post-pre) + " milliseconds");
     }
 
     @Override

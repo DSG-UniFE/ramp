@@ -19,7 +19,7 @@ public class PrintDataTypeIdDataPlaneRule extends AbstractDataPlaneRule implemen
     }
 
     @Override
-    public  void applyRuleToUnicastHeader(UnicastHeader uh) {
+    public void applyRuleToUnicastHeader(UnicastHeader uh) {
         long dataTypeId = uh.getDataType();
         System.out.println("PrintDataTypeIdDataPlaneRule: dataTypeId: " + dataTypeId);
     }

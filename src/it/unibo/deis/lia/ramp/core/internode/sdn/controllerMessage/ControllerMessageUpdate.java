@@ -47,14 +47,17 @@ public class ControllerMessageUpdate extends ControllerMessage {
 
     private int routeId;
 
+    private boolean osRoutingPriority;
+
     /**
      * TOPOLOGY_UPDATE message: messageType, neighborNodes, nodeStats
      * TRAFFIC_ENGINEERING_POLICY_UPDATE message: messageType, trafficEngineeringPolicy
      * ROUTING_POLICY_UPDATE: messageType, routingPolicy
      * DEFAULT_FLOW_PATHS_UPDATE message: messageType, newPathMappings
      * FLOW_PRIORITIES_UPDATE message: messageType, flowPriorities
-     * OS_ROUTING_ADD_ROUTE: messageType, srcIP, destIP, viaIP, routeId
+     * OS_ROUTING_ADD_ROUTE: messageType, clientPort srcIP, destIP, viaIP, routeId
      * OS_ROUTING_DELETE_ROUTE: messageType, routeId
+     * OS_ROUTING_PRIORITY_UPDATE: messageType, clientPort, routeId, osRoutingPriority
      * DATA_PLANE_ADD_DATA_TYPE message: messageType, DataPlaneMessage
      * DATA_PLANE_REMOVE_DATA_TYPE message: messageType, dataType
      * DATA_PLANE_ADD_RULE_FILE message: messageType, DataPlaneMessage
@@ -76,7 +79,8 @@ public class ControllerMessageUpdate extends ControllerMessage {
         this.srcIp = null;
         this.destIp = null;
         this.viaIp = null;
-        this.routeId = UNUSED_FIELD;
+        this.routeId = ControllerMessage.UNUSED_FIELD;
+        this.osRoutingPriority = false;
     }
 
     public ControllerMessageUpdate(MessageType messageType, Map<String, NodeStats> nodeStats, Map<Integer, List<String>> neighborNodes, TrafficEngineeringPolicy trafficEngineeringPolicy, RoutingPolicy routingPolicy, Map<Integer, PathDescriptor> newPathMappings, Map<Integer, Integer> flowPriorities, DataPlaneMessage dataPlaneMessage, String dataType, String dataPlaneRule) {
@@ -90,6 +94,11 @@ public class ControllerMessageUpdate extends ControllerMessage {
         this.dataPlaneMessage = dataPlaneMessage;
         this.dataType = dataType;
         this.dataPlaneRule = dataPlaneRule;
+        this.srcIp = null;
+        this.destIp = null;
+        this.viaIp = null;
+        this.routeId = ControllerMessage.UNUSED_FIELD;
+        this.osRoutingPriority = false;
     }
 
     public ControllerMessageUpdate(MessageType messageType, int clientPort, String srcIP, String destIP, String viaIP, int routeId) {
@@ -98,6 +107,12 @@ public class ControllerMessageUpdate extends ControllerMessage {
         this.destIp = destIP;
         this.viaIp = viaIP;
         this.routeId = routeId;
+    }
+
+    public ControllerMessageUpdate(MessageType messageType, int clientPort, int routeId, boolean osRoutingPriority) {
+        super(messageType, clientPort);
+        this.routeId = routeId;
+        this.osRoutingPriority = osRoutingPriority;
     }
 
     public Map<Integer, List<String>> getNeighborNodes() {
@@ -180,4 +195,8 @@ public class ControllerMessageUpdate extends ControllerMessage {
     public int getRouteId() {return this.routeId; }
 
     public void setRouteId(int routeId) { this.routeId = routeId; }
+
+    public boolean isOsRoutingPriority() { return this.osRoutingPriority; }
+
+    public void setOsRoutingPriority(boolean osRoutingPriority) { this.osRoutingPriority = osRoutingPriority; }
 }

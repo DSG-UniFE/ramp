@@ -244,10 +244,6 @@ public class OsRoutingManager {
                 }
 
                 String sudoCommandResult;
-                String ipRouteCommand = "ip route";
-                System.out.println("OSRoutingManager " + ipRouteCommand);
-                sudoCommandResult = sudoCommand(ipRouteCommand);
-                System.out.println("OSRoutingManager " + ipRouteCommand + " result: " + sudoCommandResult);
 
                 /*
                  * Check if a table name for the current sourceIP exists otherwise create it.

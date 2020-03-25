@@ -1,11 +1,20 @@
 package it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient;
 
+import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.PathSelectionMetric;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.PathDescriptor;
 
 import java.util.List;
 
 /**
  * @author Dmitrij David Padalino Montenero
+ *
+ * This interface exposes one the methods available on the ControllerClient
+ *
+ * The class that implements these methods should be retrieved
+ * using the ComponentLocator object.
+ *
+ * Example of usage:
+ * ControllerClientInterface controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
  */
 public interface ControllerClientInterface {
     List<PathDescriptor> getFlowMulticastNextHops(int flowId);
@@ -13,6 +22,8 @@ public interface ControllerClientInterface {
     int getFlowPriority(int flowId);
 
     String[] getFlowPath(int destNodeId, int flowId);
+
+    PathDescriptor sendNewPathRequest(int destNodeId, PathSelectionMetric pathSelectionMetric);
 
     /**
      * This method lets any Controller Client Node to ask
@@ -31,7 +42,19 @@ public interface ControllerClientInterface {
      * @param sourceNodeId RAMP Id of the source
      * @param destNodeId RAMP Id of the destination
      * @param flowId of the communication
-     * @return
+     * @return the fixed path
      */
     PathDescriptor sendFixPathRequest(int sourceNodeId, int destNodeId, int flowId);
+
+    int sendOsRoutingUpdatePriorityRequest(int routeId, boolean switchToOsRouting);
+
+    /*
+     * TODO Remove me
+     */
+    void log(String message);
+
+    /*
+     * TODO Remove me
+     */
+    void logRule(String message);
 }

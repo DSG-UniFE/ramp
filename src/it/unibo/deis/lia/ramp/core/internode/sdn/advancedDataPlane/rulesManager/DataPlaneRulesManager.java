@@ -42,6 +42,12 @@ public class DataPlaneRulesManager {
     private Map<String, Class> dataPlaneRulesClassMapping;
 
     /**
+     * Data structure used to contains all the Class objects managed
+     * by this manager ready to be used.
+     */
+    private Map<String, Object> dataPlaneRulesClassInstanceMapping;
+
+    /**
      * Data structure to keep track of the current active rules to apply given
      * a serialization ID. In this implementation we use
      * the serialVersionUID to identify the DataType.
@@ -85,6 +91,7 @@ public class DataPlaneRulesManager {
     private DataPlaneRulesManager() {
         dataPlaneRulesDatabase = new ConcurrentHashMap<>();
         dataPlaneRulesClassMapping = new ConcurrentHashMap<>();
+        dataPlaneRulesClassInstanceMapping = new ConcurrentHashMap<>();
         activeDataPlaneRules = new ConcurrentHashMap<>();
         dataTypesManager = ((DataTypesManagerInterface) ComponentLocator.getComponent(ComponentType.DATA_TYPES_MANAGER));
 
@@ -186,6 +193,18 @@ public class DataPlaneRulesManager {
     private void addDataPlaneRuleToDataBase(Class dataPlaneRuleClass) {
         dataPlaneRulesDatabase.put(dataPlaneRuleClass.getSimpleName(), dataPlaneRuleClass.getName());
         dataPlaneRulesClassMapping.put(dataPlaneRuleClass.getSimpleName(), dataPlaneRuleClass);
+        try {
+            dataPlaneRulesClassInstanceMapping.put(dataPlaneRuleClass.getSimpleName(), dataPlaneRuleClass.getDeclaredConstructor().newInstance());
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void removeDataPlaneRuleFromDataBase(String dataPlaneRuleName) {
@@ -194,6 +213,7 @@ public class DataPlaneRulesManager {
          */
         dataPlaneRulesDatabase.remove(dataPlaneRuleName);
         dataPlaneRulesClassMapping.remove(dataPlaneRuleName);
+        dataPlaneRulesClassInstanceMapping.remove(dataPlaneRuleName);
         /*
          * Delete stored .class file
          */
@@ -256,21 +276,12 @@ public class DataPlaneRulesManager {
     public void executeUnicastHeaderDataPlaneRule(long dataTypeId, UnicastHeader uh) {
         String dataTypeName = dataTypesManager.getDataTypeName(dataTypeId);
         List<String> activeDataTypeRules = activeDataPlaneRules.get(dataTypeId);
-        Object dataPlaneRule = null;
+        Object dataPlaneRule;
         Method method;
         for (String dataPlaneRuleName : activeDataTypeRules) {
             Class dataPlaneRuleClass = dataPlaneRulesClassMapping.get(dataPlaneRuleName);
-            try {
-                dataPlaneRule = dataPlaneRuleClass.getDeclaredConstructor().newInstance();
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            }
+            dataPlaneRule = dataPlaneRulesClassInstanceMapping.get(dataPlaneRuleName);
+
             try {
                 method = dataPlaneRuleClass.getDeclaredMethod("applyRuleToUnicastHeader", UnicastHeader.class);
                 method.invoke(dataPlaneRule, uh);
@@ -279,9 +290,7 @@ public class DataPlaneRulesManager {
                  * This means that the empty method of AbstractDataPlaneRule has not been overriden.
                  */
                 continue;
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
+            } catch (IllegalAccessException | InvocationTargetException e) {
                 e.printStackTrace();
             }
             System.out.println("DataPlaneRulesManager: unicastHeaderDataPlaneRule: " + dataPlaneRuleName + " for DataType: " + dataTypeName + " successfully applied.");
@@ -291,21 +300,12 @@ public class DataPlaneRulesManager {
     public void executeUnicastPacketDataPlaneRule(long dataTypeId, UnicastPacket up) {
         String dataTypeName = dataTypesManager.getDataTypeName(dataTypeId);
         List<String> activeDataTypeRules = activeDataPlaneRules.get(dataTypeId);
-        Object dataPlaneRule = null;
+        Object dataPlaneRule;
         Method method;
         for (String dataPlaneRuleName : activeDataTypeRules) {
             Class dataPlaneRuleClass = dataPlaneRulesClassMapping.get(dataPlaneRuleName);
-            try {
-                dataPlaneRule = dataPlaneRuleClass.getDeclaredConstructor().newInstance();
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            }
+            dataPlaneRule = dataPlaneRulesClassInstanceMapping.get(dataPlaneRuleName);
+
             try {
                 method = dataPlaneRuleClass.getDeclaredMethod("applyRuleToUnicastPacket", UnicastPacket.class);
                 method.invoke(dataPlaneRule, up);
@@ -314,9 +314,7 @@ public class DataPlaneRulesManager {
                  * This means that the empty method of AbstractDataPlaneRule has not been overriden.
                  */
                 continue;
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
+            } catch (IllegalAccessException | InvocationTargetException e) {
                 e.printStackTrace();
             }
 
@@ -327,21 +325,12 @@ public class DataPlaneRulesManager {
     public void executeBroadcastPacketDataPlaneRule(long dataTypeId, BroadcastPacket bp) {
         String dataTypeName = dataTypesManager.getDataTypeName(dataTypeId);
         List<String> activeDataTypeRules = activeDataPlaneRules.get(dataTypeId);
-        Object dataPlaneRule = null;
+        Object dataPlaneRule;
         Method method;
         for (String dataPlaneRuleName : activeDataTypeRules) {
             Class dataPlaneRuleClass = dataPlaneRulesClassMapping.get(dataPlaneRuleName);
-            try {
-                dataPlaneRule = dataPlaneRuleClass.getDeclaredConstructor().newInstance();
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            }
+            dataPlaneRule = dataPlaneRulesClassInstanceMapping.get(dataPlaneRuleName);
+
             try {
                 method = dataPlaneRuleClass.getDeclaredMethod("applyRuleToBroadcastPacket", BroadcastPacket.class);
                 method.invoke(dataPlaneRule, bp);
@@ -350,9 +339,7 @@ public class DataPlaneRulesManager {
                  * This means that the empty method of AbstractDataPlaneRule has not been overriden.
                  */
                 continue;
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
+            } catch (IllegalAccessException | InvocationTargetException e) {
                 e.printStackTrace();
             }
             System.out.println("DataPlaneRulesManager: broadcastPacketDataPlaneRule: " + dataPlaneRuleName + " for DataType: " + dataTypeName + " successfully applied.");

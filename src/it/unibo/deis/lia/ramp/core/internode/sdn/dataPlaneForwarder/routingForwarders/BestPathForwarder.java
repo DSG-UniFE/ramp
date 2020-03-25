@@ -8,6 +8,8 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.P
 import it.unibo.deis.lia.ramp.util.componentLocator.ComponentLocator;
 import it.unibo.deis.lia.ramp.util.componentLocator.ComponentType;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Vector;
@@ -20,7 +22,7 @@ import java.util.concurrent.Semaphore;
  */
 public class BestPathForwarder implements DataPlaneForwarder {
 
-    private static BestPathForwarder flowPathChanger = null;
+    private static BestPathForwarder bestPathForwarder = null;
 
     /**
      * Control flow ID value, to be used for control communications between ControllerService and ControllerClients.
@@ -52,19 +54,19 @@ public class BestPathForwarder implements DataPlaneForwarder {
     }
 
     public synchronized static BestPathForwarder getInstance() {
-        if (flowPathChanger == null) {
-            flowPathChanger = new BestPathForwarder();
-            Dispatcher.getInstance(false).addPacketForwardingListener(flowPathChanger);
+        if (bestPathForwarder == null) {
+            bestPathForwarder = new BestPathForwarder();
+            Dispatcher.getInstance(false).addPacketForwardingListener(bestPathForwarder);
             System.out.println("BestPathForwarder ENABLED");
         }
-        return flowPathChanger;
+        return bestPathForwarder;
     }
 
     public void deactivate() {
-        if (flowPathChanger != null) {
-            Dispatcher.getInstance(false).removePacketForwardingListener(flowPathChanger);
+        if (bestPathForwarder != null) {
+            Dispatcher.getInstance(false).removePacketForwardingListener(bestPathForwarder);
             destroy();
-            flowPathChanger = null;
+            bestPathForwarder = null;
             System.out.println("BestPathForwarder DISABLED");
         }
     }
@@ -89,6 +91,13 @@ public class BestPathForwarder implements DataPlaneForwarder {
         if (controllerClient == null) {
             controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
         }
+
+        // TODO Remove me
+        LocalDateTime localDateTime = LocalDateTime.now();
+        String timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+        long pre = System.currentTimeMillis();
+        controllerClient.logRule("BestPathForwarder: started at: " + timestamp);
+
         /*
          * Check if the packet header contains a valid flowId and has to be processed according to the SDN paradigm.
          * TODO Understand if the CONTROL MESSAGES must be supported by this forwarder.
@@ -111,11 +120,17 @@ public class BestPathForwarder implements DataPlaneForwarder {
                     uh.setDest(newPath);
                     System.out.println("BestPathForwarder: dest path changed to packet " + uh.getId() + " belonging to flow " + flowId);
                     for (int i = 0; i < newPath.length; i++)
-                        System.out.println("FlowPathChanger: new flow path address " + i + ", " + newPath[i]);
+                        System.out.println("BestPathForwarder: new flow path address " + i + ", " + newPath[i]);
                 } else
                     System.out.println("BestPathForwarder: no changes made to packet " + uh.getId() + " belonging to flow " + flowId);
             }
         }
+
+        // TODO Remove me
+        localDateTime = LocalDateTime.now();
+        timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+        long post = System.currentTimeMillis();
+        controllerClient.logRule("BestPathForwarder: ended at: " + timestamp + ", totalTime: " + (post-pre));
     }
 
     @Override
@@ -139,6 +154,12 @@ public class BestPathForwarder implements DataPlaneForwarder {
             controllerClient = ((ControllerClientInterface) ComponentLocator.getComponent(ComponentType.CONTROLLER_CLIENT));
         }
 
+        // TODO Remove me
+        LocalDateTime localDateTime = LocalDateTime.now();
+        String timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+        long pre = System.currentTimeMillis();
+        controllerClient.logRule("BestPathForwarder: exception started at: " + timestamp);
+
         int flowId = uh.getFlowId();
         if (flowId != GenericPacket.UNUSED_FIELD && flowId != CONTROL_FLOW_ID) {
             int localRampId = Dispatcher.getLocalRampId();
@@ -158,11 +179,23 @@ public class BestPathForwarder implements DataPlaneForwarder {
                     uh.setDest(newPath);
                 } else {
                     if (this.fixRequestPermit.tryAcquire()) {
+                        // TODO Remove me
+                        localDateTime = LocalDateTime.now();
+                        timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                        long preFix = System.currentTimeMillis();
+                        controllerClient.logRule("BestPathForwarder: FIX PROTOCOL started at: " + timestamp);
+
                         /*
                          * Fix the broken path with a new one and
                          * push it to the original sender.
                          */
                         PathDescriptor fixedPathDescriptor = controllerClient.sendFixPathRequest(sourceNodeId, destNodeId, flowId);
+
+                        // TODO Remove me
+                        localDateTime = LocalDateTime.now();
+                        timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                        long postFix = System.currentTimeMillis();
+                        controllerClient.logRule("BestPathForwarder: FIX PROTOCOL ended at: " + timestamp + ", totalTime: " + (postFix-preFix));
 
                         /*
                          * If the sender node has discovered the broken path we need to
@@ -209,11 +242,24 @@ public class BestPathForwarder implements DataPlaneForwarder {
 
                         fixRequestPermit.release();
                     } else {
+                        // TODO Remove me
+                        localDateTime = LocalDateTime.now();
+                        timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                        long preWait = System.currentTimeMillis();
+                        controllerClient.logRule("BestPathForwarder: wait started at: " + timestamp);
+
                         while(fixRequestPermit.availablePermits() == 0) {
                             /*
                              * Wait
                              */
                         }
+
+                        // TODO Remove me
+                        localDateTime = LocalDateTime.now();
+                        timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                        long postWait = System.currentTimeMillis();
+                        controllerClient.logRule("BestPathForwarder: wait ended at: " + timestamp + ", totalTime: " + (postWait-preWait));
+
                         /*
                          * Retrieve the path from cache and set it
                          * in the packet header.
@@ -224,6 +270,12 @@ public class BestPathForwarder implements DataPlaneForwarder {
                 }
             }
         }
+
+        // TODO Remove me
+        localDateTime = LocalDateTime.now();
+        timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+        long post = System.currentTimeMillis();
+        controllerClient.logRule("BestPathForwarder: exception ended at: " + timestamp + ", totalTime: " + (post-pre));
     }
 
     /**

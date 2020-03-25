@@ -21,12 +21,17 @@ public class ControllerMessageRequest extends ControllerMessage {
 
     private int flowId;
 
+    private int routeId;
+
+    private boolean osRoutingPriority;
+
     private int sourceNodeId;
 
     /**
      * PATH_REQUEST message: messageType, clientPort, destNodeIds, applicationRequirements, pathSelectionMetric, flowId,
      * MULTICAST_REQUEST message: messageType, clientPort, destNodeIds, destPorts, applicationRequirements, pathSelectionMetric, flowId
      * PRIORITY_VALUE_REQUEST message: messageType, clientPort, applicationRequirements, flowId
+     * FIX_PATH_REQUEST message: messageType, clientPort, destNodeIds, flowId
      * OS_ROUTING_REQUEST message: messageType, clientPort, destNodeIds, destPorts, applicationRequirements, pathSelectionMetric
      * TOPOLOGY_GRAPH_REQUEST message: messageType, clientPort
      */
@@ -38,6 +43,8 @@ public class ControllerMessageRequest extends ControllerMessage {
         this.applicationRequirements = applicationRequirements;
         this.pathSelectionMetric = pathSelectionMetric;
         this.flowId = flowId;
+        this.routeId = ControllerMessage.UNUSED_FIELD;
+        this.osRoutingPriority = false;
         this.sourceNodeId = ControllerMessage.UNUSED_FIELD;
     }
 
@@ -49,6 +56,20 @@ public class ControllerMessageRequest extends ControllerMessage {
         this.applicationRequirements = applicationRequirements;
         this.pathSelectionMetric = pathSelectionMetric;
         this.flowId = flowId;
+        this.routeId = ControllerMessage.UNUSED_FIELD;
+        this.osRoutingPriority = false;
+        this.sourceNodeId = ControllerMessage.UNUSED_FIELD;
+    }
+
+    public ControllerMessageRequest(MessageType messageType, int clientPort, int routeId, boolean osRoutingPriority) {
+        super(messageType, clientPort);
+        this.destNodeIds = null;
+        this.destPorts = null;
+        this.applicationRequirements = null;
+        this.pathSelectionMetric = null;
+        this.flowId = ControllerMessage.UNUSED_FIELD;
+        this.routeId = routeId;
+        this.osRoutingPriority = osRoutingPriority;
         this.sourceNodeId = ControllerMessage.UNUSED_FIELD;
     }
 
@@ -58,7 +79,9 @@ public class ControllerMessageRequest extends ControllerMessage {
         this.destPorts = null;
         this.applicationRequirements = null;
         this.pathSelectionMetric = null;
-        this.flowId = UNUSED_FIELD;
+        this.flowId = ControllerMessage.UNUSED_FIELD;
+        this.routeId = ControllerMessage.UNUSED_FIELD;
+        this.osRoutingPriority = false;
         this.sourceNodeId = ControllerMessage.UNUSED_FIELD;
     }
 
@@ -101,6 +124,14 @@ public class ControllerMessageRequest extends ControllerMessage {
     public void setFlowId(int flowId) {
         this.flowId = flowId;
     }
+
+    public int getRouteId() { return this.routeId; }
+
+    public void setRouteId(int routeId) { this.routeId = routeId; }
+
+    public boolean isOsRoutingPriority() { return this.osRoutingPriority; }
+
+    public void setOsRoutingPriority(boolean osRoutingPriority) { this.osRoutingPriority = osRoutingPriority; }
 
     public int getSourceNodeId() {
         return sourceNodeId;

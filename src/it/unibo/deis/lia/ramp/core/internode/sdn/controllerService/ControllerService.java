@@ -2,6 +2,8 @@ package it.unibo.deis.lia.ramp.core.internode.sdn.controllerService;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -20,6 +22,7 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.osRoutingPathSele
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.osRoutingPathSelectors.MinimumNetworkLoadOsRoutingPathSelector;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.osRoutingPathSelectors.OsRoutingTopologyGraphSelector;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathDescriptors.OsRoutingPathDescriptor;
+import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.pathSelectors.LongestPathSelector;
 import it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy.TrafficEngineeringPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.routingPolicy.RoutingPolicy;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.TopologyGraphSelector;
@@ -198,13 +201,18 @@ public class ControllerService extends Thread {
      */
     private String sdnControllerDirectory = "./temp/sdnController";
 
+    /**
+     * TODO Remove me
+     */
+    private PrintWriter printWriter;
+
     private ControllerService() throws Exception {
         this.serviceSocket = E2EComm.bindPreReceive(PROTOCOL);
         ServiceManager.getInstance(false).registerService("SDNController", this.serviceSocket.getLocalPort(), PROTOCOL);
         active = true;
         this.updateManager = new UpdateManager();
 
-        this.trafficEngineeringPolicy = TrafficEngineeringPolicy.SINGLE_FLOW;
+        this.trafficEngineeringPolicy = TrafficEngineeringPolicy.NO_FLOW_POLICY;
         this.routingPolicy = RoutingPolicy.REROUTING;
 
         this.activeClients = new HashSet<>();
@@ -242,6 +250,24 @@ public class ControllerService extends Thread {
                 System.out.println("ControllerService: the folder " + dir.getName() + " already exists.");
             }
         }
+
+        /*
+         * TODO Remove me
+         */
+        File outputFile = new File(sdnControllerDirectory + "/" + "controllerServiceLog" + Dispatcher.getLocalRampId() + ".txt");
+
+        if (outputFile.exists()) {
+            outputFile.delete();
+        }
+        outputFile.createNewFile();
+
+        try {
+            printWriter = new PrintWriter(new FileWriter(outputFile, true));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        printWriter.println("ControllerService NodeId=" + Dispatcher.getLocalRampId() + " TEST LOG");
+        printWriter.flush();
     }
 
     public synchronized static ControllerService getInstance() {
@@ -259,7 +285,6 @@ public class ControllerService extends Thread {
     public synchronized static boolean isActive() {
         return active;
     }
-
 
     public void stopService() {
         System.out.println("ControllerService STOP");
@@ -280,6 +305,14 @@ public class ControllerService extends Thread {
         }
 
         controllerService = null;
+    }
+
+    /**
+     * TODO Remove me
+     */
+    public synchronized void log(String message) {
+        this.printWriter.println(message + ",");
+        this.printWriter.flush();
     }
 
     /**
@@ -354,7 +387,7 @@ public class ControllerService extends Thread {
                 e.printStackTrace();
             }
         }
-        System.out.println("ControllerService: New flow policy set: " + this.trafficEngineeringPolicy.toString());
+        System.out.println("ControllerService: New traffic engineering policy set: " + this.trafficEngineeringPolicy.toString());
     }
 
     /**
@@ -383,10 +416,59 @@ public class ControllerService extends Thread {
     }
 
     /**
+     * @param pathSelectionMetric the metric to be used to select the graph selector
+     * @return the topology graph selector according to the
+     *         {@code pathSelectionMetric} specified
+     */
+    private TopologyGraphSelector getApplicationLevelRoutingTopologyGraphSelector(PathSelectionMetric pathSelectionMetric) {
+        return getApplicationLevelRoutingTopologyGraphSelector(pathSelectionMetric, null);
+    }
+
+    /**
+     * @param pathSelectionMetric the metric to be used to select the graph selector
+     * @param providedGraph to be used in place of the topologyGraph
+     * @return the topology graph selector according to the
+     *         {@code pathSelectionMetric} specified
+     */
+    private TopologyGraphSelector getApplicationLevelRoutingTopologyGraphSelector(PathSelectionMetric pathSelectionMetric, Graph providedGraph) {
+        TopologyGraphSelector pathSelector = defaultPathSelector;
+        if (pathSelectionMetric != null) {
+            if (pathSelectionMetric == PathSelectionMetric.BREADTH_FIRST)
+                pathSelector = new BreadthFirstFlowPathSelector((providedGraph == null) ? topologyGraph : providedGraph);
+            else if (pathSelectionMetric == PathSelectionMetric.FEWEST_INTERSECTIONS)
+                pathSelector = new FewestIntersectionsFlowPathSelector((providedGraph == null) ? topologyGraph : providedGraph);
+            else if (pathSelectionMetric == PathSelectionMetric.MINIMUM_NETWORK_LOAD)
+                pathSelector = new MinimumNetworkLoadFlowPathSelector((providedGraph == null) ? topologyGraph : providedGraph);
+            else if (pathSelectionMetric == PathSelectionMetric.LONGEST_PATH) {
+                pathSelector = new LongestPathSelector((providedGraph == null) ? topologyGraph : providedGraph);
+            }
+        }
+
+        return pathSelector;
+    }
+
+    /**
+     * @param pathSelectionMetric the metric to be used to select the graph selector
+     * @return the topology graph selector according to the
+     *         {@code pathSelectionMetric} specified
+     */
+    private OsRoutingTopologyGraphSelector getOsRoutingTopologyGraphSelector(PathSelectionMetric pathSelectionMetric) {
+        OsRoutingTopologyGraphSelector pathSelector = null;
+        if (pathSelectionMetric == PathSelectionMetric.BREADTH_FIRST)
+            pathSelector = new BreadthFirstOsRoutingPathSelector(topologyGraph);
+        else if (pathSelectionMetric == PathSelectionMetric.FEWEST_INTERSECTIONS)
+            pathSelector = new FewestIntersectionsOsRoutingPathSelector(topologyGraph);
+        else if (pathSelectionMetric == PathSelectionMetric.MINIMUM_NETWORK_LOAD)
+            pathSelector = new MinimumNetworkLoadOsRoutingPathSelector(topologyGraph);
+
+        return pathSelector;
+    }
+
+    /**
      * Get the list of DataTypes currently usable by the network
      * controlled by this Controller Service.
      *
-     * @return
+     * @return the list of currently supported data types
      */
     public Set<String> getAvailableDataTypes() {
         return this.dataTypesManager.getAvailableDataTypes();
@@ -397,11 +479,21 @@ public class ControllerService extends Thread {
      * spread its definition to all the Controller Clients managed by
      * this ControllerService.
      *
-     * @param dataTypeFileName
-     * @param dataTypeFile
-     * @return
+     * @param dataTypeFileName the name of the data type .class file
+     * @param dataTypeFile the file object of the .class file
+     * @return true if the data type has been successfully installed on all nodes
+     *         false otherwise
      */
     public boolean addUserDefinedDataType(String dataTypeFileName, File dataTypeFile) {
+        /*
+         * TODO Remove me
+         */
+        log("addUserDefinedDataType");
+        LocalDateTime localDateTime;
+        String timestamp;
+        int packetSize;
+        int payloadSize;
+
         BoundReceiveSocket ackSocket = null;
         GenericPacket gp = null;
 
@@ -445,6 +537,13 @@ public class ControllerService extends Thread {
             }
 
             /*
+             * TODO Remove me
+             */
+            localDateTime = LocalDateTime.now();
+            timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+            log("DATA_PLANE_ADD_DATA_TYPE to nodeId: " + clientNodeId + " sent at: " + timestamp);
+
+            /*
              * Get Ack from each node in order to inform the ControllerService that
              * the user defined DataType class has been successfully added.
              */
@@ -453,6 +552,13 @@ public class ControllerService extends Thread {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            /*
+             * TODO Remove me
+             */
+            packetSize = E2EComm.objectSizePacket(gp);
+            localDateTime = LocalDateTime.now();
+            timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
 
             if (gp instanceof UnicastPacket) {
                 UnicastPacket up = (UnicastPacket) gp;
@@ -463,11 +569,20 @@ public class ControllerService extends Thread {
                     e.printStackTrace();
                 }
 
+                /*
+                 * TODO Remove me
+                 */
+                payloadSize = up.getBytePayload().length;
+
                 if (payload instanceof ControllerMessageAck) {
                     ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
                     switch (ackMessage.getMessageType()) {
                         case DATA_PLANE_DATA_TYPE_ACK:
                             intermediateNodesToNotifyAbort++;
+                            /*
+                             * TODO Remove me
+                             */
+                            log("DATA_PLANE_DATA_TYPE_ACK received from nodeId: " + clientNodeId + " at: " + timestamp + ", ackSize: " + packetSize + ",  payloadSize: " + payloadSize);
                             break;
                         case DATA_PLANE_DATA_TYPE_ABORT:
                             aborted = true;
@@ -507,7 +622,7 @@ public class ControllerService extends Thread {
      * Get the list of DataPlaneRules currently usable by the network
      * controlled by this Controller Service.
      *
-     * @return
+     * @return the list of currently supported data plane rules
      */
     public Set<String> getAvailableDataPlaneRules() {
         return this.dataPlaneRulesManager.getAvailableDataPlaneRules();
@@ -517,7 +632,8 @@ public class ControllerService extends Thread {
      * Get the list of DataPlaneRules currently active by the network
      * controlled by this Controller Service.
      *
-     * @return
+     * @return the list of DataPlaneRules currently active by the network
+     *         controlled by this Controller Service.
      */
     public Map<String, List<String>> getActiveDataPlaneRules() {
         return dataPlaneRulesManager.getActiveDataPlaneRulesByDataType();
@@ -528,11 +644,21 @@ public class ControllerService extends Thread {
      * spread its definition to all the Controller Clients managed by
      * this ControllerService.
      *
-     * @param dataPlaneRuleFileName
-     * @param dataPlaneRuleFile
-     * @return
+     * @param dataPlaneRuleFileName the name of the data type .class file
+     * @param dataPlaneRuleFile the file object of the .class file
+     * @return true if the data type has been successfully installed on all nodes
+     *         false otherwise
      */
     public boolean addUserDefinedDataPlaneRule(String dataPlaneRuleFileName, File dataPlaneRuleFile) {
+        /*
+         * TODO Remove me
+         */
+        log("addUserDefinedDataPlaneRule");
+        LocalDateTime localDateTime;
+        String timestamp;
+        int packetSize;
+        int payloadSize;
+
         BoundReceiveSocket ackSocket = null;
         GenericPacket gp = null;
 
@@ -575,6 +701,12 @@ public class ControllerService extends Thread {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            /*
+             * TODO Remove me
+             */
+            localDateTime = LocalDateTime.now();
+            timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+            log("DATA_PLANE_ADD_RULE_FILE to nodeId: " + clientNodeId + " sent at: " + timestamp);
 
             /*
              * Get Ack from each node in order to inform the ControllerService that
@@ -586,6 +718,13 @@ public class ControllerService extends Thread {
                 e.printStackTrace();
             }
 
+            /*
+             * TODO Remove me
+             */
+            packetSize = E2EComm.objectSizePacket(gp);
+            localDateTime = LocalDateTime.now();
+            timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+
             if (gp instanceof UnicastPacket) {
                 UnicastPacket up = (UnicastPacket) gp;
                 Object payload = null;
@@ -595,11 +734,21 @@ public class ControllerService extends Thread {
                     e.printStackTrace();
                 }
 
+                /*
+                 * TODO Remove me
+                 */
+                payloadSize = up.getBytePayload().length;
+
                 if (payload instanceof ControllerMessageAck) {
                     ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
                     switch (ackMessage.getMessageType()) {
                         case DATA_PLANE_RULE_ACK:
                             intermediateNodesToNotifyAbort++;
+
+                            /*
+                             * TODO Remove me
+                             */
+                            log("DATA_PLANE_RULE_ACK received from nodeId: " + clientNodeId + " at: " + timestamp + ", ackSize: " + packetSize + ", payloadSize: " + payloadSize);
                             break;
                         case DATA_PLANE_RULE_ABORT:
                             aborted = true;
@@ -637,17 +786,36 @@ public class ControllerService extends Thread {
     }
 
     /**
-     * Enable a usable DataPlaneRule for a given DataType
+     * Enable an available DataPlaneRule for a given DataType on all nodes.
      *
-     * @param dataType
-     * @param dataPlaneRule
-     * @return
+     * @param dataType the dataType name
+     * @param dataPlaneRule the dataPlaneRule name
+     * @return true if the data type has been successfully activated on all nodes
+     *         false otherwise
      */
     public boolean addDataPlaneRule(String dataType, String dataPlaneRule) {
         return addDataPlaneRule(dataType, dataPlaneRule, null);
     }
 
+    /**
+     * Enable an available DataPlaneRule for a given DataType on specified nodes.
+     *
+     * @param dataType the dataType name
+     * @param dataPlaneRule the dataPlaneRule name
+     * @param clientsNodeToNotify the list of clients nodes on which the rule will be activated
+     * @return true if the data type has been successfully activated on all specified nodes
+     *         false otherwise
+     */
     public boolean addDataPlaneRule(String dataType, String dataPlaneRule, List<Integer> clientsNodeToNotify) {
+        /*
+         * TODO Remove me
+         */
+        log("addDataPlaneRule");
+        LocalDateTime localDateTime;
+        String timestamp;
+        int packetSize;
+        int payloadSize;
+
         BoundReceiveSocket ackSocket = null;
         GenericPacket gp = null;
 
@@ -693,6 +861,12 @@ public class ControllerService extends Thread {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            /*
+             * TODO Remove me
+             */
+            localDateTime = LocalDateTime.now();
+            timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+            log("DATA_PLANE_ADD_RULE to nodeId: " + clientNodeId + " sent at: " + timestamp);
 
             /*
              * Get Ack from the each node in order to inform the ControllerService that
@@ -704,6 +878,13 @@ public class ControllerService extends Thread {
                 e.printStackTrace();
             }
 
+            /*
+             * TODO Remove me
+             */
+            packetSize = E2EComm.objectSizePacket(gp);
+            localDateTime = LocalDateTime.now();
+            timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+
             if (gp instanceof UnicastPacket) {
                 UnicastPacket up = (UnicastPacket) gp;
                 Object payload = null;
@@ -713,11 +894,21 @@ public class ControllerService extends Thread {
                     e.printStackTrace();
                 }
 
+                /*
+                 * TODO Remove me
+                 */
+                payloadSize = up.getBytePayload().length;
+
                 if (payload instanceof ControllerMessageAck) {
                     ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
                     switch (ackMessage.getMessageType()) {
                         case DATA_PLANE_RULE_ACK:
                             intermediateNodesToNotifyAbort++;
+
+                            /*
+                             * TODO Remove me
+                             */
+                            log("DATA_PLANE_RULE_ACK received from nodeId: " + clientNodeId + " at: " + timestamp + ", ackSize: " + packetSize + ", payloadSize: " + payloadSize);
                             break;
                         case DATA_PLANE_RULE_ABORT:
                             aborted = true;
@@ -754,15 +945,22 @@ public class ControllerService extends Thread {
     }
 
     /**
-     * Disable an active DataPlaneRule for a given DataType
+     * Disable an active DataPlaneRule for a given DataType for all nodes.
      *
-     * @param dataType
-     * @param dataPlaneRule
+     * @param dataType the dataPlaneRule name
+     * @param dataPlaneRule the dataPlaneRule name
      */
     public void removeDataPlaneRule(String dataType, String dataPlaneRule) {
         removeDataPlaneRule(dataType, dataPlaneRule, null);
     }
 
+    /**
+     * Disable an active DataPlaneRule for a given DataType for specified nodes.
+     *
+     * @param dataType the dataPlaneRule name
+     * @param dataPlaneRule the dataPlaneRule name
+     * @param clientsNodeToNotify the list of clients nodes on which the rule will be deactivated
+     */
     public void removeDataPlaneRule(String dataType, String dataPlaneRule, List<Integer> clientsNodeToNotify) {
         Collection<Node> nodeSet;
         /*
@@ -828,6 +1026,14 @@ public class ControllerService extends Thread {
 
         @Override
         public void run() {
+            /*
+             * TODO Remove me
+             */
+            int packetSize = E2EComm.objectSizePacket(gp);
+            int payloadSize;
+            LocalDateTime localDateTime = LocalDateTime.now();
+            String timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+
             if (this.gp instanceof UnicastPacket) {
                 UnicastPacket up = (UnicastPacket) gp;
                 Object payload = null;
@@ -843,6 +1049,11 @@ public class ControllerService extends Thread {
                     int clientNodeId = up.getSourceNodeId();
                     String[] clientDest = E2EComm.ipReverse(up.getSource());
 
+                    /*
+                     * TODO Remove me
+                     */
+                    payloadSize = up.getBytePayload().length;
+
                     switch (controllerMessage.getMessageType()) {
                         case JOIN_SERVICE:
                             handleJoinService(controllerMessage, up.getSourceNodeId());
@@ -851,9 +1062,19 @@ public class ControllerService extends Thread {
                             handleLeaveService(up.getSourceNodeId());
                             break;
                         case PATH_REQUEST:
+                            /*
+                             * TODO Remove me
+                             */
+                            log("PATH_REQUEST received at: " + timestamp + ", request size: " + packetSize + ", payload size: " + payloadSize);
+
                             handlePathRequest((ControllerMessageRequest) controllerMessage, clientNodeId, clientDest);
                             break;
                         case FIX_PATH_REQUEST:
+                            /*
+                             * TODO Remove me
+                             */
+                            log("FIX_PATH_REQUEST received at: " + timestamp + ", request size: " + packetSize + ", payload size: " + payloadSize);
+
                             handleFixPathRequest((ControllerMessageRequest) controllerMessage, clientNodeId, clientDest);
                             break;
                         case TOPOLOGY_GRAPH_REQUEST:
@@ -869,7 +1090,20 @@ public class ControllerService extends Thread {
                             handleMulticastRequest((ControllerMessageRequest) controllerMessage, clientNodeId, clientDest);
                             break;
                         case OS_ROUTING_REQUEST:
+                            /*
+                             * TODO Remove me
+                             */
+                            log("OS_ROUTING_REQUEST received at: " + timestamp + ", request size: " + packetSize + ", payload size: " + payloadSize);
+
                             handleOsRoutingRequest((ControllerMessageRequest) controllerMessage, clientNodeId, clientDest);
+                            break;
+                        case OS_ROUTING_UPDATE_PRIORITY_REQUEST:
+                            /*
+                             * TODO Remove me
+                             */
+                            log("OS_ROUTING_UPDATE_PRIORITY_REQUEST received at: " + timestamp + ", request size: " + packetSize + ", payload size: " + payloadSize);
+
+                            handleOsRoutingUpdatePriorityRequest((ControllerMessageRequest) controllerMessage, clientNodeId, clientDest);
                             break;
                         default:
                             break;
@@ -915,63 +1149,98 @@ public class ControllerService extends Thread {
 
         private void handlePathRequest(ControllerMessageRequest requestMessage, int clientNodeId, String[] clientDest) {
             /*
-             * Choose the best path for the specified flow, add it to the active flow paths and send it to the source node
+             * TODO Remove me
+             */
+            log("handlePathRequest");
+            LocalDateTime localDateTime;
+            String timestamp;
+
+            /*
+             * Choose the best path for the specified flow,
+             * add it to the flow paths database and
+             * send it to the source node.
              */
             int destNodeId = requestMessage.getDestNodeIds()[0];
             ApplicationRequirements applicationRequirements = requestMessage.getApplicationRequirements();
             int flowId = requestMessage.getFlowId();
-            System.out.println("ControllerService: path request from client " + clientNodeId + " to node " + destNodeId + " for flow " + flowId);
+            PathSelectionMetric pathSelectionMetric = requestMessage.getPathSelectionMetric();
+
+            if(flowId != GenericPacket.UNUSED_FIELD) {
+                System.out.println("ControllerService: path request from client " + clientNodeId + " to node " + destNodeId + " for flow " + flowId);
+            } else {
+                System.out.println("ControllerService: path request from client " + clientNodeId + " to node " + destNodeId);
+            }
 
             PathDescriptor newPath = null;
             TopologyGraphSelector pathSelector = defaultPathSelector;
-            PathSelectionMetric pathSelectionMetric = requestMessage.getPathSelectionMetric();
             if (pathSelectionMetric != null) {
-                if (pathSelectionMetric == PathSelectionMetric.BREADTH_FIRST)
-                    pathSelector = new BreadthFirstFlowPathSelector(topologyGraph);
-                else if (pathSelectionMetric == PathSelectionMetric.FEWEST_INTERSECTIONS)
-                    pathSelector = new FewestIntersectionsFlowPathSelector(topologyGraph);
-                else if (pathSelectionMetric == PathSelectionMetric.MINIMUM_NETWORK_LOAD)
-                    pathSelector = new MinimumNetworkLoadFlowPathSelector(topologyGraph);
+                pathSelector = getApplicationLevelRoutingTopologyGraphSelector(pathSelectionMetric);
             } else {
                 pathSelectionMetric = defaultPathSelectionMetric;
             }
-            /*
-             * If applicationRequirements is not null, this is the first path request for the flow,
-             * a path for the flow is selected
-             */
-            if (applicationRequirements != null) {
+
+            if (applicationRequirements != null && flowId != GenericPacket.UNUSED_FIELD) {
+                /*
+                 * If applicationRequirements is not null and the flowId exists
+                 * this is the first path request for this flowId, a new path for this
+                 * flow is computed and stored in the ControllerService database.
+                 */
                 System.out.println("ControllerService: first path request for flow " + flowId + ", selecting a path");
+
                 newPath = pathSelector.selectPath(clientNodeId, destNodeId, applicationRequirements, flowPaths);
-                flowStartTimes.put(flowId, System.currentTimeMillis());
-                flowApplicationRequirements.put(flowId, applicationRequirements);
-                flowPathSelectionMetrics.put(flowId, pathSelectionMetric);
-            }
-            /*
-             * If applicationRequirements is null, the time-to-live of the previous path for the flow
-             * has expired, if the duration hasn't expired too a new path is selected
-             */
-            else {
+
+                if(newPath != null) {
+                    long now = System.currentTimeMillis();
+
+                    newPath.setCreationTime(System.currentTimeMillis());
+                    flowPaths.put(flowId, newPath);
+                    flowStartTimes.put(flowId, now);
+                    flowApplicationRequirements.put(flowId, applicationRequirements);
+                    flowPathSelectionMetrics.put(flowId, pathSelectionMetric);
+                }
+            } else if (applicationRequirements == null && flowId != GenericPacket.UNUSED_FIELD) {
+                /*
+                 * If applicationRequirements is null and the flowId exists, the time-to-live of the previous
+                 * path for the flow has expired, if the duration hasn't expired too a new path is selected.
+                 */
                 if (flowPaths.containsKey(flowId)) {
                     System.out.println("ControllerService: new path request for flow " + flowId + ", the flow is still valid, selecting a new path");
-                    PathSelectionMetric savedPathSelectionMetric = flowPathSelectionMetrics.get(flowId);
-                    if (savedPathSelectionMetric != null) {
-                        if (savedPathSelectionMetric == PathSelectionMetric.BREADTH_FIRST)
-                            pathSelector = new BreadthFirstFlowPathSelector(topologyGraph);
-                        else if (savedPathSelectionMetric == PathSelectionMetric.FEWEST_INTERSECTIONS)
-                            pathSelector = new FewestIntersectionsFlowPathSelector(topologyGraph);
-                        else if (savedPathSelectionMetric == PathSelectionMetric.MINIMUM_NETWORK_LOAD)
-                            pathSelector = new MinimumNetworkLoadFlowPathSelector(topologyGraph);
+                    if (pathSelectionMetric == null) {
+                        /*
+                         * If not specified it is used the pathSelectionMetric used
+                         * fot the previous path computation.
+                         */
+                        PathSelectionMetric savedPathSelectionMetric = flowPathSelectionMetrics.get(flowId);
+                        pathSelector = getApplicationLevelRoutingTopologyGraphSelector(savedPathSelectionMetric);
+                    } else {
+                        flowPathSelectionMetrics.put(flowId, pathSelectionMetric);
                     }
+
                     newPath = pathSelector.selectPath(clientNodeId, destNodeId, null, flowPaths);
+
+                    if(newPath != null) {
+                        flowPaths.put(flowId, newPath);
+                        flowStartTimes.put(flowId, System.currentTimeMillis());
+                    }
                 } else
                     System.out.println("ControllerService: new path request for flow " + flowId + ", but the flow isn't valid anymore, sending null path");
+            } else {
+                /*
+                 * If applicationRequirements is null and the flowId doesn't exist, this PATH_REQUEST is sent
+                 * by someone that wants only to know the path from a source to a destination according to a
+                 * specified PathSelectionMetric. This path won't be stored in the database since it is not
+                 * associated to any flowId.
+                 */
+                System.out.println("ControllerService: new path request, selecting a new path");
+                newPath = pathSelector.selectPath(clientNodeId, destNodeId, null, flowPaths);
             }
 
             if (newPath != null) {
-                for (int i = 0; i < newPath.getPath().length; i++)
+                for (int i = 0; i < newPath.getPath().length; i++) {
                     System.out.println("ControllerService: new flow path address " + i + ", " + newPath.getPath()[i]);
-                newPath.setCreationTime(System.currentTimeMillis());
-                flowPaths.put(flowId, newPath);
+                }
+            } else {
+                System.out.println("ControllerService: no valid path has been found, sending null path");
             }
 
             List<PathDescriptor> newPaths = new ArrayList<>();
@@ -986,10 +1255,28 @@ public class ControllerService extends Thread {
                 e.printStackTrace();
             }
 
-            System.out.println("ControllerService: path request for flow " + flowId + " from client " + clientNodeId + ", response message successfully sent");
+            /*
+             * TODO Remove me
+             */
+            localDateTime = LocalDateTime.now();
+            timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+            log("PATH_RESPONSE to nodeId: " + clientNodeId + " sent at: " + timestamp);
+
+            if(flowId != GenericPacket.UNUSED_FIELD) {
+                System.out.println("ControllerService: path request for flow " + flowId + " from client " + clientNodeId + ", response message successfully sent");
+            } else {
+                System.out.println("ControllerService: path request from client " + clientNodeId + ", response message successfully sent");
+            }
         }
 
         private void handleFixPathRequest(ControllerMessageRequest requestMessage, int clientNodeId, String[] clientDest) {
+            /*
+             * TODO Remove me
+             */
+            log("handleFixPathRequest");
+            LocalDateTime localDateTime;
+            String timestamp;
+
             /*
              * Choose the best path for the existing flow, update its info in the active flow paths and send it
              * to the middle node node and push it to the original source node.
@@ -1013,14 +1300,14 @@ public class ControllerService extends Thread {
 
             int clientNodeIdIndex = -1;
             int nextNodeIdIndex = 0;
-            for(int i=0; i<currentPathNodeIds.size(); i++) {
-                if(currentPathNodeIds.get(i) == clientNodeId) {
+            for (int i = 0; i < currentPathNodeIds.size(); i++) {
+                if (currentPathNodeIds.get(i) == clientNodeId) {
                     clientNodeIdIndex = i;
                     break;
                 }
             }
 
-            if(clientNodeIdIndex >= 0 ) {
+            if (clientNodeIdIndex >= 0) {
                 nextNodeIdIndex = clientNodeIdIndex + 1;
             }
 
@@ -1039,7 +1326,7 @@ public class ControllerService extends Thread {
              * TODO the edge removal should be done better because there may be
              * TODO more than one edges (i.e. networks) connecting the two nodes.
              */
-            topologyGraphSnapshot.removeEdge(clientNode,nextHopNode);
+            topologyGraphSnapshot.removeEdge(clientNode, nextHopNode);
 
             /*
              * This is the fixed path for the node
@@ -1066,14 +1353,7 @@ public class ControllerService extends Thread {
              */
             if (flowPaths.containsKey(flowId)) {
                 PathSelectionMetric pathSelectionMetric = flowPathSelectionMetrics.get(flowId);
-                if (pathSelectionMetric != null) {
-                    if (pathSelectionMetric == PathSelectionMetric.BREADTH_FIRST)
-                        pathSelector = new BreadthFirstFlowPathSelector(topologyGraphSnapshot);
-                    else if (pathSelectionMetric == PathSelectionMetric.FEWEST_INTERSECTIONS)
-                        pathSelector = new FewestIntersectionsFlowPathSelector(topologyGraphSnapshot);
-                    else if (pathSelectionMetric == PathSelectionMetric.MINIMUM_NETWORK_LOAD)
-                        pathSelector = new MinimumNetworkLoadFlowPathSelector(topologyGraphSnapshot);
-                }
+                pathSelector = getApplicationLevelRoutingTopologyGraphSelector(pathSelectionMetric, topologyGraphSnapshot);
 
                 System.out.println("ControllerService: fix path request for flow " + flowId + ", selecting a path");
 
@@ -1105,26 +1385,35 @@ public class ControllerService extends Thread {
                 e.printStackTrace();
             }
 
+            /*
+             * TODO Remove me
+             */
+            localDateTime = LocalDateTime.now();
+            timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+            log("FIX_PATH_RESPONSE to nodeId: " + clientNodeId + " sent at: " + timestamp);
+
             System.out.println("ControllerService: fix path request for flow " + flowId + " from client " + clientNodeId + " for the source node " + sourceNodeId + ", response message successfully sent");
 
             /*
              * If a new path for the existing flow id is found we push it to
              * the original source so it can update it.
              */
-            if(newPath != null) {
+            if (newPath != null) {
                 newPaths = new ArrayList<>();
                 newPaths.add(newPath);
                 String[] sourceNodeDest;
-                if(sourceNodeId == clientNodeId) {
+                if (sourceNodeId == clientNodeId) {
                     sourceNodeDest = clientDest;
                 } else {
                     /*
                      * TODO The Resolver behaviour in retrieving the right
-                     * TODO for the original sender seems not working properly.
-                     * TODO In particular when the clientNode is different from
-                     * TODO the sourceNode the result is not correct.
+                     *      for the original sender seems not working properly.
+                     *      In particular when the clientNode is different from
+                     *      the sourceNode the result is not correct.
                      */
-                    sourceNodeDest = Resolver.getInstance(false).resolveBlocking(sourceNodeId, 5 * 1000).get(0).getPath();
+                    //sourceNodeDest = Resolver.getInstance(false).resolveBlocking(sourceNodeId, 5 * 1000).get(0).getPath();
+                    // TODO Remove me
+                    sourceNodeDest = new String[]{"192.168.3.101","192.168.3.100"};
                 }
 
                 MultiNode sourceNode = topologyGraphSnapshot.getNode(Integer.toString(sourceNodeId));
@@ -1140,6 +1429,13 @@ public class ControllerService extends Thread {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+
+                /*
+                 * TODO Remove me
+                 */
+                localDateTime = LocalDateTime.now();
+                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                log("FIX_PATH_PUSH_RESPONSE to nodeId: " + sourceNodeId + " sent at: " + timestamp);
             }
 
             System.out.println("ControllerService: fix path request for flow " + flowId + " from client " + clientNodeId + " for the source node " + sourceNodeId + ", response message successfully pushed to the original sender");
@@ -1389,12 +1685,7 @@ public class ControllerService extends Thread {
             TopologyGraphSelector pathSelector = defaultPathSelector;
             PathSelectionMetric pathSelectionMetric = requestMessage.getPathSelectionMetric();
             if (pathSelectionMetric != null) {
-                if (pathSelectionMetric == PathSelectionMetric.BREADTH_FIRST)
-                    pathSelector = new BreadthFirstFlowPathSelector(topologyGraph);
-                else if (pathSelectionMetric == PathSelectionMetric.FEWEST_INTERSECTIONS)
-                    pathSelector = new FewestIntersectionsFlowPathSelector(topologyGraph);
-                else if (pathSelectionMetric == PathSelectionMetric.MINIMUM_NETWORK_LOAD)
-                    pathSelector = new MinimumNetworkLoadFlowPathSelector(topologyGraph);
+                pathSelector = getApplicationLevelRoutingTopologyGraphSelector(pathSelectionMetric);
             } else {
                 pathSelectionMetric = defaultPathSelectionMetric;
             }
@@ -1412,7 +1703,7 @@ public class ControllerService extends Thread {
                  * Si recuperano le informazioni relative al primo hop dall'oggetto PathDescriptor appena creato
                  */
                 String[] firstHopAddress = new String[]{pathDescriptor.getPath()[0]};
-                List<Integer> firstHopId = new ArrayList<Integer>();
+                List<Integer> firstHopId = new ArrayList<>();
                 firstHopId.add(pathDescriptor.getPathNodeIds().get(0));
                 /*
                  *  Si crea un oggetto MulticastPathDescriptor inserendo le informazioni relative al primo hop
@@ -1459,7 +1750,7 @@ public class ControllerService extends Thread {
                 }
             }
 
-            ControllerMessageResponse responseMessage = null;
+            ControllerMessageResponse responseMessage;
             /*
              * Send control message to every node in the path
              */
@@ -1488,6 +1779,15 @@ public class ControllerService extends Thread {
         }
 
         private void handleOsRoutingRequest(ControllerMessageRequest requestMessage, int clientNodeId, String[] clientDest) {
+            /*
+             * TODO Remove me
+             */
+            log("handleOsRoutingRequest");
+            LocalDateTime localDateTime;
+            String timestamp;
+            int packetSize;
+            int payloadSize;
+
             int clientPort = requestMessage.getClientPort();
             int destNodeId = requestMessage.getDestNodeIds()[0];
             BoundReceiveSocket ackSocket = null;
@@ -1496,12 +1796,7 @@ public class ControllerService extends Thread {
             OsRoutingTopologyGraphSelector pathSelector = osRoutingPathSelector;
             PathSelectionMetric pathSelectionMetric = requestMessage.getPathSelectionMetric();
             if (pathSelectionMetric != null) {
-                if (pathSelectionMetric == PathSelectionMetric.BREADTH_FIRST)
-                    pathSelector = new BreadthFirstOsRoutingPathSelector(topologyGraph);
-                else if (pathSelectionMetric == PathSelectionMetric.FEWEST_INTERSECTIONS)
-                    pathSelector = new FewestIntersectionsOsRoutingPathSelector(topologyGraph);
-                else if (pathSelectionMetric == PathSelectionMetric.MINIMUM_NETWORK_LOAD)
-                    pathSelector = new MinimumNetworkLoadOsRoutingPathSelector(topologyGraph);
+                pathSelector = getOsRoutingTopologyGraphSelector(pathSelectionMetric);
             }
 
             System.out.println("ControllerService: first OS routing path request for node ID" + clientNodeId + ", selecting a path");
@@ -1610,6 +1905,13 @@ public class ControllerService extends Thread {
                 }
 
                 /*
+                 * TODO Remove me
+                 */
+                localDateTime = LocalDateTime.now();
+                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                log("OS_ROUTING_ADD_ROUTE to nodeId: " + clientNodeId + " sent at: " + timestamp);
+
+                /*
                  * Get Ack from the client node in order to inform the ControllerService that
                  * "ip route add" command has been successfully applied.
                  */
@@ -1619,6 +1921,13 @@ public class ControllerService extends Thread {
                     aborted = true;
                     e.printStackTrace();
                 }
+
+                /*
+                 * TODO Remove me
+                 */
+                packetSize = E2EComm.objectSizePacket(gp);
+                localDateTime = LocalDateTime.now();
+                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
 
                 if (gp instanceof UnicastPacket) {
                     UnicastPacket up = (UnicastPacket) gp;
@@ -1630,11 +1939,21 @@ public class ControllerService extends Thread {
                         e.printStackTrace();
                     }
 
+                    /*
+                     * TODO Remove me
+                     */
+                    payloadSize = up.getBytePayload().length;
+
                     if (payload instanceof ControllerMessageAck) {
                         ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
                         if (ackMessage.getRouteId() == routeId) {
                             switch (ackMessage.getMessageType()) {
                                 case OS_ROUTING_ACK:
+                                    /*
+                                     * TODO Remove me
+                                     */
+                                    log("OS_ROUTING_ACK received from nodeId: " + clientNodeId + " at: " + timestamp + ", ackSize: " + packetSize + ", payloadSize: " + payloadSize);
+
                                     System.out.println("ControllerService: OS_ROUTING_ACK received");
                                     break;
                                 case OS_ROUTING_ABORT:
@@ -1674,6 +1993,13 @@ public class ControllerService extends Thread {
                 }
 
                 /*
+                 * TODO Remove me
+                 */
+                localDateTime = LocalDateTime.now();
+                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                log("OS_ROUTING_ADD_ROUTE to nodeId: " + destNodeId + " sent at: " + timestamp);
+
+                /*
                  * Get Ack from the destination node in order to inform the ControllerService that
                  * "ip route add" command has been successfully applied.
                  */
@@ -1683,6 +2009,13 @@ public class ControllerService extends Thread {
                     aborted = true;
                     e.printStackTrace();
                 }
+
+                /*
+                 * TODO Remove me
+                 */
+                packetSize = E2EComm.objectSizePacket(gp);
+                localDateTime = LocalDateTime.now();
+                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
 
                 if (gp instanceof UnicastPacket) {
                     UnicastPacket up = (UnicastPacket) gp;
@@ -1694,11 +2027,21 @@ public class ControllerService extends Thread {
                         e.printStackTrace();
                     }
 
+                    /*
+                     * TODO Remove me
+                     */
+                    payloadSize = up.getBytePayload().length;
+
                     if (payload instanceof ControllerMessageAck) {
                         ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
                         if (ackMessage.getRouteId() == routeId) {
                             switch (ackMessage.getMessageType()) {
                                 case OS_ROUTING_ACK:
+                                    /*
+                                     * TODO Remove me
+                                     */
+                                    log("OS_ROUTING_ACK received from nodeId: " + destNodeId + " at: " + timestamp + ", ackSize: " + packetSize + ", payloadSize: " + payloadSize);
+
                                     System.out.println("ControllerService: OS_ROUTING_ACK received");
                                     break;
                                 case OS_ROUTING_ABORT:
@@ -1746,6 +2089,13 @@ public class ControllerService extends Thread {
                         }
 
                         /*
+                         * TODO Remove me
+                         */
+                        localDateTime = LocalDateTime.now();
+                        timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                        log("OS_ROUTING_ADD_ROUTE to nodeId: " + intermediateNode.getId() + " sent at: " + timestamp);
+
+                        /*
                          * Get Ack from the intermediate node in order to inform the ControllerService that
                          * "ip route add" command has been successfully applied.
                          */
@@ -1755,6 +2105,13 @@ public class ControllerService extends Thread {
                             aborted = true;
                             e.printStackTrace();
                         }
+
+                        /*
+                         * TODO Remove me
+                         */
+                        packetSize = E2EComm.objectSizePacket(gp);
+                        localDateTime = LocalDateTime.now();
+                        timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
 
                         if (gp instanceof UnicastPacket) {
                             UnicastPacket up = (UnicastPacket) gp;
@@ -1766,12 +2123,22 @@ public class ControllerService extends Thread {
                                 e.printStackTrace();
                             }
 
+                            /*
+                             * TODO Remove me
+                             */
+                            payloadSize = up.getBytePayload().length;
+
                             if (payload instanceof ControllerMessageAck) {
                                 ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
                                 if (ackMessage.getRouteId() == routeId) {
                                     switch (ackMessage.getMessageType()) {
                                         case OS_ROUTING_ACK:
                                             forwardPathIntermediateNodesToNotifyAbort++;
+
+                                            /*
+                                             * TODO Remove me
+                                             */
+                                            log("OS_ROUTING_ACK received from nodeId: " + intermediateNode.getId() + " at: " + timestamp + ", ackSize: " + packetSize + ", payloadSize: " + payloadSize);
                                             break;
                                         case OS_ROUTING_ABORT:
                                             aborted = true;
@@ -1809,6 +2176,13 @@ public class ControllerService extends Thread {
                             e.printStackTrace();
                         }
                         /*
+                         * TODO Remove me
+                         */
+                        localDateTime = LocalDateTime.now();
+                        timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                        log("OS_ROUTING_ADD_ROUTE to nodeId: " + intermediateNode.getId() + " sent at: " + timestamp);
+
+                        /*
                          * Get Ack from the intermediate node in order to inform the ControllerService that
                          * "ip route add" command has been successfully applied.
                          */
@@ -1819,6 +2193,13 @@ public class ControllerService extends Thread {
                             e.printStackTrace();
                         }
 
+                        /*
+                         * TODO Remove me
+                         */
+                        packetSize = E2EComm.objectSizePacket(gp);
+                        localDateTime = LocalDateTime.now();
+                        timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+
                         if (gp instanceof UnicastPacket) {
                             UnicastPacket up = (UnicastPacket) gp;
                             Object payload = null;
@@ -1828,12 +2209,22 @@ public class ControllerService extends Thread {
                                 e.printStackTrace();
                             }
 
+                            /*
+                             * TODO Remove me
+                             */
+                            payloadSize = up.getBytePayload().length;
+
                             if (payload instanceof ControllerMessageAck) {
                                 ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
                                 if (ackMessage.getRouteId() == routeId) {
                                     switch (ackMessage.getMessageType()) {
                                         case OS_ROUTING_ACK:
                                             backwardPathIntermediateNodesToNotifyAbort++;
+
+                                            /*
+                                             * TODO Remove me
+                                             */
+                                            log("OS_ROUTING_ACK received from nodeId: " + intermediateNode.getId() + " at: " + timestamp + ", ackSize: " + packetSize + ",  payloadSize: " + payloadSize);
                                             break;
                                         case OS_ROUTING_ABORT:
                                             aborted = true;
@@ -1957,6 +2348,12 @@ public class ControllerService extends Thread {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+                /*
+                 * TODO Remove me
+                 */
+                localDateTime = LocalDateTime.now();
+                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                log("OS_ROUTING_PUSH_RESPONSE sent to destinationNodeId: " + destNodeId + " sent at: " + timestamp);
 
                 /*
                  * Send an OS_ROUTING_PUSH_RESPONSE message to all the intermediate nodes of the forward path so that
@@ -1977,6 +2374,12 @@ public class ControllerService extends Thread {
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
+                        /*
+                         * TODO Remove me
+                         */
+                        localDateTime = LocalDateTime.now();
+                        timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                        log("OS_ROUTING_PUSH_RESPONSE forwardPath sent to intermediateNodeId: " + intermediateNodeId + " sent at: " + timestamp);
                     }
                 }
 
@@ -2001,6 +2404,12 @@ public class ControllerService extends Thread {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
+                            /*
+                             * TODO Remove me
+                             */
+                            localDateTime = LocalDateTime.now();
+                            timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                            log("OS_ROUTING_PUSH_RESPONSE backwardPath sent to intermediateNodeId: " + intermediateNodeId + " sent at: " + timestamp);
                         }
                     }
                 }
@@ -2017,6 +2426,149 @@ public class ControllerService extends Thread {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            /*
+             * TODO Remove me
+             */
+            localDateTime = LocalDateTime.now();
+            timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+            log("OS_ROUTING_PULL_RESPONSE sent to nodeId: " + clientNodeId + " sent at: " + timestamp);
+        }
+
+        private void handleOsRoutingUpdatePriorityRequest(ControllerMessageRequest requestMessage, int clientNodeId, String[] clientDest) {
+            /*
+             * TODO Remove me
+             */
+            log("handleOsRoutingUpdatePriorityRequest");
+            LocalDateTime localDateTime;
+            String timestamp;
+            int packetSize;
+            int payloadSize;
+
+            boolean aborted = false;
+            int clientPort = requestMessage.getClientPort();
+            int routeId = requestMessage.getRouteId();
+            boolean osRoutingPriority = requestMessage.isOsRoutingPriority();
+
+            List<Integer> destNodeIds = new ArrayList<>();
+            OsRoutingPathDescriptor osRoutingPathDescriptor = forwardOsRoutingPaths.get(routeId);
+
+            int firstPeerNodeId = osRoutingPathDescriptor.getDestinationNodeId();
+            int secondPeerNodeId = osRoutingPathDescriptor.getSourceNodeId();
+
+            if(clientNodeId == firstPeerNodeId) {
+                /*
+                 * In case this function was triggered one of the two peer nodes
+                 * we just notify the other.
+                 */
+                destNodeIds.add(secondPeerNodeId);
+            } else if(clientNodeId == secondPeerNodeId) {
+                /*
+                 * In case this function was triggered one of the two peer nodes
+                 * we just notify the other.
+                 */
+                destNodeIds.add(firstPeerNodeId);
+            } else {
+                /*
+                 * In case this function was triggered by one of the middle hops
+                 * for example at runtime by a DataPlaneRule running in a middle
+                 * hop we need to inform both the peers.
+                 */
+                destNodeIds.add(firstPeerNodeId);
+                destNodeIds.add(secondPeerNodeId);
+            }
+
+            try {
+                BoundReceiveSocket ackSocket = E2EComm.bindPreReceive(PROTOCOL);
+                ControllerMessageUpdate updateMessage = new ControllerMessageUpdate(MessageType.OS_ROUTING_PRIORITY_UPDATE, ackSocket.getLocalPort(), routeId, osRoutingPriority);
+                for(Integer nodeId : destNodeIds) {
+                    MultiNode peerNode = topologyGraph.getNode(Integer.toString(nodeId));
+                    String[] peerNodeDest = Resolver.getInstance(false).resolveBlocking(nodeId, 5 * 1000).get(0).getPath();
+                    int peerNodePort = peerNode.getAttribute("port");
+
+                    E2EComm.sendUnicast(peerNodeDest, nodeId, peerNodePort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(updateMessage));
+
+                    /*
+                     * TODO Remove me
+                     */
+                    localDateTime = LocalDateTime.now();
+                    timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                    log("OS_ROUTING_PRIORITY_UPDATE to nodeId: " + nodeId + " sent at: " + timestamp);
+
+                    /*
+                     * Get Ack from the destination node in order to inform the ControllerService that
+                     * that the os route priority status has been successfully updated.
+                     */
+                    GenericPacket gp = E2EComm.receive(ackSocket);
+
+                    /*
+                     * TODO Remove me
+                     */
+                    packetSize = E2EComm.objectSizePacket(gp);
+                    localDateTime = LocalDateTime.now();
+                    timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+
+                    if(gp instanceof UnicastPacket) {
+                        UnicastPacket up = (UnicastPacket) gp;
+                        Object payload = E2EComm.deserialize(up.getBytePayload());
+
+                        /*
+                         * TODO Remove me
+                         */
+                        payloadSize = up.getBytePayload().length;
+
+                        if (payload instanceof ControllerMessageAck) {
+                            ControllerMessageAck ackMessage = (ControllerMessageAck) payload;
+
+                            switch (ackMessage.getMessageType()) {
+                                case OS_ROUTING_ACK:
+                                    /*
+                                     * TODO Remove me
+                                     */
+                                    log("OS_ROUTING_ACK received from nodeId: " + nodeId + " at: " + timestamp + ", ackSize: " + packetSize + ", payloadSize: " + payloadSize);
+
+                                    System.out.println("ControllerService: OS_ROUTING_ACK received");
+                                    break;
+                                case OS_ROUTING_ABORT:
+                                    /*
+                                     * The client node was not able to update the os route priority
+                                     * because it is not in its database.
+                                     */
+                                    System.out.println("ControllerService: OS_ROUTING_ABORT received");
+                                    aborted = true;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                    if(aborted) {
+                        /*
+                         * Break the loop.
+                         */
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                aborted = true;
+                e.printStackTrace();
+            }
+
+            int returningRouteId = -1;
+            if(!aborted) {
+                returningRouteId = routeId;
+            }
+            ControllerMessageResponse responseMessage = new ControllerMessageResponse(MessageType.OS_ROUTING_UPDATE_PRIORITY_RESPONSE, ControllerMessage.UNUSED_FIELD, returningRouteId, null, ControllerMessage.UNUSED_FIELD);
+            try {
+                E2EComm.sendUnicast(clientDest, clientNodeId, clientPort, PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(responseMessage));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            /*
+             * TODO Remove me
+             */
+            localDateTime = LocalDateTime.now();
+            timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+            log("OS_ROUTING_UPDATE_PRIORITY_RESPONSE sent to nodeId: " + clientNodeId + " sent at: " + timestamp);
         }
     }
 

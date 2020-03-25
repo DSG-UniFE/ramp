@@ -9,6 +9,8 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -186,9 +188,18 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
     private Map<Integer, Integer> osRoutesDurations;
 
     /**
-     *
+     * Data structure to keep all the os routes available given a destination node id (destinationNodeId, List of route ids)
      */
     private Map<Integer, List<Integer>> routeIdsByDestination;
+
+    /**
+     * Data structure to keeps track if one of the nodes notified to the ControllerService has
+     * specified any preferences in using the os level routing in place of the application level one
+     * for a specific routeId.
+     * <p>
+     * True means that it should be used the os level routing
+     */
+    private Map<Integer, Boolean> osRoutesPriority;
 
     /**
      * This object will store the topology graph sent by the ControllerService when requested.
@@ -215,6 +226,16 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
      * forwards certain types of traffic.
      */
     private DataTypesManager dataTypesManager;
+
+    /**
+     * TODO Remove me
+     */
+    private PrintWriter printWriter;
+
+    /**
+     * TODO Remove me
+     */
+    private PrintWriter printWriterRules;
 
     private ControllerClient() {
 
@@ -245,7 +266,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
 
         this.dataTypesManager = DataTypesManager.getInstance();
 
-        this.trafficEngineeringPolicy = TrafficEngineeringPolicy.SINGLE_FLOW;
+        this.trafficEngineeringPolicy = TrafficEngineeringPolicy.NO_FLOW_POLICY;
         this.flowDataPlaneForwarder = SinglePriorityForwarder.getInstance(null);
 
         this.routingPolicy = RoutingPolicy.REROUTING;
@@ -265,6 +286,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
         this.osRoutesPaths = new ConcurrentHashMap<>();
         this.osRoutesStartTimes = new ConcurrentHashMap<>();
         this.osRoutesDurations = new ConcurrentHashMap<>();
+        this.osRoutesPriority = new ConcurrentHashMap<>();
 
         try {
             this.osRoutingManager = OsRoutingManager.getInstance();
@@ -278,6 +300,54 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
         if (!dir.exists()) {
             dir.mkdir();
         }
+
+        /*
+         * TODO Remove me
+         */
+        File outputFile = new File(sdnClientDirectory + "/" + "controllerClientLog" + Dispatcher.getLocalRampId() + ".txt");
+
+        if (outputFile.exists()) {
+            outputFile.delete();
+        }
+        try {
+            outputFile.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            printWriter = new PrintWriter(new FileWriter(outputFile, true));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        printWriter.println("ControllerClient NodeId=" + Dispatcher.getLocalRampId() + " TEST LOG");
+        printWriter.flush();
+
+        /*
+         * TODO Remove me
+         */
+        File outputFileRule = new File(sdnClientDirectory + "/" + "controllerClientLogRule" + Dispatcher.getLocalRampId() + ".txt");
+
+        if (outputFileRule.exists()) {
+            outputFileRule.delete();
+        }
+        try {
+            outputFileRule.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            printWriterRules = new PrintWriter(new FileWriter(outputFileRule, true));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        printWriterRules.println("ControllerClient NodeId=" + Dispatcher.getLocalRampId() + " TEST LOG");
+        printWriterRules.flush();
     }
 
     public synchronized static ControllerClient getInstance() {
@@ -338,6 +408,22 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
         return this.controllerServiceDiscoverer.getControllerService();
     }
 
+    /**
+     * TODO Remove me
+     */
+    public synchronized void log(String message) {
+        this.printWriter.println(message + ",");
+        this.printWriter.flush();
+    }
+
+    /**
+     * TODO Remove me
+     */
+    public synchronized void logRule(String message) {
+        this.printWriterRules.println(message + ",");
+        this.printWriterRules.flush();
+    }
+
     public int getFlowId(ApplicationRequirements applicationRequirements, int destNodeId) {
         return getFlowId(applicationRequirements, new int[]{destNodeId}, null);
     }
@@ -348,14 +434,29 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
 
     public int getFlowId(ApplicationRequirements applicationRequirements, int[] destNodeIds, int[] destPorts, PathSelectionMetric pathSelectionMetric) {
         int flowId;
-        if (applicationRequirements.getTrafficType() == TrafficType.DEFAULT)
+        PathDescriptor flowPathDescriptor;
+
+        if (applicationRequirements.getTrafficType() == TrafficType.DEFAULT) {
             flowId = DEFAULT_FLOW_ID;
-        else {
+        } else {
             flowId = ThreadLocalRandom.current().nextInt();
             while (flowId == GenericPacket.UNUSED_FIELD || flowId == CONTROL_FLOW_ID || flowId == DEFAULT_FLOW_ID || this.flowStartTimes.containsKey(flowId))
                 flowId = ThreadLocalRandom.current().nextInt();
             if (this.routingPolicy == RoutingPolicy.REROUTING) {
-                sendNewPathRequest(destNodeIds, applicationRequirements, pathSelectionMetric, flowId);
+                flowPathDescriptor = sendNewPathRequest(destNodeIds, applicationRequirements, pathSelectionMetric, flowId);
+
+                /*
+                 * Save the new path in the ControllerClient database.
+                 */
+                if (flowPathDescriptor != null) {
+                    long now = System.currentTimeMillis();
+                    flowPathDescriptor.setCreationTime(now);
+                    this.flowPaths.put(flowId, flowPathDescriptor);
+                    this.flowStartTimes.put(flowId, now);
+                    this.flowDurations.put(flowId, applicationRequirements.getDuration());
+                } else {
+                    return -1;
+                }
             } else if (this.routingPolicy == RoutingPolicy.MULTICASTING) {
                 sendNewMulticastRequest(destNodeIds, destPorts, applicationRequirements, pathSelectionMetric, flowId);
             }
@@ -392,9 +493,6 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             path = pathSelector.selectPath(clientNodeId, destinationNodeId, null, flowPaths);
         }
 
-        if (path == null) {
-            return null;
-        }
         return path;
     }
 
@@ -416,7 +514,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
     public String[] getFlowPath(int destNodeId, int flowId) {
         System.out.println("ControllerClient: received request for new path for flow " + flowId);
         String[] flowPath = null;
-        PathDescriptor flowPathDescriptor = null;
+        PathDescriptor flowPathDescriptor;
 
         if (flowId == DEFAULT_FLOW_ID)
             flowPathDescriptor = this.defaultFlowPaths.get(destNodeId);
@@ -437,18 +535,19 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                     System.out.println("ControllerClient: entry found for flow " + flowId + ", returning the new flow path");
                 else
                     System.out.println("ControllerClient: entry found for default flow, returning the new flow path");
-            }
-            /*
-             * If the path is not valid and the flowId is not the default one, send a request for a new one to the controller
-             */
-            else {
+            } else {
+                /*
+                 * If the path is not valid and the flowId is not the default one, send a request for a new one to the controller
+                 */
                 if (flowId != DEFAULT_FLOW_ID) {
                     System.out.println("ControllerClient: entry found for flow " + flowId + ", but its validity has expired, sending request to the controller");
+
                     /*
                      * The path request is not the first one for this application,
                      * so applicationRequirements is null
                      */
-                    flowPath = sendNewPathRequest(new int[]{destNodeId}, null, null, flowId);
+                    flowPathDescriptor = sendNewPathRequest(new int[]{destNodeId}, null, null, flowId);
+                    flowPath = flowPathDescriptor.getPath();
                 } else
                     System.out.println("ControllerClient: entry found for default flow, but its validity has expired, returning null");
             }
@@ -501,13 +600,34 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
         return result;
     }
 
+    public boolean getRouteIdPriority(int routeId) {
+        boolean result = false;
+        if(this.osRoutesPriority.containsKey(routeId)) {
+            result = this.osRoutesPriority.get(routeId);
+        }
+        return result;
+    }
+
     public Set<String> getDataTypesAvailable() {
         return this.dataTypesManager.getAvailableDataTypes();
     }
 
-    private String[] sendNewPathRequest(int[] destNodeIds, ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric, int flowId) {
+    public PathDescriptor sendNewPathRequest(int destNodeId, PathSelectionMetric pathSelectionMetric) {
+        return sendNewPathRequest(new int[]{destNodeId}, null, pathSelectionMetric, GenericPacket.UNUSED_FIELD);
+    }
+
+    private PathDescriptor sendNewPathRequest(int[] destNodeIds, ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric, int flowId) {
+        /*
+         * TODO Remove me
+         */
+        log("sendNewPathRequest");
+        LocalDateTime localDateTime;
+        String timestamp;
+        int packetSize;
+        int payloadSize;
+
         PathDescriptor newPath = null;
-        BoundReceiveSocket responseSocket = null;
+        BoundReceiveSocket responseSocket;
 
         /*
          * Controller service has to be found before sending any message
@@ -530,66 +650,95 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
 
                 E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(requestMessage));
 
+                /*
+                 * TODO Remove me
+                 */
+                localDateTime = LocalDateTime.now();
+                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                log("PATH_REQUEST sent at: " + timestamp);
+
                 System.out.println("ControllerClient: request for a new path for flow " + flowId + " sent to the controller");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
 
-        /*
-         * In alternativa, ricezione della risposta nel metodo run(),
-         * senza attesa, ma senza poter inviare subito il nuovo percorso.
-         */
-        GenericPacket gp = null;
-        try {
-            gp = E2EComm.receive(responseSocket);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        if (gp instanceof UnicastPacket) {
-            UnicastPacket up = (UnicastPacket) gp;
-            Object payload = null;
-            try {
-                payload = E2EComm.deserialize(up.getBytePayload());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            if (payload instanceof ControllerMessage) {
-                ControllerMessage controllerMessage = (ControllerMessage) payload;
-                ControllerMessageResponse responseMessage = null;
-
-                switch (controllerMessage.getMessageType()) {
-                    case PATH_RESPONSE:
-                        responseMessage = (ControllerMessageResponse) controllerMessage;
-                        /*
-                         * Set the received path creation time and add it to the known flow paths.
-                         */
-                        newPath = responseMessage.getNewPaths().get(0);
-                        if (newPath != null) {
-                            newPath.setCreationTime(System.currentTimeMillis());
-                            this.flowPaths.put(flowId, newPath);
-                            this.flowStartTimes.put(flowId, System.currentTimeMillis());
-                            this.flowDurations.put(flowId, applicationRequirements.getDuration());
-
-                            System.out.println("ControllerClient: response with a new path for flow " + flowId + " received from the controller");
-                        } else
-                            System.out.println("ControllerClient: null path received from the controller for flow " + flowId);
-                        break;
-                    default:
-                        break;
+                /*
+                 * Wait for ControllerService response
+                 */
+                GenericPacket gp = null;
+                try {
+                    gp = E2EComm.receive(responseSocket);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
+
+                /*
+                 * TODO Remove me
+                 */
+                packetSize = E2EComm.objectSizePacket(gp);
+                localDateTime = LocalDateTime.now();
+                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+
+                if (gp instanceof UnicastPacket) {
+                    UnicastPacket up = (UnicastPacket) gp;
+                    Object payload = null;
+                    try {
+                        payload = E2EComm.deserialize(up.getBytePayload());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    /*
+                     * TODO Remove me
+                     */
+                    payloadSize = up.getBytePayload().length;
+
+                    if (payload instanceof ControllerMessage) {
+                        ControllerMessage controllerMessage = (ControllerMessage) payload;
+                        ControllerMessageResponse responseMessage;
+
+                        switch (controllerMessage.getMessageType()) {
+                            case PATH_RESPONSE:
+                                /*
+                                 * TODO Remove me
+                                 */
+                                log("PATH_RESPONSE received at: " + timestamp + ", responseSize: " + packetSize + ", payloadSize: " + payloadSize);
+
+                                responseMessage = (ControllerMessageResponse) controllerMessage;
+                                /*
+                                 * Set the received path creation time and add it to the known flow paths.
+                                 */
+                                newPath = responseMessage.getNewPaths().get(0);
+                                if (newPath != null) {
+                                    if (flowId != GenericPacket.UNUSED_FIELD) {
+                                        System.out.println("ControllerClient: response with a new path for flow " + flowId + " received from the controller");
+                                    } else {
+                                        System.out.println("ControllerClient: response with a new path received from the controller");
+                                    }
+                                } else
+                                    System.out.println("ControllerClient: null path received from the controller for flow " + flowId);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
-        if (newPath != null)
-            return newPath.getPath();
-        else
-            return null;
+
+        return newPath;
     }
 
     @Override
     public PathDescriptor sendFixPathRequest(int sourceNodeId, int destNodeId, int flowId) {
+        /*
+         * TODO Remove me
+         */
+        log("sendFixPathRequest");
+        LocalDateTime localDateTime;
+        String timestamp;
+        int packetSize;
+        int payloadSize;
+
         PathDescriptor newPath = null;
         BoundReceiveSocket responseSocket = null;
 
@@ -615,22 +764,32 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
 
                 E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(requestMessage));
 
+                /*
+                 * TODO Remove me
+                 */
+                localDateTime = LocalDateTime.now();
+                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                log("FIX_PATH_REQUEST sent at: " + timestamp);
+
                 System.out.println("ControllerClient: request for fixing an existing path for flow " + flowId + " sent to the controller");
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        /*
-         * In alternativa, ricezione della risposta nel metodo run(),
-         * senza attesa, ma senza poter inviare subito il nuovo percorso.
-         */
         GenericPacket gp = null;
         try {
             gp = E2EComm.receive(responseSocket);
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        /*
+         * TODO Remove me
+         */
+        packetSize = E2EComm.objectSizePacket(gp);
+        localDateTime = LocalDateTime.now();
+        timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
 
         if (gp instanceof UnicastPacket) {
             UnicastPacket up = (UnicastPacket) gp;
@@ -641,17 +800,28 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                 e.printStackTrace();
             }
 
+            /*
+             * TODO Remove me
+             */
+            payloadSize = up.getBytePayload().length;
+
             if (payload instanceof ControllerMessage) {
                 ControllerMessage controllerMessage = (ControllerMessage) payload;
-                ControllerMessageResponse responseMessage = null;
+                ControllerMessageResponse responseMessage;
 
                 switch (controllerMessage.getMessageType()) {
                     case FIX_PATH_RESPONSE:
+                        /*
+                         * TODO Remove me
+                         */
+                        log("FIX_PATH_RESPONSE received at: " + timestamp + ", responseSize: " + packetSize + ", payloadSize: " + payloadSize);
+
                         responseMessage = (ControllerMessageResponse) controllerMessage;
                         /*
                          * Set the received path creation time and add it to the known flow paths.
                          */
                         newPath = responseMessage.getNewPaths().get(0);
+                        log("Path: " + Arrays.toString(newPath.getPath()));
                         if (newPath != null) {
                             System.out.println("ControllerClient: response with a fixed path for flow " + flowId + " received from the controller");
                         } else
@@ -791,6 +961,15 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
     }
 
     private int sendOSLevelRoutingRequest(int[] destNodeIds, int[] destPorts, ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric) {
+        /*
+         * TODO Remove me
+         */
+        log("sendOSLevelRoutingRequest");
+        LocalDateTime localDateTime;
+        String timestamp;
+        int packetSize;
+        int payloadSize;
+
         BoundReceiveSocket responseSocket = null;
         int routeId = -1;
         OsRoutingPathDescriptor osRoutingPathDescriptor = null;
@@ -810,6 +989,12 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            /*
+             * TODO Remove me
+             */
+            localDateTime = LocalDateTime.now();
+            timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+            log("OS_ROUTING_REQUEST sent at: " + timestamp);
         }
 
         GenericPacket gp;
@@ -820,6 +1005,13 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             return routeId;
         }
 
+        /*
+         * TODO Remove me
+         */
+        packetSize = E2EComm.objectSizePacket(gp);
+        localDateTime = LocalDateTime.now();
+        timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+
         if (gp instanceof UnicastPacket) {
             UnicastPacket up = (UnicastPacket) gp;
             Object payload = null;
@@ -829,11 +1021,21 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                 e.printStackTrace();
             }
 
+            /*
+             * TODO Remove me
+             */
+            payloadSize = up.getBytePayload().length;
+
             if (payload instanceof ControllerMessageResponse) {
                 ControllerMessageResponse responseMessage = (ControllerMessageResponse) payload;
                 if (responseMessage.getMessageType() == MessageType.OS_ROUTING_PULL_RESPONSE) {
                     routeId = responseMessage.getRouteId();
                     osRoutingPathDescriptor = responseMessage.getOsRoutingPath();
+
+                    /*
+                     * TODO Remove me
+                     */
+                    log("OS_ROUTING_PULL_RESPONSE received at: " + timestamp + ", responseSize: " + packetSize + ", payloadSize: " + payloadSize);
                 }
             }
         }
@@ -850,9 +1052,104 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             this.osRoutesPaths.put(routeId, osRoutingPathDescriptor);
             this.osRoutesStartTimes.put(routeId, System.currentTimeMillis());
             this.osRoutesDurations.put(routeId, applicationRequirements.getDuration());
+            this.osRoutesPriority.put(routeId, false);
         }
 
         return routeId;
+    }
+
+    public int sendOsRoutingUpdatePriorityRequest(int routeId, boolean switchToOsRouting) {
+        /*
+         * TODO Remove me
+         */
+        log("sendOsRoutingUpdatePriorityRequest");
+        LocalDateTime localDateTime;
+        String timestamp;
+        int packetSize;
+        int payloadSize;
+
+        int result = -1;
+
+        /*
+         * Check if this node is one of the peers and
+         * in case set the desired status.
+         */
+        if (this.osRoutesPaths.containsKey(routeId)) {
+            int currentNodeId = Dispatcher.getLocalRampId();
+            OsRoutingPathDescriptor osRoutingPathDescriptor = this.osRoutesPaths.get(routeId);
+            if (osRoutingPathDescriptor.getSourceNodeId() == currentNodeId || osRoutingPathDescriptor.getDestinationNodeId() == currentNodeId) {
+                this.osRoutesPriority.replace(routeId, switchToOsRouting);
+            }
+        }
+
+        /*
+         * Controller service has to be found before sending any message
+         */
+        ServiceResponse serviceResponse = this.controllerServiceDiscoverer.getControllerService();
+        if (serviceResponse == null) {
+            System.out.println("ControllerClient: controller service not found, cannot bind client socket");
+        } else {
+            try {
+                BoundReceiveSocket responseSocket = E2EComm.bindPreReceive(serviceResponse.getProtocol());
+                ControllerMessageRequest requestMessage = new ControllerMessageRequest(MessageType.OS_ROUTING_UPDATE_PRIORITY_REQUEST, responseSocket.getLocalPort(), routeId, switchToOsRouting);
+                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(requestMessage));
+                System.out.println("ControllerClient: request for switch to OS level routing for routeId " + routeId + " sent to the controller");
+
+                /*
+                 * TODO Remove me
+                 */
+                localDateTime = LocalDateTime.now();
+                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                log("OS_ROUTING_UPDATE_PRIORITY_REQUEST sent at: " + timestamp);
+
+                /*
+                 * Wait for ControllerService response
+                 */
+                GenericPacket gp = E2EComm.receive(responseSocket);
+
+                /*
+                 * TODO Remove me
+                 */
+                packetSize = E2EComm.objectSizePacket(gp);
+                localDateTime = LocalDateTime.now();
+                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+
+                if (gp instanceof UnicastPacket) {
+                    UnicastPacket up = (UnicastPacket) gp;
+                    Object payload = E2EComm.deserialize(up.getBytePayload());
+
+                    /*
+                     * TODO Remove me
+                     */
+                    payloadSize = up.getBytePayload().length;
+
+                    if (payload instanceof ControllerMessageResponse) {
+                        ControllerMessageResponse responseMessage = (ControllerMessageResponse) payload;
+                        if (responseMessage.getMessageType() == MessageType.OS_ROUTING_UPDATE_PRIORITY_RESPONSE) {
+                            int receivedRouteId = responseMessage.getRouteId();
+                            /*
+                             * TODO Remove me
+                             */
+                            log("OS_ROUTING_UPDATE_PRIORITY_RESPONSE received at: " + timestamp + ", responseSize: " + packetSize + ", payloadSize: " + payloadSize);
+
+                            if (receivedRouteId == routeId) {
+                                result = 0;
+                                System.out.println("ControllerClient: priority of routeId " + routeId + " updated");
+                            } else {
+                                System.out.println("ControllerClient: priority of routeId " + routeId + " not updated");
+                            }
+                        } else {
+                            System.out.println("ControllerClient: priority of routeId " + routeId + " not updated");
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("ControllerClient: priority of routeId " + routeId + " not updated");
+                e.printStackTrace();
+            }
+        }
+
+        return result;
     }
 
     public void getTopologyGraph() {
@@ -1015,6 +1312,14 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
 
         @Override
         public void run() {
+            /*
+             * TODO Remove me
+             */
+            int packetSize = E2EComm.objectSizePacket(gp);
+            LocalDateTime localDateTime = LocalDateTime.now();
+            String timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+            int payloadSize = -1;
+
             if (this.gp instanceof UnicastPacket) {
                 UnicastPacket up = (UnicastPacket) this.gp;
                 Object payload = null;
@@ -1024,6 +1329,11 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+
+                /*
+                 * TODO Remove me
+                 */
+                payloadSize = up.getBytePayload().length;
 
                 if (payload instanceof ControllerMessage) {
                     ControllerMessage controllerMessage = (ControllerMessage) payload;
@@ -1045,30 +1355,68 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                             handleMulticastControl((ControllerMessageResponse) controllerMessage);
                             break;
                         case FIX_PATH_PUSH_RESPONSE:
+                            /*
+                             * TODO Remove me
+                             */
+                            log("FIX_PATH_PUSH_RESPONSE received at: " + timestamp + ", response size: " + packetSize + ", payloadSize: " + payloadSize);
+
                             handleFixPathPushResponse((ControllerMessageResponse) controllerMessage);
                             break;
                         case OS_ROUTING_ADD_ROUTE:
+                            /*
+                             * TODO Remove me
+                             */
+                            log("OS_ROUTING_ADD_ROUTE received at: " + timestamp + ", response size: " + packetSize + ", payloadSize: " + payloadSize);
+
                             handleOsRoutingAddRoute((ControllerMessageUpdate) controllerMessage);
                             break;
                         case OS_ROUTING_PUSH_RESPONSE:
+                            /*
+                             * TODO Remove me
+                             */
+                            log("OS_ROUTING_PUSH_RESPONSE received at: " + timestamp + ", response size: " + packetSize + ", payloadSize: " + payloadSize);
+
                             handleOsRoutingPushResponseRoute((ControllerMessageResponse) controllerMessage);
                             break;
                         case OS_ROUTING_DELETE_ROUTE:
                             handleOsRoutingDeleteRoute((ControllerMessageUpdate) controllerMessage);
                             break;
+                        case OS_ROUTING_PRIORITY_UPDATE:
+                            /*
+                             * TODO Remove me
+                             */
+                            log("OS_ROUTING_PRIORITY_UPDATE received at: " + timestamp + ", response size: " + packetSize + ", payloadSize: " + payloadSize);
+
+                            handleOsRoutingPriorityUpdate((ControllerMessageUpdate) controllerMessage);
+                            break;
                         case DATA_PLANE_ADD_DATA_TYPE:
+                            /*
+                             * TODO Remove me
+                             */
+                            log("DATA_PLANE_ADD_DATA_TYPE received at: " + timestamp + ", response size: " + packetSize + ", payloadSize: " + payloadSize);
+
                             handleDataPlaneAddDataType((ControllerMessageUpdate) controllerMessage);
                             break;
                         case DATA_PLANE_REMOVE_DATA_TYPE:
                             handleDataPlaneRemoveDataType((ControllerMessageUpdate) controllerMessage);
                             break;
                         case DATA_PLANE_ADD_RULE_FILE:
+                            /*
+                             * TODO Remove me
+                             */
+                            log("DATA_PLANE_ADD_RULE_FILE received at: " + timestamp + ", response size: " + packetSize + ", payloadSize: " + payloadSize);
+
                             handleDataPlaneAddRuleFile((ControllerMessageUpdate) controllerMessage);
                             break;
                         case DATA_PLANE_REMOVE_RULE_FILE:
                             handleDataPlaneRemoveRuleFile((ControllerMessageUpdate) controllerMessage);
                             break;
                         case DATA_PLANE_ADD_RULE:
+                            /*
+                             * TODO Remove me
+                             */
+                            log("DATA_PLANE_ADD_RULE received at: " + timestamp + ", response size: " + packetSize + ", payloadSize: " + payloadSize);
+
                             handleDataPlaneAddRule((ControllerMessageUpdate) controllerMessage);
                             break;
                         case DATA_PLANE_REMOVE_RULE:
@@ -1158,6 +1506,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
              */
             int flowId = responseMessage.getFlowId();
             PathDescriptor newPath = responseMessage.getNewPaths().get(0);
+            log("PushFixPath: " + Arrays.toString(newPath.getPath()));
             newPath.setCreationTime(System.currentTimeMillis());
 
             flowPaths.put(flowId, newPath);
@@ -1171,6 +1520,13 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
          * routing.
          */
         private void handleOsRoutingAddRoute(ControllerMessageUpdate updateMessage) {
+            /*
+             * TODO Remove me
+             */
+            log("handleOsRoutingAddRoute");
+            LocalDateTime localDateTime;
+            String timestamp;
+
             int ackSocketPort = updateMessage.getClientPort();
 
             String sourceIP = updateMessage.getSrcIP();
@@ -1180,7 +1536,10 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
 
             boolean success = false;
             try {
+                long pre = System.currentTimeMillis();
                 success = osRoutingManager.addRoute(sourceIP, destinationIP, viaIP, routeId);
+                long post = System.currentTimeMillis();
+                log("OS ROUTING MANAGER ADD ROUTE completed in: " + (post - pre) + "milliseconds");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1208,6 +1567,10 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                    localDateTime = LocalDateTime.now();
+                    timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                    log("OS_ROUTING_ACK sent to controller at: " + timestamp);
+
                     System.out.println("ControllerClient: OS_ROUTING_ADD_ROUTE for routeId: " + routeId + " received from the controller and successfully applied");
                 } else {
                     ControllerMessageAck abortMessage = new ControllerMessageAck(MessageType.OS_ROUTING_ABORT, routeId);
@@ -1227,7 +1590,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             int osRoutingPathDuration = responseMessage.getOsROutingPathDuration();
             OsRoutingPathDescriptor osRoutingPathDescriptor = responseMessage.getOsRoutingPath();
             /*
-             * For the intermediate nodes of a os route the osRoutingPathDescriptor
+             * For the intermediate nodes of an os route the osRoutingPathDescriptor
              * is null.
              */
             if (osRoutingPathDescriptor != null) {
@@ -1240,6 +1603,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                     routeIdsByDestination.get(destinationNode).add(routeId);
                 }
                 osRoutesPaths.put(routeId, osRoutingPathDescriptor);
+                osRoutesPriority.put(routeId, false);
             }
             /*
              * This check is in case of pathSelectionMetric that may have different
@@ -1268,7 +1632,55 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             System.out.println("ControllerClient: OS_ROUTING_DELETE_ROUTE for routeId: " + routeId + " received from the controller and successfully applied");
         }
 
+        private void handleOsRoutingPriorityUpdate(ControllerMessageUpdate updateMessage) {
+            /*
+             * TODO Remove me
+             */
+            log("handleOsRoutingPriorityUpdate");
+            LocalDateTime localDateTime;
+            String timestamp;
+
+            int ackSocketPort = updateMessage.getClientPort();
+
+            int routeId = updateMessage.getRouteId();
+
+            ControllerMessageAck ackMessage;
+            if (osRoutesPaths.containsKey(routeId)) {
+                osRoutesPriority.replace(routeId, updateMessage.isOsRoutingPriority());
+                ackMessage = new ControllerMessageAck(MessageType.OS_ROUTING_ACK, routeId);
+            } else {
+                ackMessage = new ControllerMessageAck(MessageType.OS_ROUTING_ABORT, routeId);
+            }
+
+            /*
+             * Controller service has to be found before sending any message
+             */
+            ServiceResponse serviceResponse = controllerServiceDiscoverer.getControllerService();
+            if (serviceResponse == null) {
+                System.out.println("ControllerClient: controller service not found, cannot bind client socket");
+            } else {
+                try {
+                    E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), ackSocketPort, serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(ackMessage));
+                    System.out.println("ControllerClient: " + ackMessage.getMessageType() + " for routeId: " + routeId + " sent to the controller");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                localDateTime = LocalDateTime.now();
+                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                log(ackMessage.getMessageType() + " sent to controller at: " + timestamp);
+
+                System.out.println("ControllerClient: OS_ROUTING_PRIORITY_UPDATE for routeId: " + routeId + " received from the controller and successfully applied");
+            }
+        }
+
         private void handleDataPlaneAddDataType(ControllerMessageUpdate updateMessage) {
+            /*
+             * TODO Remove me
+             */
+            log("handleDataPlaneAddDataType");
+            LocalDateTime localDateTime;
+            String timestamp;
+
             int ackSocketPort = updateMessage.getClientPort();
 
             DataPlaneMessage dataPlaneMessage = updateMessage.getDataPlaneMessage();
@@ -1295,6 +1707,13 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                    /*
+                     * TODO Remove me
+                     */
+                    localDateTime = LocalDateTime.now();
+                    timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                    log("DATA_PLANE_DATA_TYPE_ACK to controller sent at: " + timestamp);
+
                     System.out.println("ControllerClient: DATA_PLANE_ADD_DATA_TYPE: add DataType: " + dataTypeFileName + " received from the controller and successfully applied");
                 } else {
                     ControllerMessageAck abortMessage = new ControllerMessageAck(MessageType.DATA_PLANE_DATA_TYPE_ABORT);
@@ -1317,6 +1736,13 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
         }
 
         private void handleDataPlaneAddRuleFile(ControllerMessageUpdate updateMessage) {
+            /*
+             * TODO Remove me
+             */
+            log("handleDataPlaneAddRuleFile");
+            LocalDateTime localDateTime;
+            String timestamp;
+
             int ackSocketPort = updateMessage.getClientPort();
 
             DataPlaneMessage dataPlaneMessage = updateMessage.getDataPlaneMessage();
@@ -1345,6 +1771,13 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                         e.printStackTrace();
                     }
 
+                    /*
+                     * TODO Remove me
+                     */
+                    localDateTime = LocalDateTime.now();
+                    timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                    log("DATA_PLANE_RULE_ACK to controller sent at: " + timestamp);
+
                     System.out.println("ControllerClient: DATA_PLANE_ADD_RULE_FILE: add DataPlaneRule: " + dataPlaneRuleFileName + " received from the controller and successfully applied");
                 } else {
                     ControllerMessageAck abortMessage = new ControllerMessageAck(MessageType.DATA_PLANE_RULE_ABORT);
@@ -1367,6 +1800,13 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
         }
 
         private void handleDataPlaneAddRule(ControllerMessageUpdate updateMessage) {
+            /*
+             * TODO Remove me
+             */
+            log("handleDataPlaneAddRule");
+            LocalDateTime localDateTime;
+            String timestamp;
+
             int ackSocketPort = updateMessage.getClientPort();
 
             String dataType = updateMessage.getDataType();
@@ -1399,6 +1839,12 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                    /*
+                     * TODO Remove me
+                     */
+                    localDateTime = LocalDateTime.now();
+                    timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                    log("DATA_PLANE_RULE_ACK to controller sent at: " + timestamp);
 
                     System.out.println("ControllerClient: DATA_PLANE_ADD_RULE: add rule: " + dataPlaneRule + " for data type: " + dataType + " received from the controller and successfully applied");
                 } else {
@@ -1477,6 +1923,7 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                     osRoutesStartTimes.remove(routeId);
                     osRoutesDurations.remove(routeId);
                     osRoutesPaths.remove(routeId);
+                    osRoutesPriority.remove(routeId);
                 }
             }
         }

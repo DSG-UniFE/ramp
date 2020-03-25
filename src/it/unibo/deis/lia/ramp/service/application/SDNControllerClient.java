@@ -312,7 +312,7 @@ public class SDNControllerClient {
                     cls = dataTypesManager.getDataTypeClassObject(this.dataType);
                     packet = cls.getDeclaredConstructor().newInstance();
                     method = cls.getMethod("setPayloadSize", paramInt);
-                    method.invoke(packet, this.payload - 141);
+                    method.invoke(packet, this.payload);
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 } catch (InstantiationException e) {
@@ -559,7 +559,7 @@ public class SDNControllerClient {
                     /*
                      * The number 138 is the size in byte of the object without payload field set.
                      */
-                    packet.setPayloadSize(this.payload - 138);
+                    packet.setPayloadSize(this.payload);
                     System.out.println("SDNControllerClient.DatagramSocketPacketSender: sending Packet \""
                             + packet.getSeqNumber() + "\" to the receiver (nodeId: " + serviceResponse.getServerNodeId() + "), IP: " + destinationIP + ", Protocol: UDP");
 
@@ -596,7 +596,7 @@ public class SDNControllerClient {
                     /*
                      * The number 138 is the size in byte of the object without payload field set.
                      */
-                    packet.setPayloadSize(this.payload - 138);
+                    packet.setPayloadSize(this.payload);
                     System.out.println("SDNControllerClient.DatagramSocketPacketSender: sending Packet \""
                             + packet.getSeqNumber() + "\" to the receiver (nodeId: " + serviceResponse.getServerNodeId() + "), IP: " + destinationIP + ", Protocol: UDP");
 
@@ -694,7 +694,7 @@ public class SDNControllerClient {
                     /*
                      * The number 138 is the size in byte of the object without payload field set.
                      */
-                    packet.setPayloadSize(this.payload - 138);
+                    packet.setPayloadSize(this.payload);
                     System.out.println("SDNControllerClient.ServerSocketPacketSender: sending Packet \""
                             + packet.getSeqNumber() + "\" to the receiver (nodeId: " + serviceResponse.getServerNodeId() + "), IP: " + destinationIP + ", Protocol: TCP");
                     if (objectOutputStream != null) {
@@ -743,7 +743,7 @@ public class SDNControllerClient {
                     /*
                      * The number 138 is the size in byte of the object without payload field set.
                      */
-                    packet.setPayloadSize(this.payload - 138);
+                    packet.setPayloadSize(this.payload);
                     int seqNumber = getNextSeqNumber();
                     packet.setSeqNumber(seqNumber);
 

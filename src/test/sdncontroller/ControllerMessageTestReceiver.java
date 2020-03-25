@@ -1,9 +1,13 @@
 package test.sdncontroller;
 
 import it.unibo.deis.lia.ramp.core.e2e.GenericPacket;
+import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.defaultDataTypes.VibrationDataType;
 
 import java.time.LocalDateTime;
 
+/**
+ * @author Dmitrij David Padalino Montenero
+ */
 public class ControllerMessageTestReceiver {
     private LocalDateTime receivedTime;
     private GenericPacket genericPacket;

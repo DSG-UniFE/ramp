@@ -1,10 +1,10 @@
 package it.unibo.deis.lia.ramp.util.componentLocator.initializer;
 
-import it.unibo.deis.lia.ramp.RampEntryPoint;
 import it.unibo.deis.lia.ramp.core.internode.sdn.advancedDataPlane.dataTypesManager.DataTypesManager;
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClient;
 import it.unibo.deis.lia.ramp.util.componentLocator.ComponentLocator;
 import it.unibo.deis.lia.ramp.util.componentLocator.cache.Cache;
+import it.unibo.deis.lia.ramp.util.rampUtils.RampUtils;
 
 /**
  * @author Dmitrij David Padalino Montenero
@@ -21,8 +21,8 @@ import it.unibo.deis.lia.ramp.util.componentLocator.cache.Cache;
 public class InitialContext {
 
     public Object lookup(String componentName) {
-        if(componentName.equalsIgnoreCase("RampEntryPoint")) {
-            return RampEntryPoint.getInstance(false, null);
+        if(componentName.equalsIgnoreCase("RampUtils")) {
+            return RampUtils.getInstance();
         } else if(componentName.equalsIgnoreCase("ControllerClient")) {
             return ControllerClient.getInstance();
         } else if(componentName.equalsIgnoreCase("DataTypesManager")) {
@@ -30,5 +30,4 @@ public class InitialContext {
         }
         return null;
     }
-
 }

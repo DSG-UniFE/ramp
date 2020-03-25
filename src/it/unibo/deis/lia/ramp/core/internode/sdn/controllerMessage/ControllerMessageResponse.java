@@ -27,6 +27,7 @@ public class ControllerMessageResponse extends ControllerMessage {
      * MULTICAST_CONTROL message: messageType, flowId, newPaths
      * OS_ROUTING_PULL_RESPONSE: messageType, routeId, osRoutingPath
      * OS_ROUTING_PUSH_RESPONSE: messageType, routeId, osRoutingPath
+     * OS_ROUTING_UPDATE_PRIORITY_RESPONSE: messageType, routeId
      * TOPOLOGY_GRAPH_RESPONSE: messageType
      */
     public ControllerMessageResponse(MessageType messageType, int clientPort, Map<String, NodeStats> nodeStats, int flowId, List<PathDescriptor> newPaths) {
