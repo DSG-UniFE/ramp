@@ -255,7 +255,7 @@ public class ChatCommunicationSupportOld extends Thread {
             500,
             messageObject
             );*/
-            boolean sent = ch.safeSendUnicast(dest, destNodeId, destPort, ChatCommunicationSupportOld.COMMUNICATION_PROTOCOL, msg);
+            boolean sent = ch.safeSendUnicast(dest, destNodeId, destPort, ChatCommunicationSupportOld.COMMUNICATION_PROTOCOL, "bella "+msg);
             if (sent) {
                 receivedMessages.addElement(Dispatcher.getLocalRampId() + ": " + message);
                 System.out.println(message + " INVIATO AL CONTATTO: " + destNodeId + " ALLA PORTA:" + destPort);

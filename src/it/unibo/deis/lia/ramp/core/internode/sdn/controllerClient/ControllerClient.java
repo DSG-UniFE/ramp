@@ -1036,11 +1036,13 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
                      * TODO Remove me
                      */
                     log("OS_ROUTING_PULL_RESPONSE received at: " + timestamp + ", responseSize: " + packetSize + ", payloadSize: " + payloadSize);
+                    log("routeId: " + routeId);
                 }
             }
         }
 
         if (routeId != -1) {
+            log("routeId is not -1: " + routeId);
             int destinationNodeId = osRoutingPathDescriptor.getDestinationNodeId();
             if (!this.routeIdsByDestination.containsKey(destinationNodeId)) {
                 List<Integer> routeIds = new ArrayList<>();
@@ -1271,6 +1273,112 @@ public class ControllerClient extends Thread implements ControllerClientInterfac
             try {
                 E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(leaveMessage));
                 System.out.println("ControllerClient: leave request sent to the controller");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // authot Matteo Mendula
+    // digital twin refactoring 2020
+
+    public void notifyControllerAboutTrafficState(trafficCongestionLevel trafficCongestionLevel) {   
+
+        /*
+         * TODO Remove me
+         */
+        System.out.println("----------------------------------->");
+        System.out.println("-----------------------------------------------> notifyControllerAboutTrafficState");
+        System.out.println("----------------------------------->");
+        log("notifyControllerAboutTrafficState "+trafficCongestionLevel);
+        LocalDateTime localDateTime;
+        String timestamp;
+        int packetSize;
+        int payloadSize;
+
+        PathDescriptor newPath = null;
+        BoundReceiveSocket responseSocket;
+
+        /*
+         * Controller service has to be found before sending any message
+         */
+        ServiceResponse serviceResponse = this.controllerServiceDiscoverer.getControllerService();
+        if (serviceResponse == null) {
+            System.out.println("ControllerClient: controller service not found, cannot bind client socket");
+        } else {
+            try {
+                /*
+                 * Use the protocol specified by the controller
+                 */
+                responseSocket = E2EComm.bindPreReceive(serviceResponse.getProtocol());
+                /*
+                 * Send a path request to the controller for a certain flowId,
+                 * currentDest is also necessary for the search on the controller
+                 * side (it can be chosen as the path to be used), as well as destNodeId.
+                 */
+                ControllerMessageRequest notificationMessage = new ControllerMessageRequest(MessageType.NOTIFY_CONTROLLER_ABOUT_TRAFFIC_STATE, responseSocket.getLocalPort(), trafficCongestionLevel);
+
+                E2EComm.sendUnicast(serviceResponse.getServerDest(), serviceResponse.getServerNodeId(), serviceResponse.getServerPort(), serviceResponse.getProtocol(), CONTROL_FLOW_ID, E2EComm.serialize(notificationMessage));
+
+                /*
+                 * TODO Remove me
+                 */
+                localDateTime = LocalDateTime.now();
+                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+                log("PATH_REQUEST sent at: " + timestamp);
+
+                System.out.println("ControllerClient: notifyin controller about traffica state, congestionLevel: "+trafficCongestionLevel);
+
+                /*
+                 * Wait for ControllerService response
+                 */
+//                GenericPacket gp = null;
+//                try {
+//                    gp = E2EComm.receive(responseSocket);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//
+//                /*
+//                 * TODO Remove me
+//                 */
+//                packetSize = E2EComm.objectSizePacket(gp);
+//                localDateTime = LocalDateTime.now();
+//                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+//
+//                if (gp instanceof UnicastPacket) {
+//                    UnicastPacket up = (UnicastPacket) gp;
+//                    Object payload = null;
+//                    try {
+//                        payload = E2EComm.deserialize(up.getBytePayload());
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//
+//                    /*
+//                     * TODO Remove me
+//                     */
+//                    payloadSize = up.getBytePayload().length;
+//
+//                    if (payload instanceof ControllerMessage) {
+//                        ControllerMessage controllerMessage = (ControllerMessage) payload;
+//                        ControllerMessageResponse responseMessage;
+//
+//                        switch (controllerMessage.getMessageType()) {
+//                            case NOTIFY_RESPONSE:
+//                                /*
+//                                 * TODO Remove me
+//                                 */
+//                                log("NOTIFY_RESPONSE received at: " + timestamp + ", responseSize: " + packetSize + ", payloadSize: " + payloadSize);
+//
+//                                responseMessage = (ControllerMessageResponse) controllerMessage;
+//                                System.out.println("ControllerClient: received response to traffic state notification");
+//                                break;
+//                            default:
+//                                break;
+//                        }
+//                    }
+//                }
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -30,4 +30,14 @@ public class InfoDataType extends AbstractDataType implements Serializable {
     public int getValue() {
         return value;
     }
+
+    public int getSeqNumber() {
+        return super.getSeqNumber();
+    }
+    public boolean getIsDroppable() {
+        return super.getIsDroppable();
+    }
+    public long getDelayable() {
+        return super.getDelayable();
+    }
 }

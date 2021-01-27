@@ -41,5 +41,7 @@ public enum MessageType {
     DATA_PLANE_ADD_RULE, // This is used to set in the database a specific DataPlaneRule for a specific DataType
     DATA_PLANE_REMOVE_RULE, // This is used to remove from the database a specific DataPlaneRule for a specific DataType
     DATA_PLANE_RULE_ACK,
-    DATA_PLANE_RULE_ABORT
+    DATA_PLANE_RULE_ABORT,
+    NOTIFY_CONTROLLER_ABOUT_TRAFFIC_STATE,
+    NOTIFY_RESPONSE
 }

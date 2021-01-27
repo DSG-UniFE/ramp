@@ -49,7 +49,7 @@ public class UnicastHeader extends GenericPacket {
             int expiry,
             int connectTimeout,
             int flowId,
-            long dataType
+            long dataType //----- matte ---------> may they are already defined, place here SenML
     ) {
         this.id = RampEntryPoint.nextRandomInt(); //Stefano Lanzone
         this.setDest(destString);
@@ -134,15 +134,23 @@ public class UnicastHeader extends GenericPacket {
     public String[] getDest() {
         String[] resDest = new String[this.dest.length];
         for (int i = 0; i < this.dest.length; i++) {
+            //System.out.println("--------------this.dest[i] "+this.dest[i]);
             resDest[i] = GenericPacket.i2s(this.dest[i]);
         }
+        //System.out.println("--------------resDest "+resDest);
+        //System.out.println("--------------this.dest.length "+this.dest.length);
         return resDest;
     }
 
     public void setDest(String[] destString) {
         if (destString == null) {
             this.dest = new int[0];
+            //            System.out.println("--------------destString is null");
+            //            this.dest = new int[1];
+            //            Vector<ResolverPath> paths = Resolver.getInstance(false).resolveBlocking(destNodeId);
+            //            this.dest[0] = GenericPacket.s2i("192.168.1.91");
         } else {
+            //            System.out.println("--------------destString is not null");
             this.dest = new int[destString.length];
             for (int i = 0; i < destString.length; i++) {
                 this.dest[i] = GenericPacket.s2i(destString[i]);

@@ -6,12 +6,15 @@ import it.unibo.deis.lia.ramp.util.GeneralUtils;
 import it.unibo.deis.lia.ramp.util.rampClassLoader.RampClassLoader;
 
 import java.io.*;
+import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.nio.file.Files;
 
 /**
  * @author Dmitrij David Padalino Montenero
@@ -113,13 +116,17 @@ public class DataTypesManager implements DataTypesManagerInterface {
          * Initialise user defined DataTypes if available,
          * the ones currently available from previous ControllerClient sessions.
          */
-        Set<String> userDefinedDataTypes = Stream.of(new File(userDefinedDataTypesDirectoryName).listFiles())
-                .filter(file -> !file.isDirectory())
-                .map(File::getName)
-                .collect(Collectors.toSet());
+        Set<String> userDefinedDataTypes = new HashSet<>();
+        if (Files.exists(Paths.get(userDefinedDataTypesDirectoryName))){
+            System.out.println("userDefinedDataTypesDirectoryName ("+userDefinedDataTypesDirectoryName+") does not exist");
+            userDefinedDataTypes = Stream.of(new File(userDefinedDataTypesDirectoryName).listFiles())
+                    .filter(file -> !file.isDirectory())
+                    .map(File::getName)
+                    .collect(Collectors.toSet());
+        }
 
         for (String dataTypeFileName : userDefinedDataTypes) {
-            String dataTypeClassName = dataTypeFileName.replaceFirst("[.][^.]+$", "");
+            String dataTypeClassName = dataTypeFileName.replaceFirst("[droppingPacketsEnabled.][^.]+$", "");
             try {
                 Class cls = rampClassLoader.loadClass(dataTypeClassName);
                 addDataTypeToDataBase(cls);

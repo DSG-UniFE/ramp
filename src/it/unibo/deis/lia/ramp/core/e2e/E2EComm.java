@@ -20,6 +20,7 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.Vector;
 
 import it.unibo.deis.lia.ramp.RampEntryPoint;
 import it.unibo.deis.lia.ramp.core.internode.Dispatcher;
@@ -27,6 +28,8 @@ import it.unibo.deis.lia.ramp.core.internode.HeartbeatRequest;
 import it.unibo.deis.lia.ramp.core.internode.HeartbeatResponse;
 import it.unibo.deis.lia.ramp.core.internode.TcpDispatcher;
 import it.unibo.deis.lia.ramp.core.internode.UdpDispatcher;
+import it.unibo.deis.lia.ramp.core.internode.Resolver;
+import it.unibo.deis.lia.ramp.core.internode.ResolverPath;
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 
 
@@ -366,7 +369,8 @@ public class E2EComm {
     // -----------------------------------------------------------------
     // sendUnicast: receiver via nodeId, payload as byte[]
     // -----------------------------------------------------------------
-    /*public static boolean sendUnicastDestNodeId(int destNodeId, int destPort, int protocol, byte[] payload) throws Exception{
+    /*
+    public static boolean sendUnicastDestNodeId(int destNodeId, int destPort, int protocol, byte[] payload) throws Exception{
         // destNodeId!!! static sender-side version
         boolean res;
         boolean ack = false;
@@ -413,7 +417,8 @@ public class E2EComm {
             res = false;
         }
         return res;
-    }*/
+    }
+    //*/
 
 
     // -----------------------------------------------------------------
@@ -592,13 +597,32 @@ public class E2EComm {
 
     private static boolean executeSendUnicast(String[] dest, int destNodeId, int destPort, int protocol, boolean ack, int timeoutAck, int bufferSize, int packetDeliveryTimeout,
                                               int packetTimeoutConnect, byte[] payload, int retry, int timeWait, int expiry, int flowId, long dataType, UnicastPacket gp) throws Exception, SocketException, UnknownHostException, IOException {
-
         boolean res = true;
         UnicastPacket up;
         UnicastHeader uh;
         int payloadSize;
+        String[] checkedDest = dest;
 
         if (gp == null) {
+            //            author: Matteo Mendula
+            if (checkedDest == null){
+                System.out.println("dest is null; resolving destNodeId ("+destNodeId+")");
+                Vector<ResolverPath> paths = Resolver.getInstance(false).resolveBlocking(destNodeId);
+                if(paths!=null && paths.size()>0){
+                    ResolverPath mostRecent = paths.elementAt(0);
+                    for(int i=1; i<paths.size(); i++){
+                        ResolverPath current = paths.elementAt(i);
+                        if(current.getLastUpdate()>mostRecent.getLastUpdate()){
+                            mostRecent = current;
+                        }
+                    }
+                    checkedDest = mostRecent.getPath();
+                }
+                else{
+                    System.out.println("destNodeId ("+destNodeId+") cannot be resolved");
+                }
+
+            }
             if ((bufferSize != GenericPacket.UNUSED_FIELD) && (bufferSize == 0)) {
                 bufferSize = E2EComm.DEFAULT_BUFFERSIZE;
             }
@@ -626,7 +650,8 @@ public class E2EComm {
             // 1) setup packet
             int localNodeId = Dispatcher.getLocalRampId();
             uh = new UnicastHeader(
-                    dest,
+//                    dest,
+                    checkedDest,
                     destPort,
                     destNodeId,
                     localNodeId,
@@ -644,6 +669,7 @@ public class E2EComm {
 
             up = new UnicastPacket(uh, payload);
         } else {
+//            System.out.println("boh ----- gp is not null");
             up = gp;
             uh = up.getHeader();
             payloadSize = up.getBytePayload().length;
@@ -661,9 +687,16 @@ public class E2EComm {
             }
 
             // check 255.255.255.255 is not in dest[]
-            if (dest != null) {
-                for (int i = 0; i < dest.length; i++) {
-                    if (dest[i].equals("255.255.255.255")) {
+//            if (dest != null) {
+//                for (int i = 0; i < dest.length; i++) {
+//                    if (dest[i].equals("255.255.255.255")) {
+//                        throw new Exception("E2EComm.sendUnicast: 255.255.255.255 not allowed");
+//                    }
+//                }
+//            }
+            if (checkedDest != null) {
+                for (int i = 0; i < checkedDest.length; i++) {
+                    if (checkedDest[i].equals("255.255.255.255")) {
                         throw new Exception("E2EComm.sendUnicast: 255.255.255.255 not allowed");
                     }
                 }
@@ -697,6 +730,8 @@ public class E2EComm {
             //System.out.println("E2EComm.sendUnicast tcp localhost = "+localhost);
             //(new TcpDispatcher.TcpDispatcherHandler(up, localhost)).start();
             TcpDispatcher.asyncDispatchTcpGenericPacket(up, localhost);
+//            System.out.println("boh2");
+
 
             //System.out.println("E2EComm.sendUnicast tcp s.getSendBufferSize() = "+socketToLocalhost.getSendBufferSize());
             /*

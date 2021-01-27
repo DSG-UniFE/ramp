@@ -462,7 +462,11 @@ public class GeneralUtils {
 	 * @return the list of all classes in the package
 	 */
 	public static List<Class<?>> getClassesInPackage(String packageName) {
-		String path = packageName.replaceAll("\\.", File.separator);
+//		System.out.println("packageName "+ packageName);
+//		System.out.println("File.separator "+ File.separator);
+//		String path = packageName.replaceAll("\\.", File.separator);    //------------------------> Matteo Fix
+		String path = packageName.replaceAll("\\.", "\\"+File.separator);
+//		System.out.println("path "+ path);
 		List<Class<?>> classes = new ArrayList<>();
 		String[] classPathEntries = System.getProperty("java.class.path").split(
 				System.getProperty("path.separator")

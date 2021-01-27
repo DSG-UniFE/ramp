@@ -13,18 +13,14 @@ public class VibrationDataType extends AbstractDataType implements Serializable 
 
     private int vibrationValue;
 
-    private long sentTimestamp;
-
     public VibrationDataType() {
         super();
         this.vibrationValue = -1;
-        this.sentTimestamp = -1;
     }
 
-    public VibrationDataType(int seqNumber, int payloadSize, int vibrationValue, long sentTimestamp) {
+    public VibrationDataType(int seqNumber, int payloadSize, int vibrationValue) {
         super(seqNumber, payloadSize);
         this.vibrationValue = vibrationValue;
-        this.sentTimestamp = sentTimestamp;
     }
 
     public int getVibrationValue() {
@@ -34,12 +30,14 @@ public class VibrationDataType extends AbstractDataType implements Serializable 
     public void setVibrationValue(int vibrationValue) {
         this.vibrationValue = vibrationValue;
     }
-
-    public long getSentTimestamp() {
-        return sentTimestamp;
+    public int getSeqNumber() {
+        return super.getSeqNumber();
+    }
+    public boolean getIsDroppable() {
+        return super.getIsDroppable();
+    }
+    public long getDelayable() {
+        return super.getDelayable();
     }
 
-    public void setSentTimestamp(long sentTimestamp) {
-        this.sentTimestamp = sentTimestamp;
-    }
 }

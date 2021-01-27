@@ -37,6 +37,7 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.prioritySelector.TrafficTypeFlo
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerMessage.ControllerMessageUpdate;
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.PathSelectionMetric;
 
+import it.unibo.deis.lia.ramp.service.application.SDNControllerService;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.graphstream.graph.Edge;
@@ -206,6 +207,8 @@ public class ControllerService extends Thread {
      */
     private PrintWriter printWriter;
 
+//    private SDNControllerService sdnControllerService;
+
     private ControllerService() throws Exception {
         this.serviceSocket = E2EComm.bindPreReceive(PROTOCOL);
         ServiceManager.getInstance(false).registerService("SDNController", this.serviceSocket.getLocalPort(), PROTOCOL);
@@ -268,6 +271,8 @@ public class ControllerService extends Thread {
         }
         printWriter.println("ControllerService NodeId=" + Dispatcher.getLocalRampId() + " TEST LOG");
         printWriter.flush();
+
+//        this.sdnControllerService = SDNControllerService.getInstance();
     }
 
     public synchronized static ControllerService getInstance() {
@@ -1105,10 +1110,125 @@ public class ControllerService extends Thread {
 
                             handleOsRoutingUpdatePriorityRequest((ControllerMessageRequest) controllerMessage, clientNodeId, clientDest);
                             break;
+                        case NOTIFY_CONTROLLER_ABOUT_TRAFFIC_STATE:
+                            log("NOTIFY_CONTROLLER_ABOUT_TRAFFIC_STATE received at: " + timestamp + ", request size: " + packetSize + ", payload size: " + payloadSize);
+                            handleTrafficStateNotification((ControllerMessageRequest) controllerMessage, clientNodeId, clientDest);
+                            break;
                         default:
                             break;
                     }
                 }
+            }
+        }
+
+        private void handleTrafficStateNotification(ControllerMessageRequest requestMessage, int clientNodeId, String[] clientDest) {
+            /*
+             * TODO Remove me
+             */
+//            log("handleTrafficStateNotification");
+//            LocalDateTime localDateTime;
+//            String timestamp;
+
+            /*
+             * Choose the best path for the specified flow,
+             * add it to the flow paths database and
+             * send it to the source node.
+             */
+
+            List<Integer> clientsToNotify = Arrays.asList(92);
+
+            trafficCongestionLevel trafficCongestionLevel = requestMessage.getTrafficCongestionType();
+
+            if(trafficCongestionLevel != null) {
+//                System.out.println("ControllerService:  traffic notification received from nodeID:" + clientNodeId + "congestion LEVEL: " + trafficCongestionLevel);
+
+                List<String> dataTypesToConsider = Arrays.asList("InfoDataType", "VibrationDataType", "VideoDataType");
+                String ruleToActive = null;
+
+//                Map<String, List<String>> activeRules = controllerService.getActiveDataPlaneRules();
+
+                // removing all active rules
+//                for ( String dataType : activeRules.keySet() ) {
+//                    for (String activeRule : activeRules.get(dataType)){
+//                        controllerService.removeDataPlaneRule(dataType, activeRule);
+//                    }
+//                }
+
+                // handling here different congestion levels
+                switch (trafficCongestionLevel) {
+                    case LOW_CONGESTION:
+                        /*
+                         * TODO Remove me
+                         */
+                        log("NOTIFY_CONTROLLER_ABOUT_TRAFFIC_STATE [LOW_CONGESTION]received from nodeId: " + clientNodeId);
+                        ruleToActive = "DT_LowCongestionDataPlaneRule";
+                        break;
+                    case MEDIUM_CONGESTION:
+                        /*
+                         * TODO Remove me
+                         */
+                        log("NOTIFY_CONTROLLER_ABOUT_TRAFFIC_STATE [MEDIUM_CONGESTION]received from nodeId: " + clientNodeId);
+                        for (String dataType : dataTypesToConsider) {
+                            controllerService.removeDataPlaneRule(dataType, "DT_LowCongestionDataPlaneRule", clientsToNotify);
+                            log("Removed: " + ruleToActive + " to dataType: " +dataType);
+                        }
+                        log("NOTIFY_CONTROLLER_ABOUT_TRAFFIC_STATE [MEDIUM_CONGESTION]setting medium rule: " + clientNodeId);
+                        ruleToActive = "DT_MediumCongestionDataPlaneRule";
+                        break;
+                    case HIGH_CONGESTION:
+                        /*
+                         * TODO Remove me
+                         */
+                        //           just removing other rules, to switch to os routing
+                        log("NOTIFY_CONTROLLER_ABOUT_TRAFFIC_STATE [HIGH_CONGESTION]received from nodeId: " + clientNodeId);
+                        break;
+                    case EXTREME_CONGESTION:
+                        /*
+                         * TODO Remove me
+                         */
+                        log("NOTIFY_CONTROLLER_ABOUT_TRAFFIC_STATE [EXTREME_CONGESTION]received from nodeId: " + clientNodeId);
+                        break;
+                    default:
+                        break;
+                }
+
+//                try{
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+
+
+                // applying the corresponding rule to all dataTypesToConsider
+                if (ruleToActive != null){
+                    for (String dataType : dataTypesToConsider) {
+                        controllerService.addDataPlaneRule(dataType, ruleToActive, clientsToNotify);
+                        log("Applying: " + ruleToActive + " to dataType: " +dataType);
+                    }
+                }
+
+
+                // sending ack to client
+
+//                ControllerMessageResponse responseMessage = new ControllerMessageResponse(MessageType.NOTIFY_RESPONSE);
+//                try {
+//                    /*
+//                     * Send the response message using the inverted source path
+//                     */
+//                    E2EComm.sendUnicast(clientDest, clientNodeId, requestMessage.getClientPort(), PROTOCOL, CONTROL_FLOW_ID, E2EComm.serialize(responseMessage));
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+
+                /*
+                 * TODO Remove me
+                 */
+//                localDateTime = LocalDateTime.now();
+//                timestamp = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"));
+//                log("NOTIFY_CONTROLLER_ABOUT_TRAFFIC_STATE to nodeId: " + clientNodeId + " sent at: " + timestamp);
+
+            } else {
+                System.out.println("ControllerService: error! trafficCongestionType is UNUSED_FIELD, pkt received from noeID: "+clientNodeId);
             }
         }
 

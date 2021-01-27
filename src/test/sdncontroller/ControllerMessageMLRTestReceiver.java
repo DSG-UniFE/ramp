@@ -13,6 +13,7 @@ public class ControllerMessageMLRTestReceiver {
     private LocalDateTime receivedTime;
     private GenericPacket genericPacket;
     private Object object;
+    private boolean delayed;
 
     public ControllerMessageMLRTestReceiver(LocalDateTime receivedTime, GenericPacket genericPacket) {
         this.receivedTimeMilliseconds = -1;
@@ -33,6 +34,29 @@ public class ControllerMessageMLRTestReceiver {
         this.receivedTime = receivedTime;
         this.genericPacket = null;
         this.object = object;
+    }
+
+    public ControllerMessageMLRTestReceiver(long receivedTimeMilliseconds, LocalDateTime receivedTime, Object object) {
+        this.receivedTimeMilliseconds = receivedTimeMilliseconds;
+        this.receivedTime = receivedTime;
+        this.genericPacket = null;
+        this.object = object;
+    }
+
+    public ControllerMessageMLRTestReceiver(long receivedTimeMilliseconds, LocalDateTime receivedTime, GenericPacket gp, boolean delayed) {
+        this.receivedTimeMilliseconds = receivedTimeMilliseconds;
+        this.receivedTime = receivedTime;
+        this.genericPacket = gp;
+        this.object = null;
+        this.delayed = delayed;
+    }
+
+    public ControllerMessageMLRTestReceiver(long receivedTimeMilliseconds, LocalDateTime receivedTime, Object object, boolean delayed) {
+        this.receivedTimeMilliseconds = receivedTimeMilliseconds;
+        this.receivedTime = receivedTime;
+        this.genericPacket = null;
+        this.object = object;
+        this.delayed = delayed;
     }
 
     public void setReceivedTimeMilliseconds(long receivedTimeMilliseconds) {
@@ -65,5 +89,9 @@ public class ControllerMessageMLRTestReceiver {
 
     public Object getObject() {
         return this.object;
+    }
+
+    public boolean isDelayed() {
+        return this.delayed;
     }
 }

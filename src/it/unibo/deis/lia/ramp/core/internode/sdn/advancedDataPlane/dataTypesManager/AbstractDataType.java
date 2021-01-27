@@ -9,11 +9,17 @@ public abstract class AbstractDataType implements Serializable {
     private static final long serialVersionUID = -6368488354603521877L;
 
     protected int seqNumber;
-
+    private boolean isDroppable;
+    private long delayable;
+    private long sentTimestamp;
     protected byte[] payload;
+
 
     public AbstractDataType() {
         this.seqNumber = -1;
+        this.isDroppable = false;
+        this.delayable = 0;
+        this.sentTimestamp = -1;
         this.payload = new byte[0];
     }
 
@@ -36,5 +42,29 @@ public abstract class AbstractDataType implements Serializable {
 
     public int getSeqNumber() {
         return this.seqNumber;
+    }
+
+    public void setDroppable(boolean droppable) {
+        isDroppable = droppable;
+    }
+
+    public void setDelayable(long delayable) {
+        this.delayable = delayable;
+    }
+
+    public boolean getIsDroppable() {
+        return isDroppable;
+    }
+
+    public long getDelayable() {
+        return delayable;
+    }
+
+    public long getSentTimestamp() {
+        return sentTimestamp;
+    }
+
+    public void setSentTimestamp(long sentTimestamp) {
+        this.sentTimestamp = sentTimestamp;
     }
 }

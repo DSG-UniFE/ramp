@@ -6,7 +6,7 @@ package it.unibo.deis.lia.ramp.core.internode.sdn.trafficEngineeringPolicy;
  */
 public enum TrafficEngineeringPolicy {
     SINGLE_FLOW,
-    QUEUES,
-    TRAFFIC_SHAPING,
+    QUEUES, //multiple flows - single priority
+    TRAFFIC_SHAPING,  //multiple flows - multiple priorities
     NO_FLOW_POLICY
 }

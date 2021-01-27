@@ -22,6 +22,9 @@ import android.net.wifi.WifiManager;
 import it.unibo.deis.lia.ramp.RampEntryPoint;
 import it.unibo.deis.lia.ramp.core.e2e.E2EComm;
 
+import java.util.Arrays;
+
+
 /**
  * @author Carlo Giannelli
  */
@@ -105,6 +108,17 @@ public class Heartbeater extends Thread {
 		}
 		heartbeater = null;
 		System.out.println("Heartbeater END");
+	}
+
+	private static boolean isValidInet4Address(String ip)
+	{
+		String[] groups = ip.split("\\.");
+
+		if (ip.matches(".*[a-zA-Z].*") ){ //<------------------ ipv6 ip
+			return false;
+		}else{
+			return true;
+		}
 	}
 
 	public void sendHeartbeat(boolean force) {
@@ -377,20 +391,31 @@ public class Heartbeater extends Thread {
 //					}
 
 				} else {	// NOT Android
+//					System.out.println("netA.getInterfaceAddresses() "+netA.getInterfaceAddresses());
 					for (InterfaceAddress address : netA.getInterfaceAddresses()) {
-						InetAddress inetAddress = address.getAddress();
-						DatagramSocket ds = new DatagramSocket(0, inetAddress);
+//						System.out.println("-------------------address is "+address);
+						// Validate an IPv4 address
+						if (isValidInet4Address(""+address)) {
+							System.out.println("The IP address " + address + " is valid");
+							InetAddress inetAddress = address.getAddress();
+							DatagramSocket ds = new DatagramSocket(0, inetAddress);
 
-						String ip = inetAddress.toString().replaceAll("/", "").split(":")[0];
-						int prefixLength = address.getNetworkPrefixLength();
-						String subnet = ip + "/" + prefixLength;
+							String ip = inetAddress.toString().replaceAll("/", "").split(":")[0];
+							int prefixLength = address.getNetworkPrefixLength();
+							String subnet = ip + "/" + prefixLength;
 
-						SubnetUtils utils = new SubnetUtils(subnet);
-						SubnetInfo info = utils.getInfo();
+//							System.out.println("Subnet "+subnet);
 
-						unicastDiscovery(inetAddress, ds, ip, info);
+							SubnetUtils utils = new SubnetUtils(subnet);
+							SubnetInfo info = utils.getInfo();
 
-						Thread.sleep(50);
+							unicastDiscovery(inetAddress, ds, ip, info);
+
+							Thread.sleep(50);
+						}
+						else {
+							System.out.println("The IP address " + address + " isn't valid. Then skipped.");
+						}
 					}
 				}
 			}

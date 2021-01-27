@@ -581,12 +581,14 @@ public class ControllerClientMLRTestSender {
              * to the longest path currently available
              * in the topology.
              */
-            ApplicationRequirements applicationRequirements = new ApplicationRequirements(TrafficType.FILE_TRANSFER, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 36000);
+            //ApplicationRequirements applicationRequirements = new ApplicationRequirements(TrafficType.FILE_TRANSFER, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 36000);
+            ApplicationRequirements applicationRequirements = new ApplicationRequirements(TrafficType.DEFAULT, GenericPacket.UNUSED_FIELD, GenericPacket.UNUSED_FIELD, 0, 36000);
             int[] destNodeIds = new int[]{serviceResponse.getServerNodeId()};
             int[] destPorts = new int[0];
 
             long pre = System.currentTimeMillis();
-            int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts, PathSelectionMetric.LONGEST_PATH);
+            //int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts, PathSelectionMetric.LONGEST_PATH);
+            int flowId = controllerClient.getFlowId(applicationRequirements, destNodeIds, destPorts, PathSelectionMetric.BREADTH_FIRST);
             long post = System.currentTimeMillis();
 
             controllerClient.log("ControllerClientMLRTestSender: getFlowId protocol completed in " + (post-pre) + "milliseconds");

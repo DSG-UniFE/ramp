@@ -7,13 +7,13 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.controllerClient.ControllerClie
 import it.unibo.deis.lia.ramp.core.internode.sdn.controllerService.ControllerService;
 
 public class ControllerServiceTest {
-	
+
 	private static ControllerService controllerService;
 	private static ControllerClient controllerClient;
 	private static RampEntryPoint ramp;
-	
+
 	public static void main(String[] args) {
-		
+
 		ramp = RampEntryPoint.getInstance(true, null);
 
 		System.out.println("ControllerServiceTest: registering shutdown hook");
@@ -32,31 +32,31 @@ public class ControllerServiceTest {
 				}
 			}
 		}));
-		
+
 		controllerService = ControllerService.getInstance();
-		
+
 		try {
 			Thread.sleep(2*1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
+
 		controllerClient = ControllerClient.getInstance();
-		
+
 		try {
 			Thread.sleep(2*1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
+
 		controllerService.displayGraph();
-		
+
 		try {
 			Thread.sleep(20*1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
+
 		controllerService.takeGraphScreenshot("topologygraph.png");
 	}
 

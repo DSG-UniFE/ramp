@@ -52,6 +52,11 @@ public class VibrationDataPlaneRule extends AbstractDataPlaneRule implements Ser
 
     @Override
     public void applyRuleToUnicastPacket(UnicastPacket up) {
+
+        System.out.println("----------------------------------------------> BELLA MATTE");
+        System.out.println("---------------applyRuleToUnicastPacket-------------------------------> BELLA MATTE");
+        System.out.println("----------------------------------------------> BELLA MATTE");
+
         UnicastHeader packetHeader = up.getHeader();
         if (packetHeader.getDataType() == vibrationDataTypeId) {
             try {

@@ -122,7 +122,6 @@ public class TcpDispatcher extends Thread {
         public void run() {
             // System.out.println("TcpDispatcherHandler run start");
             try {
-
                 if (gp == null) {
                     gp = E2EComm.readPacket(is);
                 }
@@ -171,6 +170,7 @@ public class TcpDispatcher extends Thread {
                     else
                         broadcastPacketTcpHandler(firstHop, remoteAddressString, exploredNodeIdList, bp);
                 } else {
+
                     // not UnicastPacket, not UnicastHeader, not BroadcastPacket
                     throw new Exception("Unknown packet type: " + gp.getClass().getName());
                 }

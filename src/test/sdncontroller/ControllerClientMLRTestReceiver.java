@@ -343,6 +343,7 @@ public class ControllerClientMLRTestReceiver {
             assert message != null;
             int senderPort = Integer.parseInt(message);
 
+
             /*
              * Store info about the sender to be used
              * in the os level routing thread.
@@ -350,7 +351,9 @@ public class ControllerClientMLRTestReceiver {
             senderNodePort = senderPort;
             senderNodeId = ((UnicastPacket) gp).getSourceNodeId();
 
+            System.out.println("---------------------------------->  ");
             System.out.println("ControllerClientMLRTestReceiver: handshake message received from the sender, message: " + message + ", port: " + senderPort);
+            System.out.println("---------------------------------->  ");
 
             String response = "ok";
             try {
@@ -363,7 +366,9 @@ public class ControllerClientMLRTestReceiver {
 
             try {
                 while (applicationLevelRoutingActive) {
+                    System.out.println("----------------------------------> prima di gp");
                     gp = E2EComm.receive(firstServiceSocket);
+                    System.out.println("----------------------------------> dopo di gp");
                     ControllerClientMLRTestReceiver.messageQueue.put(new ControllerMessageMLRTestReceiver(System.currentTimeMillis(), LocalDateTime.now(), gp));
 
                     packetsReceived++;

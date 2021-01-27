@@ -4,6 +4,8 @@ import it.unibo.deis.lia.ramp.core.internode.sdn.applicationRequirements.Applica
 import it.unibo.deis.lia.ramp.core.internode.sdn.pathSelection.PathSelectionMetric;
 import it.unibo.deis.lia.ramp.util.NodeStats;
 
+import it.unibo.deis.lia.ramp.core.internode.sdn.controllerMessage.trafficCongestionLevel;
+
 import java.util.Map;
 
 /**
@@ -27,6 +29,8 @@ public class ControllerMessageRequest extends ControllerMessage {
 
     private int sourceNodeId;
 
+    private trafficCongestionLevel trafficCongestionLevel;
+
     /**
      * PATH_REQUEST message: messageType, clientPort, destNodeIds, applicationRequirements, pathSelectionMetric, flowId,
      * MULTICAST_REQUEST message: messageType, clientPort, destNodeIds, destPorts, applicationRequirements, pathSelectionMetric, flowId
@@ -46,11 +50,11 @@ public class ControllerMessageRequest extends ControllerMessage {
         this.routeId = ControllerMessage.UNUSED_FIELD;
         this.osRoutingPriority = false;
         this.sourceNodeId = ControllerMessage.UNUSED_FIELD;
+        this.trafficCongestionLevel = null;
     }
 
     public ControllerMessageRequest(MessageType messageType, int clientPort, int[] destNodeIds, int[] destPorts, ApplicationRequirements applicationRequirements, PathSelectionMetric pathSelectionMetric, int flowId) {
         super(messageType, clientPort);
-
         this.destNodeIds = destNodeIds;
         this.destPorts = destPorts;
         this.applicationRequirements = applicationRequirements;
@@ -59,6 +63,7 @@ public class ControllerMessageRequest extends ControllerMessage {
         this.routeId = ControllerMessage.UNUSED_FIELD;
         this.osRoutingPriority = false;
         this.sourceNodeId = ControllerMessage.UNUSED_FIELD;
+        this.trafficCongestionLevel = null;
     }
 
     public ControllerMessageRequest(MessageType messageType, int clientPort, int routeId, boolean osRoutingPriority) {
@@ -71,6 +76,7 @@ public class ControllerMessageRequest extends ControllerMessage {
         this.routeId = routeId;
         this.osRoutingPriority = osRoutingPriority;
         this.sourceNodeId = ControllerMessage.UNUSED_FIELD;
+        this.trafficCongestionLevel = null;
     }
 
     public ControllerMessageRequest(MessageType messageType, int clientPort) {
@@ -83,6 +89,20 @@ public class ControllerMessageRequest extends ControllerMessage {
         this.routeId = ControllerMessage.UNUSED_FIELD;
         this.osRoutingPriority = false;
         this.sourceNodeId = ControllerMessage.UNUSED_FIELD;
+        this.trafficCongestionLevel = null;
+    }
+
+    public ControllerMessageRequest(MessageType messageType, int clientPort, trafficCongestionLevel traffic_congestion) {
+        super(messageType, clientPort);
+        this.destNodeIds = null;
+        this.destPorts = null;
+        this.applicationRequirements = null;
+        this.pathSelectionMetric = null;
+        this.flowId = ControllerMessage.UNUSED_FIELD;
+        this.routeId = ControllerMessage.UNUSED_FIELD;
+        this.osRoutingPriority = false;
+        this.sourceNodeId = ControllerMessage.UNUSED_FIELD;
+        this.trafficCongestionLevel = traffic_congestion;
     }
 
     public int[] getDestNodeIds() {
@@ -139,5 +159,13 @@ public class ControllerMessageRequest extends ControllerMessage {
 
     public void setSourceNodeId(int sourceNodeId) {
         this.sourceNodeId = sourceNodeId;
+    }
+
+    public trafficCongestionLevel getTrafficCongestionType() {
+        return this.trafficCongestionLevel;
+    }
+
+    public void setTrafficCongestionType(trafficCongestionLevel trafficCongestionLevel) {
+        this.trafficCongestionLevel = trafficCongestionLevel;
     }
 }

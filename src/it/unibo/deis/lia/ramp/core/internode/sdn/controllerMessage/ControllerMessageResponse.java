@@ -59,6 +59,16 @@ public class ControllerMessageResponse extends ControllerMessage {
         this.osROutingPathDuration = osROutingPathDuration;
     }
 
+    public ControllerMessageResponse(MessageType messageType) {
+        super(messageType);
+
+        this.flowId = ControllerMessage.UNUSED_FIELD;
+        this.newPaths = null;
+        this.routeId = ControllerMessage.UNUSED_FIELD;
+        this.osRoutingPath = null;
+        this.osROutingPathDuration = ControllerMessage.UNUSED_FIELD;
+    }
+
     public int getFlowId() {
         return this.flowId;
     }

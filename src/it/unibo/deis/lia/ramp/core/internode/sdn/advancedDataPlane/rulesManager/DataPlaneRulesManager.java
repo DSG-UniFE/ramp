@@ -18,6 +18,8 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -140,10 +142,14 @@ public class DataPlaneRulesManager {
          * Initialise user defined DataPlaneRules if available,
          * the ones currently available from previous ControllerClient sessions.
          */
-        Set<String> userDefinedDataPlaneRules = Stream.of(new File(userDefinedDataPlaneRulesDirectoryName).listFiles())
-                .filter(file -> !file.isDirectory())
-                .map(File::getName)
-                .collect(Collectors.toSet());
+        Set<String> userDefinedDataPlaneRules = new HashSet<>();
+        if (Files.exists(Paths.get(userDefinedDataPlaneRulesDirectoryName))){
+            System.out.println("userDefinedDataPlaneRulesDirectoryName ("+userDefinedDataPlaneRulesDirectoryName+") does not exist");
+            userDefinedDataPlaneRules = Stream.of(new File(userDefinedDataPlaneRulesDirectoryName).listFiles())
+                    .filter(file -> !file.isDirectory())
+                    .map(File::getName)
+                    .collect(Collectors.toSet());
+        }
 
         for (String dataPlaneRuleFileName : userDefinedDataPlaneRules) {
             String dataPlaneRuleClassName = dataPlaneRuleFileName.replaceFirst("[.][^.]+$", "");
@@ -311,7 +317,7 @@ public class DataPlaneRulesManager {
                 method.invoke(dataPlaneRule, up);
             } catch (NoSuchMethodException e) {
                 /*
-                 * This means that the empty method of AbstractDataPlaneRule has not been overriden.
+                 * This means that the empty method of AbstractDataPlaneRule has not been overwritten.
                  */
                 continue;
             } catch (IllegalAccessException | InvocationTargetException e) {
